@@ -29,13 +29,23 @@ body{font-family:Tahoma,"Times New Roman", Times, serif;}
     width: 30%;
 }
 
-.velmnt {margin:5px;}
+.velmnt {margin:5px; display:inline-block; width:100px; }
 .velmnt .velmnt_table{display: inline;}
-.velmnt .bn{margin:10px;}
+
 .velmnt td{text-align:center;}
 .velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
 .velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
 border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+
+.velmnt .vcontainer{position: relative; width: 100%;}
+.vcontainer video{ width:100%; border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+.velmnt button{position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+-ms-transform: translate(-50%, -50%);}
+
+.vcontainer .btn:hover{background-color: #999999;}
+
 
 .scale {font-size: 100%;}
 .scale td { text-align: left; padding:0;}
@@ -52,6 +62,11 @@ fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5
 </style>
 
 <script type="text/javascript">
+
+
+max_accepted_extra_playing_time_sec = 2;
+max_accepted_extra_playing_time_percent = 0.1;
+
 //--------------- Utilities -----------------
 
 /*
@@ -81,6 +96,7 @@ String.prototype.toMMSS = function () {
 //---------------- v_elm.js -----------------
 // All functions needed for custom audio playback
 const video_played_finished = new Map();
+const video_played_start = new Map();
 var videoElements=[];
 function clickManager(event) {
 	ae=event.data.ae;
@@ -94,7 +110,6 @@ function clickManager(event) {
 };
 
 function fullscreen_closed(e,video,caller){
-
     if (!document.fullscreenElement && /* Standard syntax */
         !document.webkitFullscreenElement && /* Chrome, Safari and Opera syntax */
         !document.mozFullScreenElement &&/* Firefox syntax */
@@ -102,13 +117,13 @@ function fullscreen_closed(e,video,caller){
       ) {
       	var idT=video.id;
 		var id=idT.substring(6,idT.length);
+		if (!(video.paused || video.ended))
+			pauseVideo(video);
 		//reload video if it has not been watched before
-
 		if (video_played_finished.get(id) != 1 ){
 			video.load();
 		}
-
-
+		$("#velmnt_"+id).show();
 
         //restore the old height and weight
         let oldH=video.getAttribute("oldheight");
@@ -116,8 +131,8 @@ function fullscreen_closed(e,video,caller){
 
         video.setAttribute("width",oldW);
         video.setAttribute("height",oldH);
-        video.setAttribute("oldwidth",0);
-        video.setAttribute("oldheight",0);
+        video.removeAttribute("oldwidth");
+        video.removeAttribute("oldheight");
       //remove the eventlistner of the fullscreen mode
         let parent=video.parentNode;
     if (parent.requestFullscreen) {
@@ -131,7 +146,7 @@ function fullscreen_closed(e,video,caller){
       }
 
 	 if (video_played_finished.get(id) != 1 ){
-      		alert("the video must be watched in fullscreen mode");
+      		alert("The video must be watched fully and in fullscreen mode.");
       }
 
     }
@@ -141,12 +156,12 @@ function playVideo(video){
 
 	var idT=video.id;
 	var id=idT.substring(6,idT.length);
-	console.log(id);
 	$("#velmnt_s_"+id).removeClass("glyphicon-repeat");
 	$("#velmnt_s_"+id).removeClass("glyphicon-play");
 	$("#velmnt_s_"+id).addClass("glyphicon-pause");
 	$("#velmnt_"+id).addClass("btn-primary");
 	$("#video_n_play_"+id).val(parseInt($("#video_n_play_"+id).val())+1);
+	$("#velmnt_"+id).hide();
 
 	let caller= function (e){ fullscreen_closed(e,video,caller) }
 
@@ -172,11 +187,11 @@ function playVideo(video){
     //change height and weight
     video.setAttribute("oldwidth",oldW);
     video.setAttribute("oldheight",oldH);
-    video.setAttribute("width",fullW);
-    video.setAttribute("height",fullH);
+    //video.setAttribute("width",fullW);
+    //video.setAttribute("height",fullH);
 
     video.play();
-
+	video_played_start.set(id, Date.now());
 }
 
 function pauseVideo(video){
@@ -200,7 +215,6 @@ function canPlay(event){
 	var ae=this;
 	var idText =this.id;
 	var id=idText.substring(6,idText.length);
-	console.log("id:"+ id);
 	$("#velmnt_l_d_"+id).text(" / " + (ae.duration).toString().toMMSS());
 	$("#velmnt_"+id).removeClass("disabled");
 }
@@ -211,18 +225,15 @@ function timeUpdate(){
 	var id=idText.substring(6,idText.length);
 	t = ae.currentTime.toString().toMMSS()
 	$("#velmnt_l_c_"+id).text(t);
-	console.log(t);
-	console.log("velmnt_l_c_"+id);
 }
 
 function isended(){
 	var ae=this;
 	var idText =this.id;
 	var id=idText.substring(6,idText.length);
-	console.log("id:"+ id);
-	video_played_finished.set(id, 1);
 
-	document.exitFullscreen();
+	is_first_time = video_played_finished.get(id)==0;
+	video_played_finished.set(id, 1);
 
 	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
 	$("#velmnt_"+id).removeClass("btn-primary");
@@ -231,7 +242,19 @@ function isended(){
 	if ($("#"+id).attr('data-onfinished')){
 		window[$("#"+id).attr('data-onfinished')](id);
 	}
+	document.exitFullscreen();
 
+	if (is_first_time){
+		now = Date.now();
+		play_duration = (Date.now()-  video_played_start.get(id))/1000;
+		$("#video_play_duration_"+id).val(play_duration);
+		$("#video_duration_"+id).val(this.duration);
+		perc_delay = Math.abs(play_duration-this.duration)/this.duration;
+		if (play_duration>max_accepted_extra_playing_time_sec ||
+			perc_delay > max_accepted_extra_playing_time_percent){
+				maximum_extra_playing_time_reached();
+		}
+	}
 }
 
 function issuePlayingVideo(videoElement, issue){
@@ -239,26 +262,31 @@ function issuePlayingVideo(videoElement, issue){
 	console.log(issue);
 }
 
+
+
 // loading all video elements in the page
 $(function() {
     $( ".velmnt" ).each(function(){
 		titleTextTemplate='<tr><td>{1}</td></tr>';
 		insert='';
 		title='';
-		a='<video id="video_{0}" preload="true"  width="50" poster="poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
+		a='<video id="video_{0}" preload="true"  width="1" poster="poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
 		'<input type="hidden" id="video_n_play_{0}" name="video_n_play_{0}" value="0">'+
 		'<input type="hidden" id="video_n_finish_{0}" name="video_n_finish_{0}" value="0">'+
-		'<input type="hidden" id="video_play_duration_{0}" name="video_play_duration_{0}" value="0">';
+		'<input type="hidden" id="video_play_duration_{0}" name="video_play_duration_{0}" value="0">'+
+		'<input type="hidden" id="video_duration_{0}" name="video_duration_{0}" value="0">';
 		if ($(this).attr('title')){
 			insert=titleTextTemplate;
 			title=$(this).attr('title');
 		}
 
+		//a ='<img src="https://www.w3schools.com/howto/img_snow.jpg" alt="Sno111w"></img>';
+
 		src=$(this).attr('data-src');
 		id=$(this).attr('id');
 
 
-		t='<table class="velmnt_table" border="0">'+insert+' <tr><td class="vtd">'+a.f(id,src)+'<button id="velmnt_{0}" type="button" class="btn bn disabled"><span id ="velmnt_s_{0}" class="glyphicon glyphicon-play"></span></button></td></tr><tr><td><span id="velmnt_l_c_{0}" class="blabel" >00:00</span><span id="velmnt_l_d_{0}" class="blabel" > / 00:00</span></td></tr></table>';
+		t='<table class="velmnt_table" border="0">'+insert+' <tr><td class="vtd"> <div class="vcontainer">'+a.f(id,src)+'<button id="velmnt_{0}" type="button" class="btn bn disabled"><span id ="velmnt_s_{0}" class="glyphicon glyphicon-play"></span></button></div></td></tr><tr><td><span id="velmnt_l_c_{0}" class="blabel" >00:00</span><span id="velmnt_l_d_{0}" class="blabel" > / 00:00</span></td></tr></table>';
 
 		//$(this).append(a.f(id,src));
 		$(this).append(t.f(id,title));
@@ -312,6 +340,18 @@ function avoidAnsweringBeforeListeningThrough(){
 	}
 }
 
+
+
+//---------------
+/*
+	will be called when a video took extra time to be finished.
+*/
+function maximum_extra_playing_time_reached(){
+}
+function testFinish(t){
+	console.log(t);
+}
+
 </script>
 
 <!-- Instructions -->
@@ -326,7 +366,8 @@ function avoidAnsweringBeforeListeningThrough(){
 			  <div class="panel-body">
 
                   <p align="center"> <span class="velmnt" id="test1" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample.mp4" >&nbsp;</span> </p>
-				   <p align="center"> <span class="velmnt" id="test2" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4" >&nbsp;</span> </p>
+				   <p align="center"> <span class="velmnt" id="test2" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4"
+				   data-onfinished="testFinish">&nbsp;</span> </p>
 
 			</div>
 		</div>
