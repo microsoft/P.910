@@ -1,0 +1,335 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+-->
+
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+
+
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+
+.table th, .table td {
+     border-top: none !important;
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+}
+
+.velmnt {margin:5px;}
+.velmnt .velmnt_table{display: inline;}
+.velmnt .bn{margin:10px;}
+.velmnt td{text-align:center;}
+.velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
+.velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+.scale {font-size: 100%;}
+.scale td { text-align: left; padding:0;}
+.scale label { display:block;}
+.scale .c { text-align: center;}
+section {
+	margin-bottom:15px;
+	padding: 10px 10px;
+	font-family: Verdana, Geneva, sans-serif;
+	color:#333333;
+	font-size:0.9em;
+}
+fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+</style>
+
+<script type="text/javascript">
+//--------------- Utilities -----------------
+
+/*
+	Utility function to format strings
+*/
+String.prototype.format = String.prototype.f = function() {
+    var s = this,
+        i = arguments.length;
+    while (i--) {
+        s = s.replace(new RegExp('\\{' + i + '\\}', 'gm'), arguments[i]);
+    }
+    return s;
+};
+
+/*
+	Utility: convert seconds to MM:SS
+*/
+String.prototype.toMMSS = function () {
+    var sec_num = parseInt(this, 10); // don't forget the second param
+    var minutes   = Math.floor(sec_num / 60);
+    var seconds = sec_num - (minutes * 60);
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    return minutes+':'+seconds;
+}
+
+//---------------- v_elm.js -----------------
+// All functions needed for custom audio playback
+const video_played_finished = new Map();
+var videoElements=[];
+function clickManager(event) {
+	ae=event.data.ae;
+	var id=event.data.id;
+	if (ae.paused) {
+		pauseAll();
+		playVideo(ae);
+	} else {
+		pauseVideo(ae);
+	}
+};
+
+function fullscreen_closed(e,video,caller){
+
+    if (!document.fullscreenElement && /* Standard syntax */
+        !document.webkitFullscreenElement && /* Chrome, Safari and Opera syntax */
+        !document.mozFullScreenElement &&/* Firefox syntax */
+        !document.msFullscreenElement /* IE/Edge syntax */
+      ) {
+      	var idT=video.id;
+		var id=idT.substring(6,idT.length);
+		//reload video if it has not been watched before
+
+		if (video_played_finished.get(id) != 1 ){
+			video.load();
+		}
+
+
+
+        //restore the old height and weight
+        let oldH=video.getAttribute("oldheight");
+        let oldW=video.getAttribute("oldwidth");
+
+        video.setAttribute("width",oldW);
+        video.setAttribute("height",oldH);
+        video.setAttribute("oldwidth",0);
+        video.setAttribute("oldheight",0);
+      //remove the eventlistner of the fullscreen mode
+        let parent=video.parentNode;
+    if (parent.requestFullscreen) {
+        parent.removeEventListener("fullscreenchange",caller)
+      } else if (parent.msRequestFullscreen) {
+        parent.removeEventListener("onmsfullscreenchange",caller)
+      } else if (parent.mozRequestFullScreen) {
+        parent.removeEventListener("mozfullscreenchange",caller)
+      } else if (parent.webkitRequestFullscreen) {
+        parent.removeEventListener("webkitfullscreenchange",caller)
+      }
+
+	 if (video_played_finished.get(id) != 1 ){
+      		alert("the video must be watched in fullscreen mode");
+      }
+
+    }
+}
+
+function playVideo(video){
+
+	var idT=video.id;
+	var id=idT.substring(6,idT.length);
+	console.log(id);
+	$("#velmnt_s_"+id).removeClass("glyphicon-repeat");
+	$("#velmnt_s_"+id).removeClass("glyphicon-play");
+	$("#velmnt_s_"+id).addClass("glyphicon-pause");
+	$("#velmnt_"+id).addClass("btn-primary");
+	$("#video_n_play_"+id).val(parseInt($("#video_n_play_"+id).val())+1);
+
+	let caller= function (e){ fullscreen_closed(e,video,caller) }
+
+	let parent = document.getElementById(id);
+	if (parent.requestFullscreen) {
+        parent.requestFullscreen();
+        parent.addEventListener("fullscreenchange",caller)
+      } else if (parent.msRequestFullscreen) {
+        parent.msRequestFullscreen();
+        parent.addEventListener("onmsfullscreenchange",caller)
+      } else if (parent.mozRequestFullScreen) {
+        parent.mozRequestFullScreen();
+        parent.addEventListener("mozfullscreenchange",caller)
+      } else if (parent.webkitRequestFullscreen) {
+        parent.webkitRequestFullscreen();
+        parent.addEventListener("webkitfullscreenchange",caller)
+      }
+
+    let oldH=video.getAttribute("height");
+    let oldW=video.getAttribute("width");
+    let fullW=screen.width;
+    let fullH=screen.height;
+    //change height and weight
+    video.setAttribute("oldwidth",oldW);
+    video.setAttribute("oldheight",oldH);
+    video.setAttribute("width",fullW);
+    video.setAttribute("height",fullH);
+
+    video.play();
+
+}
+
+function pauseVideo(video){
+	video.pause();
+	var idT=video.id;
+	var id=idT.substring(6,idT.length);
+	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
+	$("#velmnt_"+id).removeClass("btn-primary");
+	$("#velmnt_s_"+id).addClass("glyphicon-play");
+}
+
+function pauseAll(){
+	for (i = 0; i < videoElements.length; i++) {
+		if (!videoElements[i].paused){
+			pauseVideo(videoElements[i]);
+		}
+	}
+}
+
+function canPlay(event){
+	var ae=this;
+	var idText =this.id;
+	var id=idText.substring(6,idText.length);
+	console.log("id:"+ id);
+	$("#velmnt_l_d_"+id).text(" / " + (ae.duration).toString().toMMSS());
+	$("#velmnt_"+id).removeClass("disabled");
+}
+
+function timeUpdate(){
+	var ae=this;
+	var idText =this.id;
+	var id=idText.substring(6,idText.length);
+	t = ae.currentTime.toString().toMMSS()
+	$("#velmnt_l_c_"+id).text(t);
+	console.log(t);
+	console.log("velmnt_l_c_"+id);
+}
+
+function isended(){
+	var ae=this;
+	var idText =this.id;
+	var id=idText.substring(6,idText.length);
+	console.log("id:"+ id);
+	video_played_finished.set(id, 1);
+
+	document.exitFullscreen();
+
+	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
+	$("#velmnt_"+id).removeClass("btn-primary");
+	$("#velmnt_s_"+id).addClass("glyphicon-repeat");
+	$("#video_n_finish_"+id).val(parseInt($("#video_n_finish_"+id).val())+1);
+	if ($("#"+id).attr('data-onfinished')){
+		window[$("#"+id).attr('data-onfinished')](id);
+	}
+
+}
+
+function issuePlayingVideo(videoElement, issue){
+	// todod log the data
+	console.log(issue);
+}
+
+// loading all video elements in the page
+$(function() {
+    $( ".velmnt" ).each(function(){
+		titleTextTemplate='<tr><td>{1}</td></tr>';
+		insert='';
+		title='';
+		a='<video id="video_{0}" preload="true"  width="50" poster="poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
+		'<input type="hidden" id="video_n_play_{0}" name="video_n_play_{0}" value="0">'+
+		'<input type="hidden" id="video_n_finish_{0}" name="video_n_finish_{0}" value="0">'+
+		'<input type="hidden" id="video_play_duration_{0}" name="video_play_duration_{0}" value="0">';
+		if ($(this).attr('title')){
+			insert=titleTextTemplate;
+			title=$(this).attr('title');
+		}
+
+		src=$(this).attr('data-src');
+		id=$(this).attr('id');
+
+
+		t='<table class="velmnt_table" border="0">'+insert+' <tr><td class="vtd">'+a.f(id,src)+'<button id="velmnt_{0}" type="button" class="btn bn disabled"><span id ="velmnt_s_{0}" class="glyphicon glyphicon-play"></span></button></td></tr><tr><td><span id="velmnt_l_c_{0}" class="blabel" >00:00</span><span id="velmnt_l_d_{0}" class="blabel" > / 00:00</span></td></tr></table>';
+
+		//$(this).append(a.f(id,src));
+		$(this).append(t.f(id,title));
+		video_played_finished.set(id, 0);
+
+		var videoElement = document.getElementById("video_"+id);
+		//save for later
+		videoElements.push(videoElement);
+		$( "#velmnt_"+id ).click({ae: videoElement, id: id},clickManager);
+		$( "#velmnt_"+id ).disabled=false;
+		videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
+		videoElement.addEventListener("canplaythrough",canPlay.bind(videoElement),false);
+		videoElement.addEventListener("timeupdate",timeUpdate.bind(videoElement),false);
+		videoElement.addEventListener("ended",isended.bind(videoElement),false);
+
+		videoElement.addEventListener("stalled",issuePlayingVideo.bind(videoElement ,'stalled'),false);
+		videoElement.addEventListener("suspend",issuePlayingVideo.bind(videoElement, 'suspend'),false);
+		videoElement.addEventListener("waiting",issuePlayingVideo.bind(videoElement, 'waiting'),false);
+
+	});
+
+	$("source").on("error", function (e) {
+        console.log("Error at video tag level!"+e.target.src);
+        problematic_urls=problematic_urls+"<li>"+e.target.src+"</li>";
+        //$("#error_details").html(problematic_urls);
+        recordError("on loading audio clips",e.target.src);
+        //$("#error_loading_files").show();
+    });
+});
+var problematic_urls="";
+/*
+	Called when the scale item is clicked
+*/
+function alertForbiddenChange(){
+	alert('You should watch until the end.');
+	$(this).prop('checked', false);
+}
+
+/*
+	Users should not be able to vot before listening the audio clips until the end.
+*/
+function avoidAnsweringBeforeListeningThrough(){
+	var i;
+	// Training section
+	for (i = 0; i < config['trainingUrls'].length; i++) {
+		$('input[name="t{0}"]'.f(i+1)).on('change', alertForbiddenChange);
+	}
+	// Rating section
+	for (i = 0; i < config['questionUrls'].length; i++) {
+		$('input[name="q{0}"]'.f(i+1)).on('change', alertForbiddenChange);
+	}
+}
+
+</script>
+
+<!-- Instructions -->
+<section class="container" id="Survey">
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<h3 class="panel-title">
+				<a data-target="#instruction" data-toggle="collapse" >Instructions for speech quality assessment</a>
+			</h3>
+		</div>
+		<div  class="panel-collapse collapse in" id="instruction">
+			  <div class="panel-body">
+
+                  <p align="center"> <span class="velmnt" id="test1" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample.mp4" >&nbsp;</span> </p>
+				   <p align="center"> <span class="velmnt" id="test2" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4" >&nbsp;</span> </p>
+
+			</div>
+		</div>
+
+	</div>
+</section>

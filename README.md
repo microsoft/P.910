@@ -22,7 +22,7 @@ For bug reports and issues with this code, please see the
 
 ## Contact
 
-Contact [Ross Cutler](rcutler@microsoft.com) with any questions.
+Contact [Ross Cutler](mailto:rcutler@microsoft.com) with any questions.
 
 ## License
 ### Code License
