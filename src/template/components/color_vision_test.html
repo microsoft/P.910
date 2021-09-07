@@ -1,0 +1,184 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+-->
+
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+
+
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+
+.table th, .table td {
+     border-top: none !important;
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+}
+
+.velmnt {margin:5px; display:inline-block; width:100px; }
+.velmnt .velmnt_table{display: inline;}
+
+.velmnt td{text-align:center;}
+.velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
+.velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+
+.velmnt .vcontainer{position: relative; width: 100%;}
+.vcontainer video{ width:100%; border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+.velmnt button{position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+-ms-transform: translate(-50%, -50%);}
+
+.vcontainer .btn:hover{background-color: #999999;}
+
+
+.scale {font-size: 100%;}
+.scale td { text-align: left; padding:0;}
+.scale label { display:block;}
+.scale .c { text-align: center;}
+section {
+	margin-bottom:15px;
+	padding: 10px 10px;
+	font-family: Verdana, Geneva, sans-serif;
+	color:#333333;
+	font-size:0.9em;
+}
+fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+</style>
+
+<script type="text/javascript">
+
+var config ={
+	cookieName:"test",
+	qualificationCookieName:"test",
+	qualificationValidFor:43200,
+    forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+    debug:"true",
+    qualification:{
+		plate3: "29",
+		plate4: "5"
+	}
+}
+
+/*
+	Initializing the page: generate and hide sections depending to the cookies value
+*/
+$(function() {
+	try{
+			initializeQualification();
+	}catch(err){
+		console.error(err);
+		recordError(err.name,err.message);
+
+	}
+});
+
+
+/*
+	Initialize the qualification section
+*/
+var qualification_ans= new Set();
+function initializeQualification(){
+	//randomizeHearingtestItems();
+    //makeCheckboxBeRequired();
+    forceNoSpaceInInput();
+    $("#qualification :input").on('change', isQualificationDone);
+}
+
+function isQualificationDone(){
+	qualification_ans.add(this.name);
+	console.log("check if the qualification is done"+this.name+","+qualification_ans.size);
+	validateQualificationAnswer();
+	//if (qualification_ans.size==13)
+	//	validateQualificationAnswer();
+}
+
+/*
+	check the qualification passed
+*/
+function validateQualificationAnswer(){
+	count_correct_plates=0;
+	if ($("input[name='plate3']").val().trim()==config.qualification.plate3)
+		count_correct_plates ++;
+	if ($("input[name='plate4']").val().trim()==config.qualification.plate4)
+		count_correct_plates ++;
+
+
+	//passed=  m_tongue_check && device_check && working_area_checked &&  hearing_self_report_check && count_correct_ht>= 3;
+	passed=  count_correct_plates ==2;
+	console.log(passed);
+	// add a qualification for 'qualificationValidFor' minutes
+	//createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+}
+
+/*
+	Avoid space in text field
+*/
+function forceNoSpaceInInput(){
+    $(".nospace").on({
+          keydown: function(e) {
+            if (e.which === 32)
+              return false;
+          },
+          change: function() {
+            this.value = this.value.replace(/\s/g, "");
+          }
+        });
+}
+</script>
+
+<!-- Instructions -->
+<section class="container" id="qualification">
+	<div class="row col-xs-12 col-md-12">
+	<div class="panel panel-info">
+	  <div class="panel-heading">
+		<h3 class="panel-title">
+			<a data-toggle="collapse" href="#collapse1">Qualification - Just once</a>
+		</h3>
+	  </div>
+	  <div id="collapse1" class="panel-collapse collapse in">
+		  <div class="panel-body">
+
+                  <fieldset class="qualificationFieldset"><label>1.&nbsp; Type in the number you see in the following pictures. In case you do not see a number insert "x".</label>
+
+						<div class="table-responsive 2_lds">
+						  <table class="table" border="0" cellpadding="0" cellspacing="0" >
+							<tbody>
+								<tr>
+									<td style="width:50%;text-align:center"> <img src="../imgs/3.jpg" alt="plate3" width="80%"> </td>
+									<td style="width:50%;text-align:center"> <img src="../imgs/4.jpg" alt="plate4" width="80%"> </td>
+								</tr>
+								<tr>
+									<td style="text-align:center"><input type="text" name="plate3" required="" class="nospace" autocomplete="off"></td>
+									<td style="text-align:center"><input type="text" name="plate4" required="" class="nospace" autocomplete="off"></td>
+
+								</tr>
+
+							</tbody>
+						  </table>
+						</div>
+
+					</fieldset>
+
+			</div>
+		</div>
+
+	</div>
+	</div>
+</section>
