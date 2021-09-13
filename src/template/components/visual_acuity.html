@@ -218,6 +218,10 @@ function onMouseUp(){
 		clearInterval(continues_hold_event);
 	}
 }
+
+/**
+   Initiate the listeners and default settings for the visual acuity test
+**/
 $(function() {
 	$('#minus').mousedown(function(){onMouseDown('minus');});
 	$('#plus').mousedown(function(){onMouseDown('plus');});
@@ -236,6 +240,10 @@ $(function() {
 	set_random_landoltc();
 });
 
+
+/**
+	Load the step2 of visual acuity test.
+**/
 function continue_visual_acuity(){
 
 	if (!interact_with_screen_size){
@@ -272,8 +280,9 @@ var current_landoltc_id = -1
 var landoltc_results = [];
 var visual_acuity_test_passed=false;
 
+
 /**
-	randmly selectz a new landolt C and update the GUI
+	randomly select a new landolt C and update the GUI
 **/
 function set_random_landoltc(){
 	let index = 0;
@@ -318,14 +327,14 @@ function landoltc_clicked(num){
 }
 
 /**
-	return a random number in aa range
+	Return a random number in aa range
 **/
 const getRandomNumber = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
 /**
-	add two number, to be used in combination with reduce
+	Add two number, to be used in combination with reduce
 **/
 function add(accumulator, a) {
     return accumulator + a;

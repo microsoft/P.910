@@ -45,7 +45,7 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 -ms-transform: translate(-50%, -50%);}
 
 .vcontainer .btn:hover{background-color: #999999;}
-
+.velmnt_finished {color: green;}
 
 .scale {font-size: 100%;}
 .scale td { text-align: left; padding:0;}
@@ -232,6 +232,8 @@ function isended(){
 	}
 	document.exitFullscreen();
 
+	$("#velmnt_l_c_"+id).css('color','green');
+	$("#velmnt_l_d_"+id).css('color','green');
 	if (is_first_time){
 		now = Date.now();
 		play_duration = (Date.now()-  video_play_start_time.get(id))/1000;
