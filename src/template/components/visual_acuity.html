@@ -1,0 +1,430 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+-->
+
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+
+
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+
+.table th, .table td {
+     border-top: none !important;
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+}
+
+
+.velmnt {margin:5px; display:inline-block; width:100px; }
+.velmnt .velmnt_table{display: inline;}
+
+.velmnt td{text-align:center;}
+.velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
+.velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+
+.velmnt .vcontainer{position: relative; width: 100%;}
+.vcontainer video{ width:100%; border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+.velmnt button{position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+-ms-transform: translate(-50%, -50%);}
+
+
+
+.scale {font-size: 100%;}
+.scale td { text-align: left; padding:0;}
+.scale label { display:block;}
+.scale .c { text-align: center;}
+section {
+	margin-bottom:15px;
+	padding: 10px 10px;
+	font-family: Verdana, Geneva, sans-serif;
+	color:#333333;
+	font-size:0.9em;
+}
+fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+
+h5{font-weight: bold;}
+.center-button{display: flex;align-items: center;}
+.center-img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+}
+.lc{
+margin:20px;
+}
+
+.table-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+</style>
+
+<script type="text/javascript">
+
+var config ={
+	cookieName:"test",
+	qualificationCookieName:"test",
+	qualificationValidFor:43200,
+    forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+    debug:"true",
+    qualification:{
+		plate3: "29",
+		plate4: "5"
+	}
+}
+
+String.prototype.format = String.prototype.f = function() {
+    var s = this,
+        i = arguments.length;
+    while (i--) {
+        s = s.replace(new RegExp('\\{' + i + '\\}', 'gm'), arguments[i]);
+    }
+    return s;
+};
+
+/*
+	Initializing the page: generate and hide sections depending to the cookies value
+*/
+$(function() {
+	try{
+			initializeQualification();
+	}catch(err){
+		console.error(err);
+		recordError(err.name,err.message);
+
+	}
+});
+
+
+/*
+	Initialize the qualification section
+*/
+var qualification_ans= new Set();
+function initializeQualification(){
+	//randomizeHearingtestItems();
+    //makeCheckboxBeRequired();
+    forceNoSpaceInInput();
+    $("#qualification :input").on('change', isQualificationDone);
+}
+
+function isQualificationDone(){
+	qualification_ans.add(this.name);
+	console.log("check if the qualification is done"+this.name+","+qualification_ans.size);
+	validateQualificationAnswer();
+	//if (qualification_ans.size==13)
+	//	validateQualificationAnswer();
+}
+
+/*
+	check the qualification passed
+*/
+function validateQualificationAnswer(){
+	count_correct_plates=0;
+	if ($("input[name='plate3']").val().trim()==config.qualification.plate3)
+		count_correct_plates ++;
+	if ($("input[name='plate4']").val().trim()==config.qualification.plate4)
+		count_correct_plates ++;
+
+
+	//passed=  m_tongue_check && device_check && working_area_checked &&  hearing_self_report_check && count_correct_ht>= 3;
+	passed=  count_correct_plates ==2;
+	console.log(passed);
+	// add a qualification for 'qualificationValidFor' minutes
+	//createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+}
+
+/*
+	Avoid space in text field
+*/
+function forceNoSpaceInInput(){
+    $(".nospace").on({
+          keydown: function(e) {
+            if (e.which === 32)
+              return false;
+          },
+          change: function() {
+            this.value = this.value.replace(/\s/g, "");
+          }
+        });
+}
+//------------------------------- visual acuity test
+function card_plus(){
+	$("#card").width($("#card").width()+2);
+}
+
+function card_minus(){
+	$("#card").width($("#card").width()-2);
+}
+
+// This timeout, started on mousedown, triggers the beginning of a hold
+var holdStarter = null;
+
+// This is how many milliseconds to wait before recognizing a hold
+var holdDelay = 10;
+
+// This flag indicates the user is currently holding the mouse down
+var holdActive = false;
+
+function apply_zoom(type){
+	if (type=="minus") card_minus();
+	if (type=="plus") card_plus();
+}
+
+var continues_hold_event = null;
+var interact_with_screen_size= false;
+// MouseDown
+function onMouseDown(type){
+	interact_with_screen_size = true;
+    holdStarter = setTimeout(function() {
+    	console.log("holderstarter run"+type);
+		holdStarter = null;
+		holdActive = true;
+		// begin hold-only operation here, if desired
+        continues_hold_event = setInterval(function(){apply_zoom(type);},50);
+	}, holdDelay);
+}
+
+// MouseUp
+
+function onMouseUp(){
+	console.log("onMouseUp");
+	if (holdStarter) {
+		clearTimeout(holdStarter);
+	}
+	if (holdActive) {
+		holdActive = false;
+		clearInterval(continues_hold_event);
+	}
+}
+$(function() {
+	$('#minus').mousedown(function(){onMouseDown('minus');});
+	$('#plus').mousedown(function(){onMouseDown('plus');});
+
+	$('.hold-active').mouseup(onMouseUp);
+	// Optional add-on: if mouse moves out, then release hold
+	$('#minus').mouseout( function(){onMouseUp('minus');});
+	$('#plus').mouseout( function(){onMouseUp('plus');});
+
+	// initiate id to rotation degree
+	degree= 0;
+	for (let i = 1; i <= 8; i++) {
+	  id_to_rotation_degree.set(i, degree);
+	  degree = degree+ 45;
+	}
+	set_random_landoltc();
+});
+
+function continue_visual_acuity(){
+
+	if (!interact_with_screen_size){
+		alert("First, you need to interact with screen adjustment part.");
+		return;
+	}
+	$('#setup_visual_acity').hide();
+	$('#test_visual_acity').show();
+	$('#setup_ready').hide();
+	$('#setup_visual_acity').hide();
+	// set the size of landolt c
+	/**
+	Landolt C size  calculation
+	for 50cm viewing distance the C diameter should be 60.104 cm for 20/30 viewer:
+	20/30 is equivalent to 0.2 LogMAR
+	MAR (minimum angle of resolution) = 10^0.2 = 1.585 minutes of arc = 0.0264 degree
+	meanwhile tan(MAR/2)=gap/2/x where x is the distance to the screen
+
+	gap = 2.x.tan(MAR/2) = x. 4.1495e-4
+
+	for x = 50cm , gap should be 0.0207 cm, the C diameter (x5) = 0.104 cm
+	for x = 100cm , gap should be 0.0415 cm,  the C diameter (x5) = 0.207 cm
+	-----
+	the bank card image width suppose to represent 5.74 cm
+	Landolt C px = bank_card_image_width in px * 0.104 /5.74
+	**/
+
+	lc_px = $("#card").width() * 0.104 /5.74;
+	$("#landoltc_img").width(lc_px);
+}
+
+const id_to_rotation_degree = new Map();
+var current_landoltc_id = -1
+var landoltc_results = [];
+var visual_acuity_test_passed=false;
+
+/**
+	randmly selectz a new landolt C and update the GUI
+**/
+function set_random_landoltc(){
+	let index = 0;
+	do{
+		index =  getRandomNumber(1,8);
+	}while(index==current_landoltc_id);
+	$("#landoltc_img").css("transform", "rotate({0}deg)".f(id_to_rotation_degree.get(index)));
+	current_landoltc_id = index;
+	console.log(index);
+	$("#lc_msg").html("Question <b>{0}</b> out of <b>5</b>".f(landoltc_results.length+1));
+}
+
+/**
+	when an answer to the landolt c is given, this method will check the status and update the next question.
+**/
+function landoltc_clicked(num){
+	console.log(num);
+	if (num == current_landoltc_id)
+		landoltc_results.push(1);
+	else
+		landoltc_results.push(0);
+	console.log(landoltc_results);
+
+	if (landoltc_results.length>=3){
+		sum = landoltc_results.reduce(add,0);
+		if (sum>=3){
+			console.log("pass the visual acuity test");
+			$(".lc").prop("disabled",true);
+			$("#lc_msg").html("<p style='color:green'>Visual acuity check passed.</p>");
+			visual_acuity_test_passed = true;
+			return;
+		}else
+		 if (landoltc_results.length>=5){
+		 	console.log("failed the visual acuity test");
+		 	$(".lc").prop("disabled",true);
+		 	$("#lc_msg").html("<p style='color:red'>Visual acuity check failed.</p>");
+		 	visual_acuity_test_passed = false;
+		 	return;
+		 }
+	}
+	set_random_landoltc();
+}
+
+/**
+	return a random number in aa range
+**/
+const getRandomNumber = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+/**
+	add two number, to be used in combination with reduce
+**/
+function add(accumulator, a) {
+    return accumulator + a;
+}
+
+
+
+</script>
+
+<!-- Instructions -->
+<section class="container" id="qualification">
+	<div class="row col-xs-12 col-md-12">
+	<div class="panel panel-info">
+	  <div class="panel-heading">
+		<h3 class="panel-title">
+			<a data-toggle="collapse" href="#collapse1">Qualification - Just once</a>
+		</h3>
+	  </div>
+	  <div id="collapse1" class="panel-collapse collapse in">
+		  <div class="panel-body">
+
+                  <fieldset class="qualificationFieldset"><label>1.&nbsp;This is a two-step visual acuity check. Please follow the setup instruction below and answer to the following 5 questions.</label>
+
+						<div class="row" id ="setup_visual_acity">
+						  <div class="col-md-6" style="padding:30px;">
+							  <h5> 1. Screen adjustment</h5>
+							  <p>Adjust the distance between two dashed lines by clicking on the +/- button. The distance should be exactly 5.4 cm or 2″. Use a ruler or the short side of a debit/credit card.</p>
+							  <div class="row">
+								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="plus" style="float: left; margin-top:100px" >+</button></div>
+								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="../imgs/card.png" alt="card" width="100%" ></div>
+								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="minus"style="float: right;margin-top:100px">-</button></div>
+							  </div>
+
+						  </div>
+
+						  <div class="col-md-6" style="padding:30px;">
+							  <h5> 2. Distance to screen</h5>
+
+							  <p>Pleas make sure to keep your eyes about 50 to 100 cm (20"-40") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
+							  <img class="center-img"  src="../imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
+
+
+
+						  </div>
+						</div>
+					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
+							<p><b>Step 2:</b></p>
+							<p>We will show you couple of broken rings with gaps which making them similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
+
+							<div class="row" style="margin: 30px ">
+										<div class="col-md-3" style=""></div>
+										<div class="col-md-2" ><img class="center-img"  src="../imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="../imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="../imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
+										<div class="col-md-3" ></div>
+							</div>
+
+							<p>
+								Your task is for each ring to click the button on the side where the gap of the ring is.
+								There could be 8 orientations. In the examples above the gaps of the rings are on the  <b>&rarr;</b>, &darr;, and &nwarr;, from left to right respectively.
+								You should guess the location of the gap if you are not sure where it is.
+  							</p>
+							<p>Start whenever you are ready! </br><b>Very important:</b> Do not move closer to the screen during the test. It is crucial that you provide genuine answers.</p>
+							<div style="text-align:center;">
+									<table class="table-center">
+									  <tr>
+										<td><button type="button" class="btn btn-default active lc" id ="c6" style="float: right;" onclick="landoltc_clicked(6);">&nwarr;</button></td>
+										<td><button type="button" class="btn btn-default active lc" id ="c7" style="" onclick="landoltc_clicked(7);">&uarr;</button></td>
+										<td><button type="button" class="btn btn-default active lc" id ="c8" style="float: left;" onclick="landoltc_clicked(8);">&nearr;</button></td>
+									  </tr>
+									  <tr>
+										<td><button type="button" class="btn btn-default active lc" id ="c5" style="float: right;" onclick="landoltc_clicked(5);">&larr;</button></td>
+										<td><img class="center-img"  id="landoltc_img" src="../imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
+										<td><button type="button" class="btn btn-default active lc" id ="c1" style="float: left;" onclick="landoltc_clicked(1);">&rarr;</button></td>
+									  </tr>
+									  <tr>
+										<td><button type="button" class="btn btn-default active lc" id ="c4" style="float: right;" onclick="landoltc_clicked(4);">&swarr;</button></td>
+										<td><button type="button" class="btn btn-default active lc" id ="c3" style="" onclick="landoltc_clicked(3);">&darr;</button></td>
+										<td><button type="button" class="btn btn-default active lc" id ="c2" style="float: left;" onclick="landoltc_clicked(2);">&searr;</button></td>
+									  </tr>
+									</table>
+
+									<div class="row" style="text-align:center;font-size:small; margin-top:30px" id="lc_msg">
+										Question <b>1</b> out of <b>5</b>
+									</div>
+							</div>
+
+						</div>
+						<div class="row" style="text-align:center;margin-top:50px;">
+						  <button type="button" class="btn btn-info" id ="setup_ready" onclick="continue_visual_acuity()">Done and continue</button>
+						</div>
+					  	<div class="row" style="text-align:center;margin:50px;display:none;" id="vat_container">
+						  <p id="result_vat"></p>
+						</div>
+					</fieldset>
+
+			</div>
+		</div>
+
+	</div>
+	</div>
+</section>
