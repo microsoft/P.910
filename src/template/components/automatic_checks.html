@@ -1,0 +1,236 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+-->
+
+
+<!--
+	This file include set of automatic tests that can be run on page load to make sure the hardware support minimum
+	configurations given in the config file.
+
+	1. screen refresh rate:
+		Experimenter can specify the minimum refresh rate of screen in Frame per Second (FPS).
+		It would be problematic if the videos under the study have higher refresh rate than the participants' screen.
+		variable: min_screen_refresh_rate , value: int in FPS
+-->
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+
+.table th, .table td {
+     border-top: none !important;
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 30%;
+}
+
+
+.velmnt {margin:5px; display:inline-block; width:100px; }
+.velmnt .velmnt_table{display: inline;}
+
+.velmnt td{text-align:center;}
+.velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
+.velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+
+.velmnt .vcontainer{position: relative; width: 100%;}
+.vcontainer video{ width:100%; border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+.velmnt button{position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+-ms-transform: translate(-50%, -50%);}
+
+
+
+.scale {font-size: 100%;}
+.scale td { text-align: left; padding:0;}
+.scale label { display:block;}
+.scale .c { text-align: center;}
+section {
+	margin-bottom:15px;
+	padding: 10px 10px;
+	font-family: Verdana, Geneva, sans-serif;
+	color:#333333;
+	font-size:0.9em;
+}
+fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+
+h5{font-weight: bold;}
+.center-button{display: flex;align-items: center;}
+.center-img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+}
+.lc{
+margin:20px;
+}
+
+.table-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+</style>
+
+<script type="text/javascript">
+
+var config ={
+	debug:"true",
+	min_screen_refresh_rate: 60,
+	min_resolution:{w: 1280, h:720}
+}
+
+String.prototype.format = String.prototype.f = function() {
+    var s = this,
+        i = arguments.length;
+    while (i--) {
+        s = s.replace(new RegExp('\\{' + i + '\\}', 'gm'), arguments[i]);
+    }
+    return s;
+};
+
+/*
+	Initializing the page: generate and hide sections depending to the cookies value
+*/
+$(function() {
+	try{
+		if (config['debug']== 'false'){
+			console.log = function() {};
+			console.error = function() {};
+		}
+		getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
+		hardware_test();
+	}catch(err){
+		console.error(err);
+		//TODO: activate it in the ACR_template
+		//recordError(err.name,err.message);
+
+	}
+});
+
+
+/**
+	Run set of hardware test to make sure that the minimum requirements are satisfied
+	- the refresh_rate test are done asynchronously and will tiger this function
+**/
+function hardware_test(){
+	if(refresh_rate_passed === null) {
+       window.setTimeout(hardware_test, 100);
+    } else {
+    	// 1. result of refresh rate check is ready
+    	console.log("screen_test {0}".f(refresh_rate_passed));
+    	// 2. resolution
+    	resolution_check = check_resolution();
+    	console.log(resolution_check);
+
+
+    }
+}
+
+var refresh_rate_passed = null;
+/**
+	Check if the criterion of minimum accepted screen refresh rate is satisfied.
+**/
+function check_screen_refresh_rate(fps){
+	try {
+		console.log("{0} FPS".f(fps));
+		if (fps>=config['min_screen_refresh_rate']){
+			refresh_rate_passed =true;
+			return;
+		}
+	} catch (error) {
+  		console.error(error);
+  	}
+	refresh_rate_passed =false;
+}
+
+
+/**
+	Measure the screen refresh rate primary monitor and deliver the result by calling the callback function.
+**/
+function getScreenRefreshRate(callback){
+    let requestId = null;
+    let callbackTriggered = false;
+	let t0 = null;
+
+    if (!window.requestAnimationFrame) {
+        window.requestAnimationFrame = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
+    }
+
+    let number_of_measures = 0;
+	let max_num_measures = 50;
+    let triggerAnimation = function(DOMHighResTimeStamp){
+		if (t0==null){
+			t0= DOMHighResTimeStamp;
+		}
+		number_of_measures +=1;
+        if (number_of_measures > max_num_measures) {
+            let fps = Math.floor(1000 * number_of_measures / (DOMHighResTimeStamp - t0));
+            if(!callbackTriggered){
+                callback.call(undefined, fps);
+                callbackTriggered = true;
+                window.cancelAnimationFrame(requestId);
+            	requestId = null;
+            }
+        }else{
+        	requestId = window.requestAnimationFrame(triggerAnimation);
+        }
+    };
+    window.requestAnimationFrame(triggerAnimation);
+}
+
+
+function check_resolution(){
+	let w = window.screen.width * window.devicePixelRatio;
+	let h = window.screen.height * window.devicePixelRatio;
+	console.log("screen is {0}x{1}".f(w,h));
+	if (w>= config.min_resolution.w && h>= config.min_resolution.h){
+		return true;
+	}
+	return false;
+
+}
+
+
+</script>
+
+<!-- Instructions -->
+<section class="container" id="qualification">
+	<div class="row col-xs-12 col-md-12">
+	<div class="panel panel-info">
+	  <div class="panel-heading">
+		<h3 class="panel-title">
+			<a data-toggle="collapse" href="#collapse1">Qualification - Just once</a>
+		</h3>
+	  </div>
+	  <div id="collapse1" class="panel-collapse collapse in">
+		  <div class="panel-body">
+
+
+
+			</div>
+		</div>
+
+	</div>
+	</div>
+</section>

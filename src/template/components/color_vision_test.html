@@ -81,7 +81,10 @@ var config ={
 */
 $(function() {
 	try{
-			initializeQualification();
+		if (config['debug']== 'false'){
+			console.log = function() {}
+		}
+		initializeQualification();
 	}catch(err){
 		console.error(err);
 		recordError(err.name,err.message);
