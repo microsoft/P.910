@@ -97,7 +97,10 @@ margin:20px;
 var config ={
 	debug:"true",
 	min_screen_refresh_rate: 60,
-	min_resolution:{w: 1280, h:720}
+	min_resolution:{w: 1280, h:720},
+	//
+	// tablets will be included in PC, values:PC,MOBILE
+	device_accepted_device:["PC", "MOBILE"]
 }
 
 String.prototype.format = String.prototype.f = function() {
@@ -142,7 +145,9 @@ function hardware_test(){
     	// 2. resolution
     	resolution_check = check_resolution();
     	console.log(resolution_check);
-
+		// 3. device type
+		device_accepted = check_device_type();
+		console.log(device_accepted);
 
     }
 }
@@ -200,6 +205,9 @@ function getScreenRefreshRate(callback){
 }
 
 
+/**
+	Check if the resolution satisfied the minimum given in the config
+**/
 function check_resolution(){
 	let w = window.screen.width * window.devicePixelRatio;
 	let h = window.screen.height * window.devicePixelRatio;
@@ -212,9 +220,34 @@ function check_resolution(){
 }
 
 
+/**
+	Check if it is a mobile or pc device.
+**/
+function check_device_type(){
+	let device = "unknown"
+	if (/Mobi/.test(navigator.userAgent)) {
+		// mobile!
+		device = "MOBILE"
+	}else{
+		// it is PC or Tablet
+		device = "PC"
+	}
+	$("#device_type").val(device);
+	console.log("Device {0}".f(device));
+	return config.device_accepted_device.includes(device);
+}
 </script>
 
-<!-- Instructions -->
+
+
+<!-- hidden-fields to store data about user's device -->
+<input id="device_type" name="device_type" type="hidden" value="unknown" />
+<input id="device_resolution" name="device_resolution" type="hidden" value="unknown" />
+<input id="device_refresh_rate" name="device_refresh_rate" type="hidden" value="unknown" />
+<input id="device_estimated_size_w" name="device_estimated_size_w" type="hidden" value="unknown" />
+<input id="device_estimated_size_h" name="device_estimated_size_h" type="hidden" value="unknown" />
+
+
 <section class="container" id="qualification">
 	<div class="row col-xs-12 col-md-12">
 	<div class="panel panel-info">

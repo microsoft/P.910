@@ -96,6 +96,7 @@ String.prototype.toMMSS = function () {
 //---------------- v_elm.js -----------------
 // All functions needed for custom audio playback
 // NOTE: for longer videos fragmentation might be needed.
+// data-scale can be no-scale or max-height, default:no-scale
 const video_played_finished = new Map();
 const video_play_start_time = new Map();
 var videoElements=[];
@@ -134,12 +135,12 @@ function fullscreen_closed(e,video,caller){
         video.setAttribute("height",oldH);
         video.removeAttribute("oldwidth");
         video.removeAttribute("oldheight");
-
-	 if (video_played_finished.get(id) != 1 ){
+	$( "#video_"+id ).closest( "td" ).addClass("vtd");
+	if (video_played_finished.get(id) != 1 ){
       		alert("The video must be watched fully and in fullscreen mode.");
-      }
-
     }
+
+   }
 }
 
 function playVideo(video){
@@ -169,11 +170,20 @@ function playVideo(video){
     let oldW=video.getAttribute("width");
     let fullW=screen.width;
     let fullH=screen.height;
-    //change height and weight
+    //change height and width
     video.setAttribute("oldwidth",oldW);
     video.setAttribute("oldheight",oldH);
-    //video.setAttribute("width",fullW);
-    //video.setAttribute("height",fullH);
+	let scale_type = "";
+	if ($('#{0}'.f(id)).attr('data-scale')){
+		scale_type = $('#{0}'.f(id)).attr('data-scale');
+	}else{
+		scale_type = "no-scale";
+	}
+	if (scale_type=="max-height"){
+		$( "#video_"+id ).closest( "td" ).removeClass("vtd");
+		video.setAttribute("height",fullH);
+		video.setAttribute("width",fullW);
+	}
 
     video.play();
 	video_play_start_time.set(id, Date.now());
@@ -287,6 +297,13 @@ $(function() {
 		videoElement.addEventListener("canplaythrough",canPlay.bind(videoElement),false);
 		videoElement.addEventListener("timeupdate",timeUpdate.bind(videoElement),false);
 		videoElement.addEventListener("ended",isended.bind(videoElement),false);
+		videoElement.addEventListener( "loadedmetadata", function (e) {
+    		var width = this.videoWidth;
+        	var height = this.videoHeight;
+        	console.log("w:{0}, h:{1}".f(width,height));
+		}, false );
+
+
 
 		videoElement.addEventListener("stalled",function(){issuePlayingVideo(videoElement ,'stalled');},false);
 		videoElement.addEventListener("suspend",function(){issuePlayingVideo(videoElement ,'suspend');},false);
@@ -367,9 +384,9 @@ function onFinish(t){
 		<div  class="panel-collapse collapse in" id="instruction">
 			  <div class="panel-body">
 
-                  <p align="center"> <span class="velmnt" id="test1" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample.mp4" >&nbsp;</span> </p>
+                  <p align="center"> <span class="velmnt" id="test1" data-scale="max-height" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample.mp4" >&nbsp;</span> </p>
 				   <p align="center"> <span class="velmnt" id="test2" data-src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4"
-				   data-onfinished="onFinish">&nbsp;</span> </p>
+				   data-onfinished="onFinish" >&nbsp;</span> </p>
 
 			</div>
 		</div>
