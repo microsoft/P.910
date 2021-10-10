@@ -112,16 +112,18 @@ String.prototype.format = String.prototype.f = function() {
     return s;
 };
 
+
 /*
 	Initializing the page: generate and hide sections depending to the cookies value
 */
+$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
 $(function() {
 	try{
 		if (config['debug']== 'false'){
 			console.log = function() {};
 			console.error = function() {};
 		}
-		getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
+
 		hardware_test();
 	}catch(err){
 		console.error(err);
@@ -149,6 +151,9 @@ function hardware_test(){
 		device_accepted = check_device_type();
 		console.log(device_accepted);
 
+		record_screen_size();
+		record_os();
+
     }
 }
 
@@ -159,6 +164,7 @@ var refresh_rate_passed = null;
 function check_screen_refresh_rate(fps){
 	try {
 		console.log("{0} FPS".f(fps));
+		$("#device_refresh_rate").val(fps);
 		if (fps>=config['min_screen_refresh_rate']){
 			refresh_rate_passed =true;
 			return;
@@ -168,7 +174,6 @@ function check_screen_refresh_rate(fps){
   	}
 	refresh_rate_passed =false;
 }
-
 
 /**
 	Measure the screen refresh rate primary monitor and deliver the result by calling the callback function.
@@ -204,21 +209,19 @@ function getScreenRefreshRate(callback){
     window.requestAnimationFrame(triggerAnimation);
 }
 
-
 /**
 	Check if the resolution satisfied the minimum given in the config
 **/
 function check_resolution(){
-	let w = window.screen.width * window.devicePixelRatio;
-	let h = window.screen.height * window.devicePixelRatio;
+	let w = Math.floor(window.screen.width * window.devicePixelRatio);
+	let h = Math.floor(window.screen.height * window.devicePixelRatio);
 	console.log("screen is {0}x{1}".f(w,h));
+	$("#device_resolution").val("{0}x{1}".f(w,h));
 	if (w>= config.min_resolution.w && h>= config.min_resolution.h){
 		return true;
 	}
 	return false;
-
 }
-
 
 /**
 	Check if it is a mobile or pc device.
@@ -236,6 +239,59 @@ function check_device_type(){
 	console.log("Device {0}".f(device));
 	return config.device_accepted_device.includes(device);
 }
+
+/**
+	Returns the OS of participant. Note that it is not the perfect solution.
+	TODO: check it, the test in CS did not work
+**/
+function getOS() {
+  var userAgent = window.navigator.userAgent,
+      platform = window.navigator.platform,
+      macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'],
+      windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'],
+      iosPlatforms = ['iPhone', 'iPad', 'iPod'],
+      os = null;
+
+  if (macosPlatforms.indexOf(platform) !== -1) {
+    os = 'Mac OS';
+  } else if (iosPlatforms.indexOf(platform) !== -1) {
+    os = 'iOS';
+  } else if (windowsPlatforms.indexOf(platform) !== -1) {
+    os = 'Windows';
+  } else if (/Android/.test(userAgent)) {
+    os = 'Android';
+  } else if (!os && /Linux/.test(platform)) {
+    os = 'Linux';
+  }
+
+  return os;
+}
+
+/**
+	Record the OS of participant
+**/
+function record_os(){
+	let os = getOS();
+	$("#device_type").val(device_os);
+}
+
+
+/**
+	Estimate the screen size
+**/
+
+function record_screen_size(){
+	let pixPer10CM = $('#meter').width();
+	let CMPerPix = 10 / pixPer10CM;
+	let widthCM = screen.width * CMPerPix;
+	let w = window.screen.width * window.devicePixelRatio;
+	let widthCM_dpr = Math.floor((w * CMPerPix);
+	let heightCM= Math.floor(screen.height * CMPerPix);
+
+	$("#device_estimated_size_w").val(widthCM);
+	$("#device_estimated_size_h").val(heightCM);
+}
+
 </script>
 
 
@@ -246,7 +302,10 @@ function check_device_type(){
 <input id="device_refresh_rate" name="device_refresh_rate" type="hidden" value="unknown" />
 <input id="device_estimated_size_w" name="device_estimated_size_w" type="hidden" value="unknown" />
 <input id="device_estimated_size_h" name="device_estimated_size_h" type="hidden" value="unknown" />
+<input id="device_os" name="device_os" type="hidden" value="unknown" />
 
+<div id="meter" style="width:10cm"></div>
+<div id="meter_in" style="width:1in"></div>
 
 <section class="container" id="qualification">
 	<div class="row col-xs-12 col-md-12">
@@ -258,7 +317,7 @@ function check_device_type(){
 	  </div>
 	  <div id="collapse1" class="panel-collapse collapse in">
 		  <div class="panel-body">
-
+			<div id="log"></div>
 
 
 			</div>
