@@ -293,6 +293,16 @@ function record_screen_size(){
 	$("#device_estimated_size_h").val(heightCM);
 }
 
+
+//------------------------------ setup
+function check_brightness_test(){
+	c = $("#c_circles").val();
+	t = $("#t_triangles").val();
+	if (c==4 && t == 10)
+		alert('Great! Your answer is correct, continue!');
+	else
+		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!');
+}
 </script>
 
 
@@ -308,22 +318,33 @@ function record_screen_size(){
 <div id="meter" style="width:10cm"></div>
 <div id="meter_in" style="width:1in"></div>
 
-<section class="container" id="qualification">
-	<div class="row col-xs-12 col-md-12">
-	<div class="panel panel-info">
-	  <div class="panel-heading">
-		<h3 class="panel-title">
-			<a data-toggle="collapse" href="#collapse1">Qualification - Just once</a>
-		</h3>
-	  </div>
-	  <div id="collapse1" class="panel-collapse collapse in">
-		  <div class="panel-body">
-			<div id="log"></div>
+<!-- Training section, appears once a day-->
+<section class="container" id="setup">
+		<div class="panel panel-primary">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<a data-target="#trainingS" data-toggle="collapse" >Setup</a>
+				</h3>
+			</div>
+			<div  class="panel-collapse collapse in" id="trainingS">
+				<div class="panel-body">
+				<p> How many <b>circles and triangles</b> do you see in this picture?.
+				<p><b>IMPORTANT:</b> You may <b>change</b> the brightness of your screen, light in your environment, or your position on your seat until you can see all of the shapes. Use this task to setup your system and environment.</p>
+
+				<div class="row">
+					<div class="col-sm-6" style = "padding: 30px"><img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/matrices/Yzo0X3Q6MTA=.jpg" alt="s1" width="80%"></div>
+					<div class="col-sm-6" style = "margin-top:50px"><p>Q. How many <b>circles</b> and <b>triangles</b> do you see in the image?</p>
+					 <!-- 4 circles and 10 triangles-->
+					<div> <label> Circles: <input type="number" id="t_circles" name="t_circles" size="4" required></label></div>
+					<div> <label> Triangles: <input type="number" id="t_triangles" name="t_triangles" size="4" required></label></div>
+					<button type="button" class="btn btn-primary" onclick="check_brightness_test()" >Check my answer</button>
+					</div>
+				</div>
 
 
 			</div>
+			</div>
 		</div>
 
-	</div>
-	</div>
 </section>
+<!-- Training section ends-->
