@@ -32,9 +32,9 @@ def level_to_rgb(level, background):
     :return: tuple referring to (R, G, B)
     """
     #Level goes from 1 to 15, starting from level1:(30,30,30), and getting darker with 1 point
-    if level not in range(1, max_level+1):
+    if level not in range(1, 16):
         return None
-    gray_code = background[0]+max_level-level+1
+    gray_code = background[0]+15-level+1
     print(f"{level}::{gray_code}")
     return (gray_code, gray_code, gray_code)
 

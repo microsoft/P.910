@@ -100,7 +100,14 @@ var config ={
 	min_resolution:{w: 1280, h:720},
 	//
 	// tablets will be included in PC, values:PC,MOBILE
-	device_accepted_device:["PC", "MOBILE"]
+	device_accepted_device:["PC", "MOBILE"],
+	viewing_distance:{
+		'img_path':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/distance/img3_{0}.jpg',
+		'base_id': '0',
+		'too_close':'3',
+		'normal':'5',
+		'too_far':'7'
+	}
 }
 
 String.prototype.format = String.prototype.f = function() {
@@ -111,6 +118,20 @@ String.prototype.format = String.prototype.f = function() {
     }
     return s;
 };
+
+/*
+	shuffle function for randomization of items -->
+*/
+function shuffle(a) {
+	var j, x, i;
+	for (i = a.length - 1; i > 0; i--) {
+		j = Math.floor(Math.random() * (i + 1));
+		x = a[i];
+		a[i] = a[j];
+		a[j] = x;
+	}
+	return a;
+}
 
 
 /*
@@ -125,6 +146,10 @@ $(function() {
 		}
 
 		hardware_test();
+
+		add_distance_test();
+		cmp_check_on_load();
+
 	}catch(err){
 		console.error(err);
 		//TODO: activate it in the ACR_template
@@ -303,6 +328,112 @@ function check_brightness_test(){
 	else
 		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!');
 }
+
+// --- viewing distance
+
+function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
+	template = '<fieldset  class="image_cmp"><label>{0}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
+	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div><div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" id="cmp{0}_img_b" width="100%"></div> </div>  <div class="row" > <div class="col-sm-4"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="o">Difference is <b>not detectable</b>.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="b">Quality of <b>Image B</b> is better.</label></div> </div> <div class="col-sm-3"></div> </div>  </fieldset>';
+
+	$('#distance_test_cmps').append(template.f(q_n,img_a, img_b, title_a, title_b));
+}
+
+var url_pair_map = new Map();
+function add_distance_test(){
+	cfg = config["viewing_distance"];
+
+	urls =[cfg['img_path'].f(cfg['too_close']), cfg['img_path'].f(cfg['normal']), cfg['img_path'].f(cfg['too_far'])];
+	url_pair_map.set(urls[0], 'too_close');
+	url_pair_map.set(urls[1] , 'normal');
+	url_pair_map.set(urls[2] , 'too_far');
+
+	urls = shuffle(urls);
+	base_img = cfg['img_path'].f(cfg['base_id']);
+	q = 1;
+	for (const url of urls){
+		if (Math.random()> 0.5){
+			add_viewing_distance_question(q, base_img, url, 'Image A', 'Image B');
+		}else{
+			add_viewing_distance_question(q, url, base_img, 'Image A', 'Image B');
+		}
+		q = q+1;
+	}
+
+}
+
+
+// add this to onload of page
+function cmp_check_on_load(){
+	$('#setup').find(':input').filter(':visible').each(function(){
+	  $(this).on('change', validateCMPSection);
+	});
+}
+
+function validateCMPSection(){
+	cmp_answers=[]
+	for (i = 1; i < 4; i++) {
+		ans = $("input[name='cmp{0}']:checked".f(i)).val();
+	  	if (!ans)
+	  		return;
+	  	cmp_answers[i-1]=ans;
+	  	console.log("cmp{0}, ans:{1}".f(i,ans));
+	}
+	cfg = config["viewing_distance"];
+	base_url = cfg['img_path'].f(cfg['base_id']);
+	let pass_cmp = true;
+	for (i = 1; i < 4; i++) {
+		link_a = $('#cmp{0}_img_a'.f(i)).attr('src');
+		link_b = $('#cmp{0}_img_b'.f(i)).attr('src');
+		console.log('link a:{0}'.f(link_a));
+		console.log('link b:{0}'.f(link_b));
+		// find which link was the degraded image
+		let img_link;
+		let is_correct = false;
+		if (link_a === base_url){
+			img_link = link_b;
+
+			if (cmp_answers[i-1]=== 'a'){
+				is_correct = true;
+			}
+		}else{
+			img_link = link_a;
+			if (cmp_answers[i-1]=== 'b'){
+				is_correct = true;
+			}
+		}
+		console.log('img_link {0}'.f(img_link));
+		console.log('ans {0}'.f(cmp_answers[i-1]));
+		console.log(is_correct);
+		let state = url_pair_map.get(img_link);
+
+		switch(state){
+			case 'too_close':
+				if (cmp_answers[i-1]!= 'o'){
+					console.log("cmp {0}, are you sure, you might be too close to the screen".f(i));
+				}else{
+					is_correct = true;
+				}
+				break;
+			case 'normal':
+				if  (!is_correct){
+					console.log("cmp {0}, are you sure? Does not seem to be correct".f(i));
+				}
+				break;
+			case 'too_far':
+				if  (!is_correct){
+					console.log("cmp {0}, are you sure? you might be too far from screen".f(i));
+				}
+				break;
+		}
+		pass_cmp = (pass_cmp && is_correct);
+	}
+	if (!pass_cmp)
+		alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
+	else
+		alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
+	return pass_cmp;
+}
+
 </script>
 
 
@@ -328,22 +459,9 @@ function check_brightness_test(){
 			</div>
 			<div  class="panel-collapse collapse in" id="trainingS">
 				<div class="panel-body">
-				<p> How many <b>circles and triangles</b> do you see in this picture?.
-				<p><b>IMPORTANT:</b> You may <b>change</b> the brightness of your screen, light in your environment, or your position on your seat until you can see all of the shapes. Use this task to setup your system/environment and keep the setting until the end of this HIT.</p>
 
-				<div class="row">
+			<div id="distance_test_cmps"></div>
 
-					<div class="col-sm-6" style = "padding:50px"><p>Q. How many <b>circles</b> and <b>triangles</b> do you see in the image?</p>
-					 <!-- 4 circles and 10 triangles-->
-						<div style="margin-left:20px">
-							<div> <label> Circles: <input type="number" id="t_circles" name="t_circles" size="4" required></label></div>
-							<div> <label> Triangles: <input type="number" id="t_triangles" name="t_triangles" size="4" required></label></div>
-							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" >Check my answer</button>
-						</div>
-
-					</div>
-					<div class="col-sm-6" style = "padding: 30px"><img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/matrices/Yzo0X3Q6MTA=.jpg" alt="s1" width="80%"></div>
-				</div>
 
 
 			</div>

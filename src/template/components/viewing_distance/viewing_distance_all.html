@@ -125,6 +125,7 @@ $(function() {
 		}
 
 		hardware_test();
+		add_all_combis();
 	}catch(err){
 		console.error(err);
 		//TODO: activate it in the ACR_template
@@ -303,6 +304,30 @@ function check_brightness_test(){
 	else
 		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!');
 }
+
+// --- viewing distance
+
+function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
+	template = '<fieldset  class="image_cmp"><label>{0}.&nbsp;Which image has a better quality compared to the other one? </label>'+
+	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" width="100%"></div><div class="col-sm-2"></div><div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" width="100%"></div> </div>  <div class="row" > <div class="col-sm-4"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="o">Difference is <b>not detectable</b>.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="b">Quality of <b>Image B</b> is better.</label></div> </div> <div class="col-sm-3"></div> </div>  </fieldset>';
+
+	$('#all_imgs').append(template.f(q_n,img_a, img_b, title_a, title_b));
+}
+
+function add_all_combis(){
+	img_names =["img1", "img2", "img3", "img4", "img5", "img6", "img7", "img8"];
+	range_max = 10;
+	image_name_format = "script/out/{0}_{1}.jpg"
+	let q= 1;
+	for (const img of img_names){
+		for( var i=1;i< range_max; i++){
+			img_a = image_name_format.f(img,0);
+			img_b = image_name_format.f(img,i);
+			add_viewing_distance_question(q, img_a, img_b, img_a, img_b);
+		}
+	}
+}
+
 </script>
 
 
@@ -328,22 +353,9 @@ function check_brightness_test(){
 			</div>
 			<div  class="panel-collapse collapse in" id="trainingS">
 				<div class="panel-body">
-				<p> How many <b>circles and triangles</b> do you see in this picture?.
-				<p><b>IMPORTANT:</b> You may <b>change</b> the brightness of your screen, light in your environment, or your position on your seat until you can see all of the shapes. Use this task to setup your system/environment and keep the setting until the end of this HIT.</p>
 
-				<div class="row">
+			<div id="all_imgs"></div>
 
-					<div class="col-sm-6" style = "padding:50px"><p>Q. How many <b>circles</b> and <b>triangles</b> do you see in the image?</p>
-					 <!-- 4 circles and 10 triangles-->
-						<div style="margin-left:20px">
-							<div> <label> Circles: <input type="number" id="t_circles" name="t_circles" size="4" required></label></div>
-							<div> <label> Triangles: <input type="number" id="t_triangles" name="t_triangles" size="4" required></label></div>
-							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" >Check my answer</button>
-						</div>
-
-					</div>
-					<div class="col-sm-6" style = "padding: 30px"><img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/matrices/Yzo0X3Q6MTA=.jpg" alt="s1" width="80%"></div>
-				</div>
 
 
 			</div>
