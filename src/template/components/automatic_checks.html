@@ -112,11 +112,11 @@ String.prototype.format = String.prototype.f = function() {
     return s;
 };
 
+$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
 
 /*
 	Initializing the page: generate and hide sections depending to the cookies value
 */
-$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
 $(function() {
 	try{
 		if (config['debug']== 'false'){
