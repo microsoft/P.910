@@ -86,8 +86,14 @@ var config ={
 		'too_close':'3',
 		'normal':'5',
 		'too_far':'7'
+	},
+	block_matrix:{
+		'circles': '${t1_matrix_c}',
+		'triangles': '${t1_matrix_t}'
 	}
 }
+
+
 
 // Note: the measurements should be postponed until all images are loaded
 $( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
@@ -635,6 +641,7 @@ function landoltc_clicked(num){
 			$(".lc").prop("disabled",true);
 			$("#lc_msg").html("<p style='color:green'>Visual acuity check passed.</p>");
 			visual_acuity_test_passed = true;
+			activate_setup();
 			return;
 		}else
 		 if (landoltc_results.length>=5){
@@ -754,6 +761,19 @@ function check_resolution(){
 }
 
 /**
+	tmp function to show the resolution on screen
+**/
+function getresolution(){
+	let w = Math.floor(window.screen.width);
+	let h = Math.floor(window.screen.height);
+
+	let w1 = Math.floor(window.screen.width * window.devicePixelRatio);
+	let h1 = Math.floor(window.screen.height * window.devicePixelRatio);
+
+	$("#resolution").html("<b>w x h:</b> {0}x{1}, <b>w1 x h1:</b> {2}x{3}".f(w,h,w1,h1));
+}
+
+/**
 	Check if it is a mobile or pc device.
 **/
 function check_device_type(){
@@ -802,7 +822,7 @@ function getOS() {
 **/
 function record_os(){
 	let os = getOS();
-	$("#device_type").val(os);
+	$("#device_os").val(os);
 	console.log(os);
 }
 
@@ -823,15 +843,33 @@ function record_screen_size(){
 	$("#device_estimated_size_h").val(heightCM);
 }
 
+/**
+	called when the user say he/she has changed the resolution
+**/
+function on_resolution_change(){
+	check_resolution()
+	record_screen_size();
+}
 
 //------------------------------ setup
+/**
+	Check the answer of the first matrix block and activate the rest of page
+**/
 function check_brightness_test(){
-	c = $("#c_circles").val();
-	t = $("#t_triangles").val();
-	if (c==4 && t == 10)
-		alert('Great! Your answer is correct, continue!');
-	else
+	correct_ans = config['block_matrix'];
+	c = $("#t1_circles").val();
+	t = $("#t1_triangles").val();
+	if (c==parseInt(correct_ans['circles']) && t == parseInt(correct_ans['triangles'])){
+		//alert('Great! Your answer is correct, continue!');
+		activate_rest_setup();
+	}else
 		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!');
+}
+
+function activate_rest_setup(){
+}
+
+function activate_setup(){
 }
 
 //----------------------------- viewing distance
@@ -990,6 +1028,9 @@ function validateCMPSection(){
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
 
+
+				<button type="button" class="btn btn-primary" onclick="getresolution()" >Get resolution</button>
+				<div id="resolution"></div>
 			</div>
 		</div>
 
@@ -1164,19 +1205,31 @@ function validateCMPSection(){
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<a data-target="collapse" href="#calibration_panel" >Color calibration</a>
+					<a data-target="collapse" href="#calibration_panel" >Display calibration</a>
 				</h3>
 			</div>
 			<div  class="panel-collapse collapse in" id="calibration_panel">
 				<div class="panel-body">
+					<div class="alert alert-warning" role="alert">
+			  			<b>NOTE:</b> You may fail setup steps if this is skipped.
+					</div>
+
 					<h4>Calibrate your display</h4>
-					<p>To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS.
+					<p><b>1. Resolution:</b> It is important that you use the recommended resolution of your device. Otherwise the videos will be scaled by your system, and strongly damage this study. Use the following links to set the resolutions of your display:</p>
+					 <ul>
+  						<li><b>Windows:</b> Change the <a href="https://support.microsoft.com/en-us/windows/view-display-settings-in-windows-37f0e05e-98a9-474c-317a-e85422daa8bb" target="_blank">display resolution</a> to the "Recommended" one</li>
+  						<li><b>Mac:</b> <a href="https://support.apple.com/guide/mac-help/change-your-displays-resolution-mchl86d72b76/mac" target="_blank">Set the resolution</a> to "Default for Display"</li>
+					</ul>
+					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_resolution" onclick="on_resolution_change();" required>I followed the above description and changed the resolution of my display as recommended.</label></div></fieldset>
+
+					<p style="margin-top:20px"><b>2. Colors:</b> To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS.
 					For further instructions use the following links:</p>
 
 					 <ul>
-  						<li>Windows: Run <a href="https://support.microsoft.com/en-us/windows/get-the-best-display-on-your-monitor-a18171c2-3b8d-d130-4d66-a1a56c068548" target="_blank">Display Color Calibration</a></li>
-  						<li>Mac: Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a></li>
+  						<li><b>Windows:</b> Run <a href="https://support.microsoft.com/en-us/windows/get-the-best-display-on-your-monitor-a18171c2-3b8d-d130-4d66-a1a56c068548" target="_blank">Display Color Calibration</a></li>
+  						<li><b>Mac:</b> Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a></li>
 					</ul>
+					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_color" required>I followed the above description and calibrated the display color as recommended.</label></div></fieldset>
 				</div>
 			</div>
 		</div>
@@ -1215,7 +1268,7 @@ function validateCMPSection(){
 						</div>
 
 					</div>
-					<div class="col-sm-6" style = "padding: 30px"><img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/matrices/Yzo0X3Q6MTA=.jpg" alt="s1" width="80%"></div>
+					<div class="col-sm-6" style = "padding: 30px"><img src="${t1_matrix_url}" alt="s1" width="80%"></div>
 				</div>
 
 				<div class="alert alert-warning" role="alert">
@@ -1229,7 +1282,7 @@ function validateCMPSection(){
 							<div> <label> Triangles: <input type="number" id="t2_triangles" name="t2_triangles" size="4" required></label></div>
 						</div>
 					</div>
-					<div class="col-sm-6" style = "padding: 30px"><img src="${t2_block}" alt="t2_block" width="80%"></div>
+					<div class="col-sm-6" style = "padding: 30px"><img src="${t2_matrix_url}" alt="t2_matrix_url" width="80%"></div>
 				</div>
 				<!-- Distance check-->
 				<h4>Distance from screen</h4>
