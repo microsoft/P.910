@@ -1,0 +1,33 @@
+.velmnt {margin:5px; display:inline-block; width:100px; }
+.velmnt .velmnt_table{display: inline;}
+
+.velmnt td{text-align:center;}
+.velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
+.velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+
+.velmnt .vcontainer{position: relative; width: 100%;}
+.vcontainer video{ width:100%; border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+.velmnt button{position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+-ms-transform: translate(-50%, -50%);}
+
+.vcontainer .btn:hover{background-color: #999999;}
+.velmnt_finished {color: green;}
+
+.scale {font-size: 100%;}
+.scale td { text-align: left; padding:0;}
+.scale label { display:block;}
+.scale .c { text-align: center;}
+
+.bg1 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_a.png");}
+.bg2 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_b.png");}
+.bg {
+  /* Full height */
+  height: 100%;
+  /* Center and scale the image nicely */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
