@@ -51,8 +51,7 @@ h5{font-weight: bold;}
 <script type="text/javascript">
 
 //---- for video player
-max_accepted_extra_playing_time_sec = 2;
-max_accepted_extra_playing_time_percent = 0.1;
+max_accepted_extra_playing_time_sec = 2.5;
 const videos_not_loaded_yet_set = new Set()
 
 //---------
@@ -103,6 +102,11 @@ const videos_not_loaded_yet_set = new Set()
 */
 var config ={
 	debug:"true",
+	cookieName:"{{cfg.cookie_name}}",
+	qualificationValidFor:43200,
+    forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+
 	//allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	allowedMaxHITsInProject:10,
 	forceRetrainingInHours:1,
@@ -126,7 +130,18 @@ var config ={
 		'triangles': '${t1_matrix_t}'
 	},
 
-	questionUrls: [],
+	questionUrls: [{'ref': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small.mp4',
+    'processed': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small_bw.mp4'},
+    {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
+     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'},
+     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
+     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'},
+     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
+     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'},
+     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
+     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'}
+     ],
+
     trainingUrls: [{'ref': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small.mp4',
     'processed': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small_bw.mp4'},
     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
@@ -137,6 +152,7 @@ var config ={
     knownQuestionUrl:"${TP}",
     knownQuestionAns: "0",
     randomizeTrainingQuestions:"true",
+    randomizeRatingQuestions:"true",
 }
 
 
@@ -145,6 +161,9 @@ $( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_sc
 
 // record the errors happened in the page
 var generalErrorLog= "";
+
+// if performing of this assignment is already counted
+var hitCounterIncreased = false;
 
 //--------------- Utilities -----------------
 
@@ -196,6 +215,69 @@ function recordError(name, message){
 	$("#errorSection").show();
 }
 
+/*
+	Add a cookies with corresponding values
+*/
+function createCookie(name, value, minutes) {
+    var expires;
+    if (minutes) {
+        var date = new Date();
+        date.setTime(date.getTime() + (minutes * 60 * 1000));
+        expires = date.toGMTString();
+    } else {
+        expires = "";
+    }
+
+    let st =value +";"+ expires ;
+    console.log(st);
+    localStorage.setItem(name, st);
+}
+
+/*
+	Return the value of cookie, or null
+*/
+function readCookie(name) {
+	var storedValue = localStorage.getItem(name);
+	if (storedValue){
+		let infos = storedValue.toString().split(';');
+		let value = infos[0];
+		let validUntil = new Date(infos[1]);
+		let today = new Date();
+		if (today<=  validUntil)
+			return value;
+		else{
+			localStorage.removeItem(name);
+			return null;
+		}
+	}else
+		return null;
+}
+
+/*
+	Update the cookie which counts the number of Assignments performed by user. Increase it by "updateBy" value.
+*/
+function updateCounterCookie(name, updateBy){
+	expiry_in_a_month= 30*24*60
+	c = readCookie(name);
+	if (c==null){
+		createCookie(name, 1, expiry_in_a_month);
+		return 1;
+	}else{
+	 	console.log(c);
+	 	createCookie(name, Number(c)+updateBy, expiry_in_a_month);
+	}
+	return Number(c)+updateBy;
+}
+
+
+/*
+	Remove the variable from local storage
+*/
+function removeCookie(name) {
+	localStorage.removeItem(name);
+}
+
+
 //-------------------- Initialize page -------------------
 
 /*
@@ -217,9 +299,10 @@ $(function() {
 
 		loadTextPlaceHolders();
 		generate_training_section();
-		//generate_rating_section();
+		generate_rating_section();
 		avoidAnsweringBeforeWatchingThrough();
 
+		hitCounterIncreased = false;
 	}catch(err){
 		console.error(err);
 		recordError(err.name,err.message);
@@ -302,13 +385,12 @@ function forceNoSpaceInInput(){
 //------------------ for video
 /*
 	will be called when a video took extra time to be finished.
+	TODO: Inform the user or terminate the session.
 */
 function maximum_extra_playing_time_reached(id){
+	console.error("Playing time of the video {0} took more than what we expected.".f(id));
 }
 
-function onFinish(t){
-	console.log(t);
-}
 
 //-------------- END for video
 //------------------------------- visual acuity test -----------------
@@ -822,6 +904,7 @@ var trainingStimulusPlayed;
 /*
   If all training clips played until the end, add a cookie expiring after
   config.forceRetrainingInHours
+  TODO: check trapping question
 */
 function playedVideoTraining(id){
 	let id_num= id.substring(2);
@@ -840,7 +923,7 @@ function playedVideoTraining(id){
 
 // help to calc the sum of elements in an array
 function getSum(total, num) {
-  return total + num;
+  	return total + num;
 }
 
 /*
@@ -856,6 +939,44 @@ function onValueChangeForTpQuestionInTraining(){
 	}
 
 }
+
+/*
+	Listener on value change for the trapping question.
+	if the answer is correct, change the value of tp_check to 0.
+*/
+function onValueChangeForTpQuestion(){
+	if(!('knownQuestionAns' in config))
+		return;
+	if ($( this ).val()  == parseInt(config['knownQuestionAns']))
+		$('#tp_check').val(0);
+	else
+		$('#tp_check').val(-1);
+	//console.log("gc_check"+$('#tp_check').val())
+}
+
+/*
+	Called when a video in rating section by the given id is completely played.
+	Now user can rate the quality.
+*/
+function playedVideoQ(id){
+	let id_num= id.substring(2);
+	played= $("#video_n_finish_{0}".f(id)).val();
+	if (played== 0 )return;
+
+	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionUrl']){
+		element = $('input[name="q{0}"]'.f(id_num));
+		element.unbind();
+		element.on('change', onValueChangeForTpQuestion);
+	}else{
+		$('input[name="q{0}"]'.f(id_num)).off('change');
+		// check if already this HIT is counted
+		if (!hitCounterIncreased){
+			updateCounterCookie(config['cookieName']+"_counter",1);
+			hitCounterIncreased=true
+		}
+	}
+}
+
 </script>
 
 <script type="text/javascript">
@@ -864,25 +985,28 @@ function onValueChangeForTpQuestionInTraining(){
 	Input could be 5 or 9
 */
 
-function getScale(type){
+function getScale(type, is_training){
+	let p ='q';
+	if (is_training) p = 't';
+
 	template5 =
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="5">Imperceptible</label></div></td><td class="c">5</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="4">Perceptible but not annoying</label></div></td><td class="c">4</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="3">Slightly annoying</label></div></td><td class="c">3</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="2">Annoying</label></div></td><td class="c">2</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="1"required="">Very annoying</label></div></td><td class="c">1</td></tr>';
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="5">Imperceptible</label></div></td><td class="c">5</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="4">Perceptible but not annoying</label></div></td><td class="c">4</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="3">Slightly annoying</label></div></td><td class="c">3</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="2">Annoying</label></div></td><td class="c">2</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="1"required="">Very annoying</label></div></td><td class="c">1</td></tr>';
 
 
 	template9 =
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="9">Imperceptible</label></div></td><td class="c">9</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">8</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="7">Perceptible, but not annoying</label></div></td><td class="c">7</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="6">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">6</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="5">Slightly annoying</label></div></td><td class="c">5</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">4</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="3">Annoying</label></div></td><td class="c">3</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">2</td></tr>'+
-	'<tr><td><div class="radio" ><label ><input type="radio" name="t{0}" value="1"required="">Very annoying</label></div></td><td class="c">1</td></tr>';
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="9">Imperceptible</label></div></td><td class="c">9</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">8</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="7">Perceptible, but not annoying</label></div></td><td class="c">7</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="6">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">6</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="5">Slightly annoying</label></div></td><td class="c">5</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">4</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="3">Annoying</label></div></td><td class="c">3</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">2</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="1"required="">Very annoying</label></div></td><td class="c">1</td></tr>';
 
 	if (type== 5){
 		return template5;
@@ -902,10 +1026,11 @@ function generate_training_section(){
 	dcr_tab ='<div class="tab-pane fade {3}" id="T{0}-panel" role="tabpanel" aria-labelledby="T{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
 	'<p style="margin-top:10px;">{0}. How do you rate the impairment of the <b>second clip (Clip B)</b> with respect to the <b>first clip (Clip A)</b>? </p> <div class="row"> <p align="center">'+
-	'<span class="velmnt dcr" id="t_{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div>  '+
+	'<span class="velmnt dcr" id="t_{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
-	getScale(config['scale_points'])+
-	'</tbody></table></fieldset><p></p> </div> 	<div class="col-sm-2"></div></div> <p></p> </div>';
+	getScale(config['scale_points'], true)+
+	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
 
 	// this will show which url was shown by in which question as their orther will be randomized
 	input_template= '<input id="T{0}_URL" name="T{0}_URL" type="hidden" value="{1}" />';
@@ -934,43 +1059,36 @@ function generate_training_section(){
 	Generate rating section
 */
 function generate_rating_section(){
-	ccr_nav_tab = '<li class="nav-item {1}"><a class="nav-link" data-toggle="tab" href="#Q{0}-panel" id="Q{0}-tab" role="tab" aria-controls="Q{0}" {2}>Q. {0}</a></li>';
-	ccr_tab ='<div class="tab-pane fade {3}" id="Q{0}-panel" role="tabpanel" aria-labelledby="q{0}-tab"><p></p><div class="row">	<div class="col-sm-3"></div>	<div class="col-sm-6">		<p style="margin-top:10px;">{0}. The quality of the <b>second clip</b> compared to the quality of the <b>first clip</b> is: </p> <div class="row"> <p align="center">  <span class="baudio multi" id="q_{0}" data-src1="{1}" data-src2="{2}" data-title1 = "First clip" data-title2 = "Second clip" data-onfinished="playedAudioQ" ></span>  </p></div> <fieldset id="fieldset_q{0}"  title=""><table class="table md scale" cellspacing="0" cellpadding="0">			<thead><tr><th >Quality of the second clip is</th><th class="c" >Score</th></tr>			</thead>			<tbody><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="{4}3">Much Better</label></div></td><td class="c">3</td></tr><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="{4}2">Better</label></div></td><td class="c">2</td></tr><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="{4}1">Slightly Better</label></div></td><td class="c">1</td></tr><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="0">About the Same</label></div></td><td class="c">0</td></tr><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="{5}1"required="">Slightly Worse</label></div></td><td class="c">-1</td></tr><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="{5}2"required="">Worse</label></div></td><td class="c">-2</td></tr><tr><td><div class="radio" ><label ><input type="radio" name="q{0}" value="{5}3"required="">Much Worse</label></div></td><td class="c">-3</td></tr></tbody></table>		</fieldset><p></p> </div> 	<div class="col-sm-3"></div></div> <p></p> </div>';
+	dcr_nav_tab = '<li class="nav-item {1}"><a class="nav-link " data-toggle="tab"  href="#Q{0}-panel" id="Q{0}-tab " role="tab" aria-controls="Q{0}" {2}>Q. {0}</a></li>';
+	dcr_tab ='<div class="tab-pane fade {3}" id="Q{0}-panel" role="tabpanel" aria-labelledby="Q{0}-tab"><p></p>'+
+	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
+	'<p style="margin-top:10px;">{0}. How do you rate the impairment of the <b>second clip (Clip B)</b> with respect to the <b>first clip (Clip A)</b>? </p> <div class="row"> <p align="center">'+
+	'<span class="velmnt dcr" id="Q_{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
+	'<fieldset id="fieldset_q{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
+	getScale(config['scale_points'], false)+
+	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
+
 	// this will show which url was shown by in which question as their orther will be randomized
-	input_template= '<input id="Q{0}_URL" name="Q{0}_URL" type="hidden" value="{1}" /> <input id="Q{0}_order" name="Q{0}_order" type="hidden" value="{2}" />';
-	if (JSON.parse(config['randomizeRatingQuestions'])){
+	input_template= '<input id="Q{0}_URL" name="Q{0}_URL" type="hidden" value="{1}" />';
+
+	if (JSON.parse(config['randomizeRatingQuestions']))
 		urls = shuffle(config['questionUrls']);
-	}else{
+	else
 		urls = config['questionUrls'];
-	}
 
 	var i;
-	var urlA,urlB,signA, signB, order;
 	for (i = 0; i < urls.length; i++) {
-		let r = Math.random();
-		if (r>0.5){
-			urlA = urls[i].ref;
-			urlB = urls[i].processed;
-			signA = '';
-			signB = '-';
-			order = 'rp';
-		}else{
-			//processed ,unprocessed => sign should be replaced
-			urlA = urls[i].processed;
-			urlB = urls[i].ref;
-			signA = '-';
-			signB = '';
-			order = 'pr';
-		}
 		if (i==0){
-			$('#nav-tab-ul').append(ccr_nav_tab.f(i+1,'active', 'ria-selected="true"'));
-			$('#nav-tabContent-rating').append(ccr_tab.f(i+1,  urlA, urlB,'in active', signA, signB));
+			$('#nav-tab-ul').append(dcr_nav_tab.f(i+1,'active', 'ria-selected="true"'));
+			$('#nav-tabContent-rating').append(dcr_tab.f(i+1, urls[i].ref, urls[i].processed,'in active'));
 		}else{
-			$('#nav-tab-ul').append(ccr_nav_tab.f(i+1,'',''));
-			$('#nav-tabContent-rating').append(ccr_tab.f(i+1,  urlA, urlB,'', signA, signB));
+			$('#nav-tab-ul').append(dcr_nav_tab.f(i+1,'',''));
+			$('#nav-tabContent-rating').append(dcr_tab.f(i+1, urls[i].ref, urls[i].processed,''));
 		}
-		$('#nav-tabContent-rating').append(input_template.f(i+1,urls[i].processed, order));
+		$('#nav-tabContent-rating').append(input_template.f(i+1, urls[i].processed));
 	}
+
 }
 </script>
 
