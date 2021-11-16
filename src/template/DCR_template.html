@@ -21,6 +21,7 @@
 <style type="text/css">
 body{font-family:Tahoma,"Times New Roman", Times, serif;}
 
+.disabled_section {pointer-events: none; opacity: 0.4;}
 .table th, .table td {
      border-top: none !important;
 }
@@ -46,6 +47,8 @@ h5{font-weight: bold;}
 .lc{ margin:20px;}
 .table-center { margin-left: auto; margin-right: auto;}
 
+
+}
 </style>
 
 <script type="text/javascript">
@@ -103,6 +106,8 @@ const videos_not_loaded_yet_set = new Set()
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
+	qualificationCookieName:"{{cfg.qual_cookie_name}}",
+	qualificationValidFor:43200,
 	qualificationValidFor:43200,
     forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -129,7 +134,10 @@ var config ={
 		'circles': '${t1_matrix_c}',
 		'triangles': '${t1_matrix_t}'
 	},
-
+	plates:{
+		"plate3":29,
+		"plate4":5
+	},
 	questionUrls: [{'ref': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small.mp4',
     'processed': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small_bw.mp4'},
     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
@@ -291,6 +299,7 @@ $(function() {
 		}
 
 		initializeQualification();
+		initializeCalibration();
 		hardware_test();
 
 		// setup section
@@ -313,13 +322,20 @@ $(function() {
 /*
 	Initialize the qualification section
 */
-var qualification_ans= new Set();
 function initializeQualification(){
 	//randomizeHearingtestItems();
     //makeCheckboxBeRequired();
     forceNoSpaceInInput();
     $("#qualification :input").on('change', isQualificationDone);
 }
+
+/*
+	Initialize the calibration section
+*/
+function initializeCalibration(){
+    $("#calibration :input").on('change', isCalibrationDone);
+}
+
 
 /*
 Change placeholders inside text with values from config file.
@@ -336,35 +352,59 @@ function loadTextPlaceHolders(){
 	$('.question_number').html(config['questionUrls'].length);
 }
 
-
-
 /*
-	TODO: check it
+	Called as a listener whenever an input is answered in qualification
 */
 function isQualificationDone(){
-	qualification_ans.add(this.name);
-	console.log("check if the qualification is done"+this.name+","+qualification_ans.size);
-	validateQualificationAnswer();
-	//if (qualification_ans.size==13)
-	//	validateQualificationAnswer();
+	if(!$("input[name='1_gender']").is(':checked')) return;
+	if(!$("input[name='2_birth_year']").val()) return;
+	if(!$("input[name='3_working_area']").is(':checked')) return;
+	if(!$("select[name='4_video_test'] option:selected").val()) return;
+	if(!$("input[name='5_device']").is(':checked')) return;
+
+
+	if(!$("input[name='6_device_size_h']").val()) return;
+	if(!$("input[name='6_device_size_w']").val()) return;
+
+	if(!$("input[name='7_plate3']").val()) return;
+	if(!$("input[name='7_plate4']").val()) return;
+	if (visual_acuity_test_passed)
+		validateQualificationAnswer();
 }
 
 /*
-	check the qualification passed
-	TODO: check it
+	Check the qualification passed
 */
 function validateQualificationAnswer(){
-	count_correct_plates=0;
-	if ($("input[name='plate3']").val().trim()==config.qualification.plate3)
-		count_correct_plates ++;
-	if ($("input[name='plate4']").val().trim()==config.qualification.plate4)
-		count_correct_plates ++;
+	count_correct_ans=0;
+	if ($("input[name='7_plate3']").val().trim()==config.plates.plate3)
+		count_correct_ans ++;
+	if ($("input[name='7_plate4']").val().trim()==config.plates.plate4)
+		count_correct_ans ++;
+	if ($("input[name='3_working_area']:checked").val()=="N") count_correct_ans ++;
+	if ($("select[name='4_video_test'] option:selected").val()!="0d") count_correct_ans ++;
 
-	//passed=  m_tongue_check && device_check && working_area_checked &&  hearing_self_report_check && count_correct_ht>= 3;
-	passed=  count_correct_plates ==2;
-	console.log(passed);
+	if (visual_acuity_test_passed == null)
+		return false;
+	else
+		if (visual_acuity_test_passed) count_correct_ans ++;
+
+	passed=  count_correct_ans == 5;
+	console.log("passed qualification? "+passed);
 	// add a qualification for 'qualificationValidFor' minutes
-	//createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+	createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+
+	on_qualification_test(passed);
+}
+
+/*
+	Called as a listener whenever an input is answered in Calibration
+*/
+function isCalibrationDone(){
+	console.log("isCalibrationDone");
+	if(!$("input[name='calib_resolution']").is(':checked')) return;
+	if(!$("input[name='calib_color']").is(':checked')) return;
+	on_calibration_performed();
 }
 
 /*
@@ -502,7 +542,7 @@ function continue_visual_acuity(){
 const id_to_rotation_degree = new Map();
 var current_landoltc_id = -1
 var landoltc_results = [];
-var visual_acuity_test_passed=false;
+var visual_acuity_test_passed=null;
 
 
 /**
@@ -537,7 +577,8 @@ function landoltc_clicked(num){
 			$(".lc").prop("disabled",true);
 			$("#lc_msg").html("<p style='color:green'>Visual acuity check passed.</p>");
 			visual_acuity_test_passed = true;
-			activate_setup();
+			//activate_setup();
+			isQualificationDone();
 			return;
 		}else
 		 if (landoltc_results.length>=5){
@@ -934,7 +975,7 @@ function onValueChangeForTpQuestionInTraining(){
 	if(!('knownQuestionInTrainingAns' in config))
 		return;
 	if ($( this ).val()  != config['knownQuestionInTrainingAns']){
-		alert('Error: your answer does not seem to be correct. How is the quality of the Clip B Compared to the quality of the Clip A?');
+		alert('Error: your answer does not seem to be correct. How do you rate the impairment of the Clip B with respect to the Clip A?');
 		$(this).prop('checked', false);
 	}
 
@@ -978,7 +1019,72 @@ function playedVideoQ(id){
 }
 
 </script>
+<script type="text/javascript">
+//----- all methods for hiding/showing sections
 
+function activate_calibration_section(activate){
+	if (activate)
+		$("#calibration").removeClass("disabled_section");
+	else
+		$("#calibration").addClass("disabled_section");
+}
+
+function activate_setup_section(activate){
+	if (activate)
+		$("#setup").removeClass("disabled_section");
+	else
+		$("#setup").addClass("disabled_section");
+}
+
+function activate_training_section(activate){
+	if (activate)
+		$("#training").removeClass("disabled_section");
+	else
+		$("#training").addClass("disabled_section");
+}
+
+function activate_rating_section(activate){
+	if (activate)
+		$("#rating_section").removeClass("disabled_section");
+	else
+		$("#rating_section").addClass("disabled_section");
+}
+
+
+function on_qualification_test(success){
+	if (!success){
+		alert("Unfortunately you did not pass the qualification test. Therefore you cannot continue now. Please return this HIT.");
+		//TODO: should be blocked for X hours?
+		return;
+	}
+	activate_calibration_section(true);
+}
+
+function on_calibration_performed(){
+	activate_setup_section(true);
+}
+
+var setup_section_remaining_tries = 3;
+function on_setup_performed(success){
+	if (!success){
+		if (setup_section_remaining_tries> 1){
+			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that\n - you already calibrated your screen,\n - have a good lighting condition, and \n -is in a proper distance from screen.".f(setup_section_remaining_tries));
+			setup_section_remaining_tries--;
+		}else{
+			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
+			activate_setup_section(false);
+			//TODO block the user for X hours?
+		}
+		return;
+	}
+	activate_training_section(true);
+	activate_rating_section(true);
+}
+
+
+
+
+</script>
 <script type="text/javascript">
 
 /*
@@ -1639,14 +1745,14 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  <div class="radio">
 				  	<label><input type="radio" name="1_gender" value="F">Female</label>
 				  </div>
-				  <div class="radio disabled">
+				  <div class="radio">
 					  <label><input type="radio" name="1_gender" value="O">Other</label>
 				  </div>
 			  </fieldset>
 
 			  <fieldset class="qualificationFieldset"><label>2.&nbsp;In what year were you born? </label>
 				  <div class="form-group">
-					  <input type="text" class="form-control" name="2_birth_year" required="">
+					  <input type="text" class="form-control nospace" name="2_birth_year" required="">
 				  </div>
 			  </fieldset>
 
@@ -1684,8 +1790,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 			  <fieldset class="qualificationFieldset"><label>* 6.&nbsp;Please measure the height and width of you screen:</label>
 				  <div>
-					  <label>Height (cm): <input type="text" name="6_device_size_h" size="4" required></label>
-					  <label>Width (cm): <input type="text" name="6_device_size_w" size="4" required></label>
+					  <label>Height (cm): <input type="text" class="nospace" name="6_device_size_h" size="4" required></label>
+					  <label>Width (cm): <input type="text" class="nospace" name="6_device_size_w" size="4" required></label>
 				  </div>
 			  </fieldset>
 
@@ -1707,7 +1813,14 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 			  <!-- visual acuity check -->
 			  <fieldset class="qualificationFieldset"><label>8.&nbsp;This is a two-step visual acuity check. Please follow the setup instruction below and answer to the following 5 questions.</label>
-
+						<nav aria-label="...">
+						  <ul class="pagination pagination-lg justify-content-center">
+							<li class="page-item disabled">
+							  <a class="page-link" href="#" tabindex="-1">Setup</a>
+							</li>
+							<li class="page-item"><a class="page-link" href="#">Visual acuity check</a></li>
+						  </ul>
+						</nav>
 						<div class="row" id ="setup_visual_acity">
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 1. Screen adjustment</h5>
@@ -1784,7 +1897,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <!-- Calibration section-->
-<section class="container" id="calibration">
+<section class="container disabled_section" id="calibration">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
@@ -1820,7 +1933,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 <!-- Calibration section ends-->
 
 <!-- Setup section-->
-<section class="container" id="setup">
+<section class="container disabled_section" id="setup">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
@@ -1883,7 +1996,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <!-- Training section, appears once a day-->
-<section class="container" id="training">
+<section class="container disabled_section" id="training">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
@@ -1934,7 +2047,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="use_headset" name="use_headset" type="hidden" value="-1" />
 
 <!--- Rating task -->
-<section class="container" id="rating_section">
+<section class="container disabled_section" id="rating_section">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">Ratings</h3>
