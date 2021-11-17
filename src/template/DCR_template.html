@@ -101,6 +101,12 @@ const videos_not_loaded_yet_set = new Set()
 	cmp_pass_threshold: {{cfg.cmp_pass_threshold}},
 	emailAddress: "{{cfg.contact_email}}"
 
+	block_matrix:{
+		'img': '${t1_matrix_url}',
+		'circles': '${t1_matrix_c}',
+		'triangles': '${t1_matrix_t}'
+	},
+
 
 */
 var config ={
@@ -131,8 +137,9 @@ var config ={
 		'too_far':'7'
 	},
 	block_matrix:{
-		'circles': '${t1_matrix_c}',
-		'triangles': '${t1_matrix_t}'
+		'img': '${t1_matrix_url}',
+		'circles': '1',
+		'triangles': '2'
 	},
 	plates:{
 		"plate3":29,
@@ -285,6 +292,13 @@ function removeCookie(name) {
 	localStorage.removeItem(name);
 }
 
+/*
+	Reset all inputs in the page
+*/
+function clearInputs(){
+    $(':input').not(':button, :submit, :reset, :hidden, :checkbox, :radio').val('');
+    $(':checkbox, :radio').prop('checked', false);
+}
 
 //-------------------- Initialize page -------------------
 
@@ -304,19 +318,123 @@ $(function() {
 
 		// setup section
 		add_distance_test();
-		cmp_check_on_load();
+		//cmp_check_on_load();
+		initializeSetup();
 
 		loadTextPlaceHolders();
 		generate_training_section();
 		generate_rating_section();
 		avoidAnsweringBeforeWatchingThrough();
 
+		clearInputs();
+		cookie_debug_status="";
+
+		// check which sections should be shown
+		qual_passed= readCookie(config['qualificationCookieName']);
+		calibration_passed = false;
+		setup_passed = false;
+		training_passed  = false;
+
+		console.log(qual_passed);
+
+		if (qual_passed!==null && qual_passed=="true"){
+			$('.qualificationFieldset').prop("disabled", true);
+			$("#qualification").hide();
+			$("#qualification :input").removeAttr("required");
+			cookie_debug_status=cookie_debug_status+"Qualification Exist*";
+			activate_calibration_section(true);
+		}
+
+		// given cookie availability disable the calibration
+		if (readCookie(config['cookieName']+"_calibration")){
+			calibration_passed = true;
+			$("#calibration").hide();
+			$("#calibration :input").removeAttr("required");
+			cookie_debug_status=cookie_debug_status+"Calibration Exist*";
+			activate_setup_section(true);
+		}
+
+		// given cookie availability disable the setup
+		if (readCookie(config['cookieName']+"_setup")){
+			setup_passed = true;
+			$('.setupFieldset').prop("disabled", true);
+			$("#setup").hide();
+			$("#setup :input").removeAttr("required");
+			cookie_debug_status=cookie_debug_status+"Setup Exist*";
+			activate_training_section(true);
+			activate_rating_section(true);
+		}
+
+		// given cookie availability disable the training
+		if (readCookie(config['cookieName']+"_training")){
+			training_passed = true;
+			$('.trainingFieldset').prop("disabled", true);
+			$("#training").hide();
+			$("#training :input").removeAttr("required");
+			$('#instruction').collapse()
+			cookie_debug_status=cookie_debug_status+"Train Exist*";
+		}
+
+		hit_num = readCookie(config['cookieName']+"_counter");
+		howManyHITsAnswered =0;
+		if (hit_num != null ){
+			howManyHITsAnswered= Number(hit_num);
+			if (howManyHITsAnswered >= config['allowedMaxHITsInProject']){
+				disableTheHIT(Hide_HIT_REASON.MAX_ACHIVED);
+			}
+		}
+		if ((qual_passed!==null) && (qual_passed=="false")){
+			disableTheHIT(Hide_HIT_REASON.QUALIFICATON);
+		}
+
 		hitCounterIncreased = false;
+		cookie_debug_status=cookie_debug_status+"Counter:"+howManyHITsAnswered+"*";
+		addBrowserInfo(cookie_debug_status);
+
+
 	}catch(err){
 		console.error(err);
 		recordError(err.name,err.message);
 	}
 });
+
+/*
+	Disable the HIS and show a proper message.
+	- used when the maximum number of HITs in project is reached
+	TODO: update it
+*/
+function disableTheHIT(c){
+	$("#Survey").hide();
+	$("#qualification").hide();
+	$("#calibration").hide();
+	$("#setup").hide();
+	$("#training").hide();
+	$("#rating_section").hide();
+	$("#thanks").hide();
+
+	if (c == Hide_HIT_REASON.MAX_ACHIVED)
+		$("#max_allowed_HITs_reached").show();
+	if (c == Hide_HIT_REASON.QUALIFICATON)
+		$("#qualification_rejected").show();
+}
+
+
+/*
+Store the following information in hidden input field which will be added to answerc.csv by AMT
+userAgent, cookieEnabled, appVersion, platform, language, status of 3 cookies.
+*/
+function addBrowserInfo(debug){
+	info="U_A:"+navigator.userAgent+";"+
+		"CookieEnabled:"+navigator.cookieEnabled+";"+
+		"AppV:"+navigator.appVersion+";"+
+		"Platform:"+navigator.platform+";"+
+		"LN:"+navigator.language+";"+
+		"cookie_debug:"+debug+";";
+
+	$('#browser_info').val(info);
+	console.log(info);
+
+}
 
 
 /*
@@ -327,6 +445,7 @@ function initializeQualification(){
     //makeCheckboxBeRequired();
     forceNoSpaceInInput();
     $("#qualification :input").on('change', isQualificationDone);
+    //isQualificationDone();
 }
 
 /*
@@ -334,6 +453,16 @@ function initializeQualification(){
 */
 function initializeCalibration(){
     $("#calibration :input").on('change', isCalibrationDone);
+    //isCalibrationDone();
+}
+
+
+/*
+	Initialize the qualification section
+*/
+function initializeSetup(){
+    $("#setup-rest :input").on('change', isSetupDone);
+    //isSetupDone();
 }
 
 
@@ -406,6 +535,31 @@ function isCalibrationDone(){
 	if(!$("input[name='calib_color']").is(':checked')) return;
 	on_calibration_performed();
 }
+
+
+/*
+	Called as a listener whenever an input is answered in Setup
+*/
+function isSetupDone(){
+	if(!$("input[name='cmp1']").is(':checked')) return;
+	if(!$("input[name='cmp2']").is(':checked')) return;
+	if(!$("input[name='cmp3']").is(':checked')) return;
+
+	if(!$("input[name='t2_circles']").val()) return;
+	if(!$("input[name='t2_triangles']").val()) return;
+	validateSetupAnswer();
+}
+
+
+/*
+	Check the qualification passed
+*/
+function validateSetupAnswer(){
+	passed_cmp = validateCMPSection();
+	on_setup_performed(passed_cmp);
+}
+
+
 
 /*
 	Avoid space in text field
@@ -804,15 +958,19 @@ function check_brightness_test(){
 }
 
 function activate_rest_setup(){
-}
-
-function activate_setup(){
+	$("#alert-setup-step1").show();
+	$("#setup-rest").removeClass("disabled_section");
 }
 
 //----------------------------- viewing distance
 function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
-	template = '<fieldset  class="image_cmp"><label>{0}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
-	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div><div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" id="cmp{0}_img_b" width="100%"></div> </div>  <div class="row" > <div class="col-sm-5"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="o">Difference is <b>not detectable</b>.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="b">Quality of <b>Image B</b> is better.</label></div> </div> <div class="col-sm-3"></div> </div>  </fieldset>';
+	template = '<fieldset  class="image_cmp setupFieldset"><label>{5}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
+	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div>'+
+	'<div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" id="cmp{0}_img_b" width="100%"></div> </div>'+
+	'<div class="row" > <div class="col-sm-5"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div>'+
+	'<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="o">Difference is <b>not detectable</b>.</label></div>'+
+	'<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="b">Quality of <b>Image B</b> is better.</label></div>'+
+	'</div> <div class="col-sm-3"></div> </div>  </fieldset>';
 
 	$('#distance_test_cmps').append(template.f(q_n,img_a, img_b, title_a, title_b));
 }
@@ -828,12 +986,12 @@ function add_distance_test(){
 
 	urls = shuffle(urls);
 	base_img = cfg['img_path'].f(cfg['base_id']);
-	q = 3;
+	q = 1;
 	for (const url of urls){
 		if (Math.random()> 0.5){
-			add_viewing_distance_question(q, base_img, url, 'Image A', 'Image B');
+			add_viewing_distance_question(q, base_img, url, 'Image A', 'Image B', q+2);
 		}else{
-			add_viewing_distance_question(q, url, base_img, 'Image A', 'Image B');
+			add_viewing_distance_question(q, url, base_img, 'Image A', 'Image B', q+2);
 		}
 		q = q+1;
 	}
@@ -842,6 +1000,7 @@ function add_distance_test(){
 
 
 // add this to onload of page
+// TODO: should removed
 function cmp_check_on_load(){
 	$('#setup').find(':input').filter(':visible').each(function(){
 	  $(this).on('change', validateCMPSection);
@@ -905,10 +1064,10 @@ function validateCMPSection(){
 		}
 		pass_cmp = (pass_cmp && is_correct);
 	}
-	if (!pass_cmp)
-		alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
-	else
-		alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
+	//if (!pass_cmp)
+	//	alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
+	//else
+	//	alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
 	return pass_cmp;
 }
 
@@ -1000,9 +1159,11 @@ function onValueChangeForTpQuestion(){
 	Now user can rate the quality.
 */
 function playedVideoQ(id){
+	console.log("playedVideoQ "+id);
 	let id_num= id.substring(2);
 	played= $("#video_n_finish_{0}".f(id)).val();
 	if (played== 0 )return;
+	console.log("playedVideoQ  continue");
 
 	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionUrl']){
 		element = $('input[name="q{0}"]'.f(id_num));
@@ -1010,6 +1171,7 @@ function playedVideoQ(id){
 		element.on('change', onValueChangeForTpQuestion);
 	}else{
 		$('input[name="q{0}"]'.f(id_num)).off('change');
+		console.log("playedVideoQ remove change listener");
 		// check if already this HIT is counted
 		if (!hitCounterIncreased){
 			updateCounterCookie(config['cookieName']+"_counter",1);
@@ -1057,10 +1219,14 @@ function on_qualification_test(success){
 		//TODO: should be blocked for X hours?
 		return;
 	}
+	$("#alert-qualification").show();
 	activate_calibration_section(true);
+
 }
 
 function on_calibration_performed(){
+	$("#alert-calibration").show();
+	createCookie(config['cookieName']+"_calibration","un_important",config['showSetupEveryMinutes']);
 	activate_setup_section(true);
 }
 
@@ -1070,6 +1236,8 @@ function on_setup_performed(success){
 		if (setup_section_remaining_tries> 1){
 			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that\n - you already calibrated your screen,\n - have a good lighting condition, and \n -is in a proper distance from screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
+			 $('#setup-rest :radio').prop('checked', false);
+
 		}else{
 			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
 			activate_setup_section(false);
@@ -1077,6 +1245,8 @@ function on_setup_performed(success){
 		}
 		return;
 	}
+	$("#alert-setup-complete").show();
+	createCookie(config['cookieName']+"_setup","un_important",config['showSetupEveryMinutes']);
 	activate_training_section(true);
 	activate_rating_section(true);
 }
@@ -1171,7 +1341,7 @@ function generate_rating_section(){
 	'<p style="margin-top:10px;">{0}. How do you rate the impairment of the <b>second clip (Clip B)</b> with respect to the <b>first clip (Clip A)</b>? </p> <div class="row"> <p align="center">'+
 	'<span class="velmnt dcr" id="Q_{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
-	'<fieldset id="fieldset_q{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
+	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getScale(config['scale_points'], false)+
 	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
 
@@ -1895,13 +2065,18 @@ function avoidAnsweringBeforeWatchingThrough(){
 	</div>
 </section>
 
+<section class="container" id="alert-qualification" hidden>
+	<div  class="alert alert-success" role="alert" >
+		Well-done! Now you can continue to next section.
+	</div>
+</section>
 
 <!-- Calibration section-->
 <section class="container disabled_section" id="calibration">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<a data-target="collapse" href="#calibration_panel" >Display calibration</a>
+					<a data-target="collapse" href="#calibration_panel" >Display calibration (every <b class="setup_time"> a </b> minutes)</a>
 				</h3>
 			</div>
 			<div  class="panel-collapse collapse in" id="calibration_panel">
@@ -1932,12 +2107,18 @@ function avoidAnsweringBeforeWatchingThrough(){
 </section>
 <!-- Calibration section ends-->
 
+<section class="container" id="alert-calibration" hidden>
+	<div class="alert alert-success" role="alert">
+	  Well-done! Please continue to the next session.
+	</div>
+</section>
+
 <!-- Setup section-->
 <section class="container disabled_section" id="setup">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<a data-target="collapse" href="#setup_panel" >Setup</a>
+					<a data-target="collapse" href="#setup_panel" >Setup (every <b class="setup_time"> a </b> minutes)</a>
 				</h3>
 			</div>
 			<div  class="panel-collapse collapse in" id="setup_panel">
@@ -1971,6 +2152,11 @@ function avoidAnsweringBeforeWatchingThrough(){
 			  		<b>NOTE:</b> After that, you are not allowed to change the screen brightness anymore.
 				</div>
 
+				<div id="alert-setup-step1" class="alert alert-success" role="alert" hidden>
+  					Well-done! Now you can continue.
+				</div>
+
+				<div id="setup-rest" class="disabled_section">
 				<div class="row">
 					<div class="col-sm-6" style = "padding:50px"><p>Q2. How many <b>circles</b> and <b>triangles</b> do you see in the image?</p>
 						<div style="margin-left:20px">
@@ -1983,9 +2169,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<!-- Distance check-->
 				<h4>Distance from screen</h4>
 				<div class="alert alert-info" role="alert">
-			  		Please make sure you are in a proper distance from your screen. For this HIT it is <b>1.5 to 3 times of height of you screen</b>.
+			  		Please make sure you are in a proper distance from your screen. For this HIT it is <b>1.5 to 3 times of the height of you screen</b>.
 				</div>
 				<div id="distance_test_cmps"></div>
+				</div>
 			</div>
 			</div>
 		</div>
@@ -1993,7 +2180,11 @@ function avoidAnsweringBeforeWatchingThrough(){
 </section>
 <!-- Setup section ends-->
 
-
+<section class="container" id="alert-setup-complete" hidden>
+	<div class="alert alert-success" role="alert">
+	  Well-done! Now you can continue to next section.
+	</div>
+</section>
 
 <!-- Training section, appears once a day-->
 <section class="container disabled_section" id="training">
@@ -2085,4 +2276,23 @@ function avoidAnsweringBeforeWatchingThrough(){
 	<p>Thanks for your participation. Please perform more HITs from this group when they are available for you.</p>
 </section>
 
+<section class="container" id="max_allowed_HITs_reached" hidden>
+	<p><h2>Well done! </h2> You performed the maximum number of HITs that you were allowed to.</p>
 
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Performing more HITs
+		than what is explained in the description is forbidden and leads ro rejection of all of your submissions.
+			</div>
+
+</section>
+
+<section class="container" id="qualification_rejected" hidden>
+	<p>There is no assignments that match to your profile now. Please try it again in two-weeks time.
+	We thank you for your participation.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads ro rejection of all of your submissions.
+			</div>
+</section>
