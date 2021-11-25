@@ -11,6 +11,7 @@ import random
 import os.path
 from os import path
 import base64
+import pandas as pd
 
 def generate_rand_num(n):
     """
@@ -167,9 +168,22 @@ def method2_shapes():
         create_matrix_image()
 
 
+def print_matrix_name():
+    data =['Yzo0X3Q6MTA=','Yzo0X3Q6Mw==','Yzo0X3Q6Ng==','Yzo0X3Q6Nw==','Yzo0X3Q6OA==','Yzo1X3Q6Mg==','Yzo1X3Q6Mw==','Yzo1X3Q6NA==','Yzo1X3Q6Ng==','Yzo1X3Q6NQ==','Yzo1X3Q6Nw==','Yzo1X3Q6OA==','Yzo1X3Q6OQ==','Yzo2X3Q6Mg==','Yzo2X3Q6Mw==','Yzo2X3Q6NA==','Yzo2X3Q6Ng==','Yzo2X3Q6NQ==','Yzo2X3Q6Nw==','Yzo2X3Q6OA==','Yzo3X3Q6Mg==','Yzo3X3Q6Mw==','Yzo3X3Q6NA==','Yzo3X3Q6Ng==','Yzo3X3Q6NQ==','Yzo3X3Q6Nw==','Yzo3X3Q6OA==','Yzo4X3Q6Mg==','Yzo4X3Q6Mw==','Yzo4X3Q6NA==','Yzo4X3Q6Ng==','Yzo4X3Q6NQ==','Yzo4X3Q6Nw==','Yzo5X3Q6Mg==','Yzo5X3Q6MQ==','Yzo5X3Q6Mw==','Yzo5X3Q6NQ==','YzoxMF90OjM=','YzoxMV90OjM=','YzoxX3Q6MTI=','YzoxX3Q6Ng==','YzoxX3Q6NQ==','YzoxX3Q6Nw==','YzoyX3Q6MTA=','YzoyX3Q6Ng==','YzozX3Q6MTA=','YzozX3Q6NQ==','YzozX3Q6Nw==','YzozX3Q6OA==','YzozX3Q6OQ==']
+    df = pd.DataFrame(columns=['name', 'c', 't'])
+    for c in range (0,17):
+        for t in range(0, 17):
+            name = f"c:{c}_t:{t}"
+            name_coded = base64.b64encode(name.encode('ascii')).decode('ascii')
+            if name_coded in data:
+                df = df.append({'name': f'{name_coded}.jpg', 'c':c, 't':t}, ignore_index=True)
+
+    df.to_csv('name_to_nums.csv')
+
 if __name__ == '__main__':
-    method1_numbers()
+    #method1_numbers()
     #method2_shapes()
+    print_matrix_name()
 
 
 

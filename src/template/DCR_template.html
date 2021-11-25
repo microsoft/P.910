@@ -8,10 +8,8 @@
 
 <head>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-	<link rel="stylesheet" href="assets/css/velement.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
 	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 	<meta content="utf-8">
 </head>
@@ -47,68 +45,43 @@ h5{font-weight: bold;}
 .lc{ margin:20px;}
 .table-center { margin-left: auto; margin-right: auto;}
 
+.divided {margin: 20px; background: linear-gradient(transparent 60%, gray 10%, gray 10%, transparent 80%);}
+.divided span {padding: 10px 20px; color:#ffffff;  border-radius: 7px;}
+.divided span:last-of-type {float: right;}
+.active-step{background-color:#4F70F5}
+.future-step{background-color:#888888}
+/*--- velmnt ----- */
+.velmnt {margin:5px; display:inline-block; width:100px; }
+.velmnt .velmnt_table{display: inline;}
 
-}
+.velmnt td{text-align:center;}
+.velmnt .blabel{margin-top:50px;font-size: 70%;	color: #636363;}
+.velmnt .vtd{background-color: #dddddd;  border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+
+
+.velmnt .vcontainer{position: relative; width: 100%;}
+.vcontainer video{ width:100%; border-top-left-radius: 5px;  border-top-right-radius: 5px;
+border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
+.velmnt button{position: absolute; top:50%; left:50%; transform: translate(-50%, -50%);
+-ms-transform: translate(-50%, -50%);}
+
+.vcontainer .btn:hover{background-color: #999999;}
+.velmnt_finished {color: green;}
+
+.scale {font-size: 100%;}
+.scale td { text-align: left; padding:0;}
+.scale label { display:block;}
+.scale .c { text-align: center;}
+
+.bg1 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_a.png");}
+.bg2 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_b.png");}
+.bg { height: 100%; background-position: center; background-repeat: no-repeat;  background-size: cover;}
+/*--------- */
 </style>
 
 <script type="text/javascript">
 
-//---- for video player
-max_accepted_extra_playing_time_sec = 2.5;
-const videos_not_loaded_yet_set = new Set()
-
-//---------
-/*
-	questionUrls: {{cfg.rating_urls}},
-    trainingUrls: {{cfg.training_urls}},
-
-    knownQuestionInTrainingUrl:"{{cfg.training_trap_urls}}",
-    knownQuestionInTrainingAns: "0",
-    knownQuestionUrl:"${TP}",
-
-
-   	cookieName:"{{cfg.cookie_name}}",
-	qualificationCookieName:"{{cfg.qual_cookie_name}}",
-	qualificationValidFor:43200,
-    forceRetrainingInHours:1,
-    showSetupEveryMinutes:30,
-    debug:"false",
-    questionUrls: {{cfg.rating_urls}},
-    trainingUrls: {{cfg.training_urls}},
-
-    knownQuestionInTrainingUrl:"{{cfg.training_trap_urls}}",
-    knownQuestionInTrainingAns: "0",
-    knownQuestionUrl:"${TP}",
-    knownQuestionAns: "0",
-
-    randomizeTrainingQuestions:"true",
-    randomizeRatingQuestions:"true",
-    allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
-	allowedMaxContinuesSessionDurationInMinutes:45,
-	qualification:{
-		mother_tongue: ["english","en"],
-		ld_in: ["in-ear", "over-ear"],
-		working_area: "N",
-		hearing: "normal",
- 		num1: "{{cfg.num1_ans}}",
-        num2: "{{cfg.num2_ans}}",
-        num3: "{{cfg.num3_ans}}",
-        num4: "{{cfg.num4_ans}}",
-        num5: "{{cfg.num5_ans}}"
-	},
-	cmp_correct_answers: {{cfg.cmp_correct_answers}},
-	cmp_max_n_feedback : {{cfg.cmp_max_n_feedback}},
-	cmp_pass_threshold: {{cfg.cmp_pass_threshold}},
-	emailAddress: "{{cfg.contact_email}}"
-
-	block_matrix:{
-		'img': '${t1_matrix_url}',
-		'circles': '${t1_matrix_c}',
-		'triangles': '${t1_matrix_t}'
-	},
-
-
-*/
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -118,17 +91,16 @@ var config ={
     forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
 
-	//allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
-	allowedMaxHITsInProject:10,
+	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
     // could be 9 or 5
-    scale_points: 5,
+    scale_points: {{cfg.scale_points}},
     // qualification
-	min_screen_refresh_rate: 60,
-	min_resolution:{w: 1280, h:720},
+	min_screen_refresh_rate: {{cfg.min_screen_refresh_rate}},
+	min_resolution:{{cfg.min_device_resolution}},
 	// tablets will be included in PC, values:PC,MOBILE
-	device_accepted_device:["PC", "MOBILE"],
+	device_accepted_device:{{cfg.accepted_device}},
 	viewing_distance:{
 		'img_path':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/distance/img3_{0}.jpg',
 		'base_id': '0',
@@ -138,38 +110,33 @@ var config ={
 	},
 	block_matrix:{
 		'img': '${t1_matrix_url}',
-		'circles': '1',
-		'triangles': '2'
+		'circles': ${t1_matrix_c},
+		'triangles': ${t1_matrix_t},
+		'dummy':'dummy'
 	},
+
 	plates:{
 		"plate3":29,
 		"plate4":5
 	},
-	questionUrls: [{'ref': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small.mp4',
-    'processed': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small_bw.mp4'},
-    {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
-     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'},
-     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
-     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'},
-     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
-     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'},
-     {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
-     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'}
-     ],
-
-    trainingUrls: [{'ref': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small.mp4',
-    'processed': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/sample_small_bw.mp4'},
-    {'ref':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small.mp4',
-     'processed':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/test_small_bw.mp4'}],
+	questionUrls: {{cfg.rating_urls}},
+    trainingUrls: {{cfg.training_urls}},
 
     knownQuestionInTrainingUrl:"{{cfg.training_trap_urls}}",
-    knownQuestionInTrainingAns: "0",
-    knownQuestionUrl:"${TP}",
-    knownQuestionAns: "0",
+    knownQuestionInTrainingAns: "{{cfg.training_trap_ans}}",
+
+    knownQuestionUrl:"${TP_CLIP}",
+    knownQuestionAns: "${TP_ANS}",
+    goldAnswer:"{{cfg.gold_ans}}",
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
+    emailAddress: "{{cfg.contact_email}}"
 }
 
+//---- for video player
+max_accepted_extra_playing_time_sec = 2.5;
+const videos_not_loaded_yet_set = new Set()
+//--------------
 
 // Note: the measurements should be postponed until all images are loaded
 $( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
@@ -479,6 +446,8 @@ function loadTextPlaceHolders(){
 		$('.training_time').html(config['forceRetrainingInHours']+" hours" );
 	$('.question_number_training').html(config['trainingUrls'].length);
 	$('.question_number').html(config['questionUrls'].length);
+	$('.instruction_device').html(config['device_accepted_device'].join());
+
 }
 
 /*
@@ -668,6 +637,9 @@ function continue_visual_acuity(){
 		alert("First, you need to interact with screen adjustment part.");
 		return;
 	}
+
+	$("#vat_step").attr("src","https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/step2.png");
+
 	$('#setup_visual_acity').hide();
 	$('#test_visual_acity').show();
 	$('#setup_ready').hide();
@@ -950,7 +922,7 @@ function check_brightness_test(){
 	correct_ans = config['block_matrix'];
 	c = $("#t1_circles").val();
 	t = $("#t1_triangles").val();
-	if (c==parseInt(correct_ans['circles']) && t == parseInt(correct_ans['triangles'])){
+	if (c==correct_ans['circles'] && t == correct_ans['triangles']){
 		//alert('Great! Your answer is correct, continue!');
 		activate_rest_setup();
 	}else
@@ -1734,9 +1706,9 @@ $(function() {
 		titleTextTemplate='<tr><td>{1}</td></tr>';
 		insert='';
 		title='';
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="../imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
-		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="../imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
-		'<video id="video2_{0}" preload="true"  width="1" poster="../imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
+		'<video id="video2_{0}" preload="true"  width="1" poster="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -1860,11 +1832,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="panel-body">
 
 			 <b>Introduction</b>
-				<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/process_3.png" alt="scale" class="center" style='width: 60%' >
+				<img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/info.png" alt="scale" class="center" style='width: 60%' >
 
-				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has two + two (just every now and then) sections:</p>
+				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has one + three (just every now and then) sections:</p>
 				<ul>
 					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
+					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
 					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
 					<li><b>Training (every <b class="training_time"> 0 </b> hour):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
 					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
@@ -1889,6 +1862,17 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
+
+
+
+				<video width="100%" height="315" controls>
+
+          <!-- Your video file URLs will be substituted for the "video_url" attribute below when
+                 you publish a batch with a CSV input file containing multiple video file URLs -->
+          <source src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/MCL_JCV/1080_videoSRC05_44.mp4" type="video/mp4">
+
+        </video>
+
 
 			</div>
 		</div>
@@ -1970,8 +1954,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<div class="table-responsive 2_lds">
 						  <table class="table" border="0" cellpadding="0" cellspacing="0" >
 							<tbody>	<tr>
-								<td style="width:50%;text-align:center"> <img src="imgs/3.jpg" alt="plate3" width="80%"> </td>
-								<td style="width:50%;text-align:center"> <img src="imgs/4.jpg" alt="plate4" width="80%"> </td>
+								<td style="width:50%;text-align:center"> <img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/3.jpg" alt="plate3" width="80%"> </td>
+								<td style="width:50%;text-align:center"> <img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/4.jpg" alt="plate4" width="80%"> </td>
 							</tr><tr>
 								<td style="text-align:center"><input type="text" name="7_plate3" required="" class="nospace" autocomplete="off"></td>
 								<td style="text-align:center"><input type="text" name="7_plate4" required="" class="nospace" autocomplete="off"></td>
@@ -1983,21 +1967,21 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 			  <!-- visual acuity check -->
 			  <fieldset class="qualificationFieldset"><label>8.&nbsp;This is a two-step visual acuity check. Please follow the setup instruction below and answer to the following 5 questions.</label>
-						<nav aria-label="...">
-						  <ul class="pagination pagination-lg justify-content-center">
-							<li class="page-item disabled">
-							  <a class="page-link" href="#" tabindex="-1">Setup</a>
-							</li>
-							<li class="page-item"><a class="page-link" href="#">Visual acuity check</a></li>
-						  </ul>
-						</nav>
+
+				  		<div class="row" style="margin-top:20px">
+							<div class="col-md-2"></div>
+							<div class="col-md-8"> <img id="vat_step" src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/step1.png" width="80%"></div>
+							<div class="col-md-2"></div>
+						</div>
+
+
 						<div class="row" id ="setup_visual_acity">
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 1. Screen adjustment</h5>
 							  <p>Adjust the distance between two dashed lines by clicking on the +/- button. The distance should be exactly 5.4 cm or 2″. Use a ruler or the short side of a debit/credit card.</p>
 							  <div class="row">
 								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="plus" style="float: left; margin-top:100px" >+</button></div>
-								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="imgs/card.png" alt="card" width="100%" ></div>
+								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/card.png" alt="card" width="100%" ></div>
 								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="minus" style="float: right;margin-top:100px">-</button></div>
 							  </div>
 						  </div>
@@ -2005,7 +1989,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 2. Distance to screen</h5>
 							  <p>Pleas make sure to keep your eyes about 50 to 100 cm (20"-40") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
-							  <img class="center-img"  src="imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
+							  <img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
 						  </div>
 						</div>
 					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
@@ -2013,9 +1997,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 							<p>We will show you couple of broken rings with gaps which making them similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
 							<div class="row" style="margin: 30px ">
 										<div class="col-md-3" style=""></div>
-										<div class="col-md-2" ><img class="center-img"  src="imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
-										<div class="col-md-2" ><img class="center-img"  src="imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
-										<div class="col-md-2" ><img class="center-img"  src="imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
 										<div class="col-md-3" ></div>
 							</div>
 
@@ -2034,7 +2018,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 									  </tr>
 									  <tr>
 										<td><button type="button" class="btn btn-default active lc" id ="c5" style="float: right;" onclick="landoltc_clicked(5);">&larr;</button></td>
-										<td><img class="center-img"  id="landoltc_img" src="imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
+										<td><img class="center-img"  id="landoltc_img" src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
 										<td><button type="button" class="btn btn-default active lc" id ="c1" style="float: left;" onclick="landoltc_clicked(1);">&rarr;</button></td>
 									  </tr>
 									  <tr>
@@ -2228,6 +2212,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 </section>
 <!-- Training section ends-->
+
+<input id="t2_matrix_c" name="t2_matrix_c" type="hidden" value="${t2_matrix_c}" />
+<input id="t2_matrix_t" name="t2_matrix_t" type="hidden" value="${t2_matrix_t}" />
 
 <input id="tp_check" name="tp_check" type="hidden" value="-1" />
 <input id="gq_check" name="gq_check" type="hidden" value="0" />
