@@ -1079,7 +1079,7 @@ var trainingStimulusPlayed;
   TODO: check trapping question
 */
 function playedVideoTraining(id){
-	let id_num= id.substring(2);
+	let id_num= id.substring(1);
 	played= $("#video_n_finish_{0}".f(id)).val();
 	$('input[name="{0}"]'.f(id)).off('change');
 	eval("trainingStimulusPlayed["+id_num+"-1]=1;");
@@ -1132,7 +1132,7 @@ function onValueChangeForTpQuestion(){
 */
 function playedVideoQ(id){
 	console.log("playedVideoQ "+id);
-	let id_num= id.substring(2);
+	let id_num= id.substring(1);
 	played= $("#video_n_finish_{0}".f(id)).val();
 	if (played== 0 )return;
 	console.log("playedVideoQ  continue");
@@ -1151,6 +1151,34 @@ function playedVideoQ(id){
 		}
 	}
 }
+
+/*
+	Callback when "Next" in Rating section is clicked.
+*/
+function showNextQuestionInRatingSection(){
+	var count = $("#nav-tab-ul li").length;
+	id=$("#nav-tab-ul li.active").index();
+	if (id+2==count){
+		$('#next-rating').addClass('disabled');
+	}
+	id=id+2;
+	$('#nav-tab-ul li:nth-child('+id+') a').tab('show');
+
+}
+
+/*
+	Callback when "Previous" in Rating section is clicked.
+*/
+function showPreviousQuestionInRatingSection(){
+	id=$("#nav-tab-ul li.active").index();
+	id=id;
+	$('#nav-tab-ul li:nth-child('+id+') a').tab('show');
+	var count = $("#nav-tab-ul li").length;
+	if (id+1<=count)
+		$('#next-rating').removeClass('disabled');
+}
+
+
 
 </script>
 <script type="text/javascript">
@@ -1274,7 +1302,7 @@ function generate_training_section(){
 	dcr_tab ='<div class="tab-pane fade {3}" id="T{0}-panel" role="tabpanel" aria-labelledby="T{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
 	'<p style="margin-top:10px;">{0}. How do you rate the impairment of the <b>second clip (Clip B)</b> with respect to the <b>first clip (Clip A)</b>? </p> <div class="row"> <p align="center">'+
-	'<span class="velmnt dcr" id="t_{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<span class="velmnt dcr" id="t{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getScale(config['scale_points'], true)+
@@ -1311,7 +1339,7 @@ function generate_rating_section(){
 	dcr_tab ='<div class="tab-pane fade {3}" id="Q{0}-panel" role="tabpanel" aria-labelledby="Q{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
 	'<p style="margin-top:10px;">{0}. How do you rate the impairment of the <b>second clip (Clip B)</b> with respect to the <b>first clip (Clip A)</b>? </p> <div class="row"> <p align="center">'+
-	'<span class="velmnt dcr" id="Q_{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<span class="velmnt dcr" id="Q{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getScale(config['scale_points'], false)+
@@ -1863,17 +1891,6 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
 
-
-
-				<video width="100%" height="315" controls>
-
-          <!-- Your video file URLs will be substituted for the "video_url" attribute below when
-                 you publish a batch with a CSV input file containing multiple video file URLs -->
-          <source src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/MCL_JCV/1080_videoSRC05_44.mp4" type="video/mp4">
-
-        </video>
-
-
 			</div>
 		</div>
 
@@ -2077,7 +2094,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 					</ul>
 					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_resolution" onclick="on_resolution_change();" required>I followed the above description and changed the resolution of my display as recommended.</label></div></fieldset>
 
-					<p style="margin-top:20px"><b>2. Colors:</b> To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS.
+					<p style="margin-top:20px"><b>2. Colors:</b> To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS. Otherwise you may fail the steps in the setup section.
 					For further instructions use the following links:</p>
 
 					 <ul>
