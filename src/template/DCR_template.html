@@ -50,6 +50,9 @@ h5{font-weight: bold;}
 .divided span:last-of-type {float: right;}
 .active-step{background-color:#4F70F5}
 .future-step{background-color:#888888}
+
+.glyphicon-spin {-webkit-animation: spin 1000ms infinite linear; animation: spin 1000ms infinite linear;}
+
 /*--- velmnt ----- */
 .velmnt {margin:5px; display:inline-block; width:100px; }
 .velmnt .velmnt_table{display: inline;}
@@ -78,6 +81,20 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 .bg2 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_b.png");}
 .bg { height: 100%; background-position: center; background-repeat: no-repeat;  background-size: cover;}
 /*--------- */
+.loader {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 </style>
 
 <script type="text/javascript">
@@ -282,6 +299,7 @@ $(function() {
 		initializeQualification();
 		initializeCalibration();
 		hardware_test();
+
 
 		// setup section
 		add_distance_test();
@@ -744,18 +762,30 @@ function hardware_test(){
     } else {
     	// 1. result of refresh rate check is ready
     	console.log("screen_test {0}".f(refresh_rate_passed));
+
     	// 2. resolution
     	resolution_check = check_resolution();
     	console.log(resolution_check);
+
 		// 3. device type
 		device_accepted = check_device_type();
 		console.log(device_accepted);
 
 		record_screen_size();
 		record_os();
-
+		if (refresh_rate_passed && resolution_check && device_accepted)
+			activate_hit();
+		else
+			alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
     }
 }
+
+function activate_hit(){
+	$("#hardware-spinner").hide();
+	$("#Survey").removeClass("disabled_section");
+	$("#qualification").removeClass("disabled_section");
+}
+
 
 var refresh_rate_passed = null;
 /**
@@ -1847,9 +1877,15 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="device_os" name="device_os" type="hidden" value="unknown" />
 
 <div id="meter" style="width:10cm"></div>
+<div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
+	<div class="col-md-4"></div>
+	<div class="col-md-2" sytle="float: right" with="30%"><div class="loader"></div></div>
+	<div class="col-md-2" sytle="text-align: left;"> <h1>  Checking your Hardware</h1></div>
+	<div class="col-md-4"></div>
+</div>
 
 <!-- Instructions -->
-<section class="container" id="Survey">
+<section class="container disabled_section" id="Survey">
 	<div class="panel panel-primary">
 		<div class="panel-heading">
 			<h3 class="panel-title">
@@ -1899,7 +1935,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <!-- Qualification -->
-<section class="container" id="qualification">
+<section class="container disabled_section" id="qualification">
 	<div class="row col-xs-12 col-md-12">
 	<div class="panel panel-info">
 	  <div class="panel-heading">
@@ -1950,7 +1986,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>* 5.&nbsp;What device are you using now to do this HIT?</label>
+			  <fieldset class="qualificationFieldset"><label>5.&nbsp;What device are you using now to do this HIT?</label>
 				  <div class="radio">
 					  <label> <input type="radio" name="5_device" value="mobile" required>Smartphone / Tablet</label>
 				  </div>
@@ -1959,10 +1995,14 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>* 6.&nbsp;Please measure the height and width of you screen:</label>
+			  <fieldset class="qualificationFieldset"><label>6.&nbsp;Please measure the height and width of you screen:</label>
 				  <div>
-					  <label>Height (cm): <input type="text" class="nospace" name="6_device_size_h" size="4" required></label>
-					  <label>Width (cm): <input type="text" class="nospace" name="6_device_size_w" size="4" required></label>
+					  <label>Height: <input type="text" class="nospace" name="6_device_size_h" size="4" required></label>
+					  <label>Width: <input type="text" class="nospace" name="6_device_size_w" size="4" required></label>
+					  <span style="margin:0px 30px"></span>
+					  <span> What is the unite of your measurement?</span>
+					  <span> <label><input type="radio" name="6_1_unit" value="IN" required="">inch</label></span>
+					  <span> <label><input type="radio" name="6_1_unit" value="CM">cm</label></span>
 				  </div>
 			  </fieldset>
 
@@ -2005,7 +2045,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 2. Distance to screen</h5>
-							  <p>Pleas make sure to keep your eyes about 50 to 100 cm (20"-40") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
+							  <p>Pleas make sure to keep your eyes about 50 to 75 cm (20"-30") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
 							  <img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
 						  </div>
 						</div>
@@ -2099,7 +2139,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 					 <ul>
   						<li><b>Windows:</b> Run <a href="https://support.microsoft.com/en-us/windows/get-the-best-display-on-your-monitor-a18171c2-3b8d-d130-4d66-a1a56c068548" target="_blank">Display Color Calibration</a></li>
-  						<li><b>Mac:</b> Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a></li>
+  						<li><b>Mac:</b> Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a>. <b>Note:</b> for Mac OS 12.0.1, you can reach the Color Profile, from
+						 Settings -> Displays -> Display Settings… . Then continue from Step 2 of above document.</li>
 					</ul>
 					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_color" required>I followed the above description and calibrated the display color as recommended.</label></div></fieldset>
 				</div>
