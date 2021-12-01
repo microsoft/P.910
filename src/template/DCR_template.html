@@ -156,7 +156,8 @@ const videos_not_loaded_yet_set = new Set()
 //--------------
 
 // Note: the measurements should be postponed until all images are loaded
-$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
+//$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
+var startScreenRefreshRateMeasures = false;
 
 // record the errors happened in the page
 var generalErrorLog= "";
@@ -757,9 +758,29 @@ function add(accumulator, a) {
 	- the refresh_rate test are done asynchronously and will tiger this function
 **/
 function hardware_test(){
+
+	if (!velements_added){
+		window.setTimeout(hardware_test, 200);
+		return;
+	}
+	if (!startScreenRefreshRateMeasures){
+		if (videos_not_loaded_yet_set.size == 0){
+
+			getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
+			startScreenRefreshRateMeasures = true;
+
+		}else{
+
+			$("#remaining_videos").html(videos_not_loaded_yet_set.size);
+			window.setTimeout(hardware_test, 200);
+			return;
+		}
+	}
 	if(refresh_rate_passed === null) {
+
        window.setTimeout(hardware_test, 100);
     } else {
+
     	// 1. result of refresh rate check is ready
     	console.log("screen_test {0}".f(refresh_rate_passed));
 
@@ -1757,7 +1778,7 @@ function issuePlayingVideo(videoElement, issue){
 }
 
 
-
+var velements_added = false;
 // loading all video elements in the page
 $(function() {
     $( ".velmnt" ).each(function(){
@@ -1814,8 +1835,8 @@ $(function() {
 			$( "#velmnt_"+id ).disabled=false;
 			addListenersToVideoElement(videoElement, is_two_video);
 		}
-
 	});
+
 
 	$("source").on("error", function (e) {
         problematic_urls=problematic_urls+"<li>"+e.target.src+"</li>";
@@ -1823,6 +1844,7 @@ $(function() {
         recordError("on loading audio clips",e.target.src);
         //$("#error_loading_files").show();
     });
+    velements_added = true;
 });
 
 function addListenersToVideoElement(videoElement, is_dcr){
@@ -1879,9 +1901,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 <div id="meter" style="width:10cm"></div>
 <div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
 	<div class="col-md-4"></div>
-	<div class="col-md-2" sytle="float: right" with="30%"><div class="loader"></div></div>
-	<div class="col-md-2" sytle="text-align: left;"> <h1>  Checking your Hardware</h1></div>
-	<div class="col-md-4"></div>
+	<div class="col-md-2" sytle="float: right"><div class="loader" width="30%"></div></div>
+	<div class="col-md-3" sytle="text-align: left;"> <h1>Loading</h1>
+		<p>Loading the videos and checking your hardware. </p>
+		<p><span id ="remaining_videos">0</span> remains.</p>
+		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
+	<div class="col-md-3"></div>
 </div>
 
 <!-- Instructions -->
@@ -1926,6 +1951,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
+
 
 			</div>
 		</div>
