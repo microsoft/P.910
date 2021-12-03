@@ -5,6 +5,7 @@
 const video_played_finished = new Map();
 const video_play_start_time = new Map();
 const video_play_time_update_listeners = new Map();
+const video_player_can_played_through = new Set();
 
 var videoElements=[];
 var scheduled_video_play = null;
@@ -236,6 +237,15 @@ function canPlay(event){
 	$("#velmnt_s_"+id).addClass("glyphicon-play");
 }
 
+function canPlayThrough(event){
+    var ae=this;
+	var idText =this.id;
+    video_player_can_played_through.add(idText);
+    console.log(idText +", canPlayThrough, ready_state:"+ae.readyState);
+}
+
+
+
 function timeUpdate(is_dcr){
 	var ae=this;
 	var idText =this.id;
@@ -425,8 +435,8 @@ $(function() {
 });
 
 function addListenersToVideoElement(videoElement, is_dcr){
-		//videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
-		videoElement.addEventListener("canplaythrough",canPlay.bind(videoElement),false);
+		videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
+		videoElement.addEventListener("canplaythrough",canPlayThrough.bind(videoElement),false);
 		videoElement.addEventListener("timeupdate",timeUpdate.bind(videoElement, is_dcr) ,false);
 		videoElement.addEventListener("ended",isended.bind(videoElement),false);
 		videoElement.addEventListener( "loadedmetadata", function (e) {

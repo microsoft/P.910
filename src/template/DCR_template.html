@@ -287,6 +287,8 @@ function clearInputs(){
 
 //-------------------- Initialize page -------------------
 
+const Hide_HIT_REASON = Object.freeze({"MAX_ACHIVED":1, "QUALIFICATON":2, "QUALIFICATION_FAILED_NOW":3})
+
 /*
 	Initializing the page: generate and hide sections depending to the cookies value
 */
@@ -329,6 +331,7 @@ $(function() {
 			$("#qualification :input").removeAttr("required");
 			cookie_debug_status=cookie_debug_status+"Qualification Exist*";
 			activate_calibration_section(true);
+			$("#qualification_msg").hide();
 		}
 
 		// given cookie availability disable the calibration
@@ -397,11 +400,15 @@ function disableTheHIT(c){
 	$("#training").hide();
 	$("#rating_section").hide();
 	$("#thanks").hide();
+	$("#qualification_msg").hide();
 
 	if (c == Hide_HIT_REASON.MAX_ACHIVED)
 		$("#max_allowed_HITs_reached").show();
 	if (c == Hide_HIT_REASON.QUALIFICATON)
 		$("#qualification_rejected").show();
+	if (c == Hide_HIT_REASON.QUALIFICATION_FAILED_NOW)
+		$("#qualification_not_pass").show();
+
 }
 
 
@@ -1263,11 +1270,15 @@ function activate_rating_section(activate){
 		$("#rating_section").addClass("disabled_section");
 }
 
-
+var num_tried_qualification = 0;
 function on_qualification_test(success){
 	if (!success){
-		alert("Unfortunately you did not pass the qualification test. Therefore you cannot continue now. Please return this HIT.");
-		//TODO: should be blocked for X hours?
+		if (num_tried_qualification>= 1){
+			alert("Please review your responses in the qualification again.")
+			num_tried_qualification++;
+			return;
+		}
+		disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
 		return;
 	}
 	$("#alert-qualification").show();
@@ -2132,11 +2143,22 @@ function avoidAnsweringBeforeWatchingThrough(){
 	</div>
 </section>
 
+
+<section class="container" id="qualification_msg">
+	<div  class="alert alert-warning" role="alert" >
+		Next section will be activated when you successfully pass the qualification.
+	</div>
+</section>
+
+
+
 <section class="container" id="alert-qualification" hidden>
 	<div  class="alert alert-success" role="alert" >
 		Well-done! Now you can continue to next section.
 	</div>
 </section>
+
+
 
 <!-- Calibration section-->
 <section class="container disabled_section" id="calibration">
@@ -2221,7 +2243,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				</div>
 
 				<div id="alert-setup-step1" class="alert alert-success" role="alert" hidden>
-  					Well-done! Now you can continue.
+  					Well-done! Now you can continue. For the next question you will not get a feedback, but your answer will be evaluated based on that beside others.
 				</div>
 
 				<div id="setup-rest" class="disabled_section">
@@ -2359,8 +2381,17 @@ function avoidAnsweringBeforeWatchingThrough(){
 </section>
 
 <section class="container" id="qualification_rejected" hidden>
-	<p>There is no assignments that match to your profile now. Please try it again in two-weeks time.
+	<p>There is no assignments that match to your qualification. You may try other HITs from us.
 	We thank you for your participation.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads ro rejection of all of your submissions.
+			</div>
+</section>
+
+<section class="container" id="qualification_not_pass" hidden>
+	<p>Based on your responses, unfortunately you are not qualified for this HIT.</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
