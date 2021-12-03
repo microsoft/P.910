@@ -22,42 +22,7 @@ from jinja2 import Template
 from azure_clip_storage import AzureClipStorage, TrappingSamplesInStore, GoldSamplesInStore, PairComparisonSamplesInStore
 
 
-"""
-def create_analyzer_cfg_acr(cfg, template_path, out_path):
-
-    create cfg file to be used by analyzer script (acr method)
-    :param cfg:
-    :param template_path:
-    :param out_path:
-    :return:
-
-    print("Start creating config file for result_parser")
-    config = {}
-
-    config['q_num'] = int(cfg['create_input']['number_of_clips_per_session']) + \
-                      int(cfg['create_input']['number_of_trapping_per_session']) + \
-                      int(cfg['create_input']['number_of_gold_clips_per_session'])
-
-    config['max_allowed_hits'] = cfg['acr_html']['allowed_max_hit_in_project']
-
-    config['quantity_hits_more_than'] = cfg['acr_html']['quantity_hits_more_than']
-    config['quantity_bonus'] = cfg['acr_html']['quantity_bonus']
-    config['quality_top_percentage'] = cfg['acr_html']['quality_top_percentage']
-    config['quality_bonus'] = cfg['acr_html']['quality_bonus']
-
-    with open(template_path, 'r') as file:
-        content = file.read()
-        file.seek(0)
-    t = Template(content)
-    cfg_file = t.render(cfg=config)
-
-    with open(out_path, 'w') as file:
-        file.write(cfg_file)
-        file.close()
-    print(f"  [{out_path}] is created")
-"""
-
-
+# todo for ACR
 def create_analyzer_cfg_general(cfg, cfg_section, template_path, out_path):
     """
     create cfg file to be used by analyzer script (acr, p835, and echo_impairment_test method)
@@ -97,9 +62,9 @@ def create_analyzer_cfg_general(cfg, cfg_section, template_path, out_path):
     print(f"  [{out_path}] is created")
 
 
-def create_analyzer_cfg_dcr_ccr(cfg, template_path, out_path):
+def create_analyzer_cfg_dcr(cfg, template_path, out_path):
     """
-    create cfg file to be used by analyzer script (ccr/dcr method)
+    create cfg file to be used by analyzer script (DCR method)
     :param cfg:
     :param template_path:
     :param out_path:
@@ -109,7 +74,8 @@ def create_analyzer_cfg_dcr_ccr(cfg, template_path, out_path):
     config = {}
 
     config['q_num'] = int(cfg['create_input']['number_of_clips_per_session']) + \
-                      int(cfg['create_input']['number_of_trapping_per_session'])
+                      int(cfg['create_input']['number_of_trapping_per_session']) + \
+                      int(cfg['create_input']['number_of_gold_clips_per_session'])
 
     config['max_allowed_hits'] = cfg['hit_app_html']['allowed_max_hit_in_project']
 
@@ -117,11 +83,18 @@ def create_analyzer_cfg_dcr_ccr(cfg, template_path, out_path):
     config['quantity_bonus'] = cfg['hit_app_html']['quantity_bonus']
     config['quality_top_percentage'] = cfg['hit_app_html']['quality_top_percentage']
     config['quality_bonus'] = cfg['hit_app_html']['quality_bonus']
+
     default_condition = r'.*_c(?P<condition_num>\d{1,2})_.*.wav'
     default_keys = 'condition_num'
     config['condition_pattern'] = cfg['create_input'].get("condition_pattern", default_condition)
     config['condition_keys'] = cfg['create_input'].get("condition_keys", default_keys)
-    
+
+    # only video
+    config['scale'] = cfg['hit_app_html']['scale']
+    config['accepted_device'] = cfg['viewing_condition']['accepted_device']
+    config['min_device_resolution'] = cfg['viewing_condition']['min_device_resolution']
+    config['min_screen_refresh_rate'] = cfg['viewing_condition']['min_screen_refresh_rate']
+
     with open(template_path, 'r') as file:
         content = file.read()
         file.seek(0)
@@ -200,10 +173,10 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
 
     config['rating_urls'] = rating_urls
 
-    # training urls *****
+    # training urls
     df_train = pd.read_csv(training_path)
     train_urls = []
-    train_ref = None
+    # train_ref = None
     for _, row in df_train.iterrows():
         train_urls.append({"ref": f"{row['training_src']}", "processed": f"{row['training_pvs']}", 'dummy': 'dummy'})
     # add a trapping clips to the training section
@@ -238,6 +211,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     print(f"  [{out_path}] is created")
 
 
+# TODO ACR
 async def create_hit_app_acr(cfg, template_path, out_path, training_path, trap_path, cfg_g, cfg_trapping_store,
                              general_cfg):
     """
@@ -316,6 +290,7 @@ async def create_hit_app_acr(cfg, template_path, out_path, training_path, trap_p
     print(f"  [{out_path}] is created")
 
 
+# checked
 async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, general):
     """
     Merge different input files into one dataframe
@@ -364,6 +339,7 @@ async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, 
     return result
 
 
+# checked
 def prepare_basic_cfg(df):
     """
     Create basic config file to be inserted inside the HTML template. Basically adding variables to be filled in the
@@ -376,6 +352,7 @@ def prepare_basic_cfg(df):
     return config
 
 
+# checked
 def get_path(test_method):
     """
     check all the preequsites and see if all resources are available
@@ -405,6 +382,7 @@ def get_path(test_method):
     return template_path, cfg_path
 
 
+# checked
 async def main(cfg, test_method, args):
 
     # check assets
@@ -463,15 +441,14 @@ async def main(cfg, test_method, args):
     else:
         print('Method is not supported yet.')
 
-    return ;
     # create a config file for analyzer ********
-    output_cfg_file_name = f"{args.project}_p831_{test_method}_result_parser.cfg" if is_p831_fest else f"{args.project}_{test_method}_result_parser.cfg"
+    output_cfg_file_name = f"{args.project}_{test_method}_result_parser.cfg"
     output_cfg_file = os.path.join(output_dir, output_cfg_file_name)
 
-    if test_method in ['acr', 'p835', 'echo_impairment_test']:
+    if test_method in ['acr']:
         create_analyzer_cfg_general(cfg, cfg_hit_app, cfg_path, output_cfg_file)
     else:
-        create_analyzer_cfg_dcr_ccr(cfg, cfg_path, output_cfg_file)
+        create_analyzer_cfg_dcr(cfg, cfg_path, output_cfg_file)
 
 
 if __name__ == '__main__':
