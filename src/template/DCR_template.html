@@ -492,7 +492,7 @@ function isQualificationDone(){
 
 	if(!$("input[name='7_plate3']").val()) return;
 	if(!$("input[name='7_plate4']").val()) return;
-	if (visual_acuity_test_passed)
+	if (performed_visual_acuity_test)
 		validateQualificationAnswer();
 }
 
@@ -508,15 +508,16 @@ function validateQualificationAnswer(){
 	if ($("input[name='3_working_area']:checked").val()=="N") count_correct_ans ++;
 	if ($("select[name='4_video_test'] option:selected").val()!="0d") count_correct_ans ++;
 
-	if (visual_acuity_test_passed == null)
-		return false;
-	else
-		if (visual_acuity_test_passed) count_correct_ans ++;
+	//if (visual_acuity_test_passed == null)
+	//	return false;
+	//else
+	if (visual_acuity_test_passed) count_correct_ans ++;
 
 	passed=  count_correct_ans == 5;
 	console.log("passed qualification? "+passed);
 	// add a qualification for 'qualificationValidFor' minutes
-	createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+	if (passed)
+		createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
 
 	on_qualification_test(passed);
 }
@@ -636,6 +637,17 @@ function onMouseUp(){
    Initiate the listeners and default settings for the visual acuity test
 **/
 $(function() {
+	initiate_visual_acuity_test();
+});
+
+function initiate_visual_acuity_test(){
+	id_to_rotation_degree = new Map();
+	current_landoltc_id = -1
+	landoltc_results = [];
+	visual_acuity_test_passed=null;
+	interact_with_screen_size = false;
+	performed_visual_acuity_test= null;
+
 	$('#minus').mousedown(function(){onMouseDown('minus');});
 	$('#plus').mousedown(function(){onMouseDown('plus');});
 
@@ -644,6 +656,8 @@ $(function() {
 	$('#minus').mouseout( function(){onMouseUp('minus');});
 	$('#plus').mouseout( function(){onMouseUp('plus');});
 
+	$(".lc").prop("disabled",false);
+
 	// initiate id to rotation degree
 	degree= 0;
 	for (let i = 1; i <= 8; i++) {
@@ -651,8 +665,16 @@ $(function() {
 	  degree = degree+ 45;
 	}
 	set_random_landoltc();
-});
+}
 
+function reset_visual_acuity(){
+	$("#vat_step").attr("src","https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/step2.png");
+	$('#setup_visual_acity').show();
+	$('#test_visual_acity').hide();
+	$('#setup_ready').show();
+	$('#setup_visual_acity').show();
+	initiate_visual_acuity_test();
+}
 
 /**
 	Load the step2 of visual acuity test.
@@ -691,7 +713,7 @@ function continue_visual_acuity(){
 	$("#landoltc_img").width(lc_px);
 }
 
-const id_to_rotation_degree = new Map();
+var id_to_rotation_degree = new Map();
 var current_landoltc_id = -1
 var landoltc_results = [];
 var visual_acuity_test_passed=null;
@@ -729,6 +751,7 @@ function landoltc_clicked(num){
 			$(".lc").prop("disabled",true);
 			$("#lc_msg").html("<p style='color:green'>Visual acuity check passed.</p>");
 			visual_acuity_test_passed = true;
+			performed_visual_acuity_test = true;
 			//activate_setup();
 			isQualificationDone();
 			return;
@@ -738,6 +761,8 @@ function landoltc_clicked(num){
 		 	$(".lc").prop("disabled",true);
 		 	$("#lc_msg").html("<p style='color:red'>Visual acuity check failed.</p>");
 		 	visual_acuity_test_passed = false;
+		 	performed_visual_acuity_test = true;
+		 	isQualificationDone();
 		 	return;
 		 }
 	}
@@ -994,7 +1019,7 @@ function activate_rest_setup(){
 
 //----------------------------- viewing distance
 function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
-	template = '<fieldset  class="image_cmp setupFieldset"><label>{5}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
+	template = '<fieldset  class="image_cmp setupFieldset"><label>{0}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
 	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div>'+
 	'<div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" id="cmp{0}_img_b" width="100%"></div> </div>'+
 	'<div class="row" > <div class="col-sm-5"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div>'+
@@ -1273,12 +1298,14 @@ function activate_rating_section(activate){
 var num_tried_qualification = 0;
 function on_qualification_test(success){
 	if (!success){
-		if (num_tried_qualification>= 1){
+		if (num_tried_qualification <= 1){
 			alert("Please review your responses in the qualification again.")
 			num_tried_qualification++;
+			if (!visual_acuity_test_passed) reset_visual_acuity();
 			return;
 		}
 		disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
+		createCookie(config.qualificationCookieName,success,config.qualificationValidFor);
 		return;
 	}
 	$("#alert-qualification").show();
