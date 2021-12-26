@@ -888,7 +888,8 @@ def analyze_results(config, test_method, answer_path, list_of_req, quality_bonus
 
     n_workers = number_of_uniqe_workers(full_data)
     print(f"{n_workers} workers participated in this batch.")
-    calc_stats(answer_path)
+    # disabled becuase of the HITAPP_server
+    #calc_stats(answer_path)
     # votes_per_file, votes_per_condition = transform(accepted_sessions)
     if len(accepted_sessions) > 1:
         condition_set = []
@@ -906,6 +907,7 @@ def analyze_results(config, test_method, answer_path, list_of_req, quality_bonus
             condition_keys = []
             if config.has_option('general', 'condition_pattern'):
                 condition_keys = config['general']['condition_keys'].split(',')
+                print(condition_keys)
                 votes_per_file = sorted(votes_per_file, key=lambda i: i[condition_keys[0]])
                 condition_keys.append('Unknown')
             headers = create_headers_for_per_file_report(test_method, condition_keys)
