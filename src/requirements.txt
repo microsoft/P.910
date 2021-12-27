@@ -1,11 +1,8 @@
 argparse
 pandas
 configparser
-librosa
 numpy
-soundfile
 jinja2
-boto3
 scipy
 asyncio
 azure-core==1.13.0

@@ -243,12 +243,12 @@ def check_matrix(row):
 
     if int(c1_correct) == int(given_c1) and int(t1_correct) == int(given_t1):
         n_correct += 1
-    else:
-        print(f'wrong matrix 1: c1 {c1_correct},{given_c1} | t1 {t1_correct},{given_t1}')
+    #else:
+    #    print(f'wrong matrix 1: c1 {c1_correct},{given_c1} | t1 {t1_correct},{given_t1}')
     if int(c2_correct) == int(given_c2) and int(t2_correct) == int(given_t2):
         n_correct += 1
-    else:
-        print(f'wrong matrix 2: c2 {c2_correct},{given_c2} | t2 {t2_correct},{given_t2}')
+    #else:
+    #    print(f'wrong matrix 2: c2 {c2_correct},{given_c2} | t2 {t2_correct},{given_t2}')
     return n_correct
 
 
@@ -907,7 +907,6 @@ def analyze_results(config, test_method, answer_path, list_of_req, quality_bonus
             condition_keys = []
             if config.has_option('general', 'condition_pattern'):
                 condition_keys = config['general']['condition_keys'].split(',')
-                print(condition_keys)
                 votes_per_file = sorted(votes_per_file, key=lambda i: i[condition_keys[0]])
                 condition_keys.append('Unknown')
             headers = create_headers_for_per_file_report(test_method, condition_keys)
