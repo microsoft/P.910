@@ -22,6 +22,7 @@ import time
 import itertools
 import configparser as CP
 import collections
+import warnings
 
 max_found_per_file = -1
 
@@ -871,7 +872,25 @@ def number_of_uniqe_workers(answers):
     return len(df)
 
 
-def analyze_results(config, test_method, answer_path, list_of_req, quality_bonus):
+def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
+    amt_ans = pd.read_csv(amt_ans_path, low_memory=False)
+    hitapp_ans = pd.read_csv(hitapp_ans_path, low_memory=False)
+
+    amt_ans.drop(amt_ans.columns.difference(['WorkerId', 'Answer.v_code', 'HITId',
+                                             'HITTypeId', 'AssignmentId']), 1, inplace=True)
+    hitapp_ans.rename(columns={"WorkerId": "hitapp_workerid",
+                               "AssignmentId": "hitapp_assignmentid",
+                               "HITId": "hitapp_hitid",
+                               "HITTypeId": "hitapp_hittypeid"},  inplace=True)
+
+    merged = pd.merge(hitapp_ans, amt_ans, left_on='v_code', right_on='Answer.v_code')
+
+    merged_ans_path = os.path.splitext(hitapp_ans_path)[0] + '_merged.csv'
+    merged.to_csv(merged_ans_path, index=False)
+    return merged_ans_path
+
+
+def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req, quality_bonus):
     """
     main method for calculating the results
     :param config:
@@ -884,6 +903,8 @@ def analyze_results(config, test_method, answer_path, list_of_req, quality_bonus
     global question_name_suffix
 
     suffixes = ['']
+    if amt_ans_path:
+        answer_path = combine_amt_hit_server(amt_ans_path, answer_path)
     full_data, accepted_sessions = data_cleaning(answer_path, test_method)
 
     n_workers = number_of_uniqe_workers(full_data)
@@ -957,7 +978,9 @@ if __name__ == '__main__':
     parser.add_argument("--method", required=True,
                         help="one of the test methods: 'acr', 'dcr'")
     parser.add_argument("--answers", required=True,
-                        help="Answers csv file, path relative to current directory")
+                        help="Answers csv file from HIT App Server, path relative to current directory")
+    parser.add_argument("--amt_answers", required=True,
+                        help="Answers csv file from AMT, path relative to current directory")
 
     parser.add_argument('--quantity_bonus', help="specify status of answers which should be counted when calculating "
                                                 " the amount of quantity bonus. All answers will be used to check "
@@ -981,6 +1004,14 @@ if __name__ == '__main__':
     assert (args.answers is not None), f"--answers  are required]"
     # answer_path = os.path.join(os.path.dirname(__file__), args.answers)
     answer_path = args.answers
+
+    if args.amt_answers is None:
+        warnings.warn("No AMT answer is provided with --amt_answers. That means the WorkerId, HITIds, ect. are internal "
+                      "HIT APP server ids. Therefore bonus reports cannot be used. ")
+        amt_ans_path = None
+    else:
+        amt_ans_path = args.amt_answers
+
     assert os.path.exists(answer_path), f"No input file found in [{answer_path}]"
     list_of_possible_status = ['all', 'submitted']
 
@@ -991,4 +1022,4 @@ if __name__ == '__main__':
     np.seterr(divide='ignore', invalid='ignore')
     question_names = [f"q{i}" for i in range(1, int(config['general']['number_of_questions_in_rating']) + 1)]
     # start
-    analyze_results(config, test_method,  answer_path, list_of_req, args.quality_bonus)
+    analyze_results(config, test_method,  answer_path, amt_ans_path,  list_of_req, args.quality_bonus)
