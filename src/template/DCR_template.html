@@ -637,6 +637,16 @@ function onMouseUp(){
    Initiate the listeners and default settings for the visual acuity test
 **/
 $(function() {
+	holdStarter = null
+
+	$('#minus').mousedown(function(){onMouseDown('minus');});
+	$('#plus').mousedown(function(){onMouseDown('plus');});
+
+	$('.hold-active').mouseup(onMouseUp);
+	// Optional add-on: if mouse moves out, then release hold
+	$('#minus').mouseout( function(){onMouseUp('minus');});
+	$('#plus').mouseout( function(){onMouseUp('plus');});
+
 	initiate_visual_acuity_test();
 });
 
@@ -647,14 +657,6 @@ function initiate_visual_acuity_test(){
 	visual_acuity_test_passed=null;
 	interact_with_screen_size = false;
 	performed_visual_acuity_test= null;
-
-	$('#minus').mousedown(function(){onMouseDown('minus');});
-	$('#plus').mousedown(function(){onMouseDown('plus');});
-
-	$('.hold-active').mouseup(onMouseUp);
-	// Optional add-on: if mouse moves out, then release hold
-	$('#minus').mouseout( function(){onMouseUp('minus');});
-	$('#plus').mouseout( function(){onMouseUp('plus');});
 
 	$(".lc").prop("disabled",false);
 
