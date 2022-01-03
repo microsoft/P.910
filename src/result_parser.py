@@ -279,7 +279,7 @@ def check_a_cmp(file_a, file_b, ans, audio_a_played, audio_b_played):
     return answer_is_correct
 
 # pcrowd
-def data_cleaning(filename, method):
+def data_cleaning(filename, method, wrong_vcodes):
    """
    Data screening process
    :param filename:
@@ -363,18 +363,35 @@ def data_cleaning(filename, method):
     # reject hits when the user performed more than the limit
     worker_list = evaluate_maximum_hits(worker_list)
 
+    #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
 
     write_dict_as_csv(worker_list, report_file)
     save_approved_ones(worker_list, approved_file)
-    save_rejected_ones(worker_list, rejected_file)
-    save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file)
+    save_rejected_ones(worker_list, rejected_file, wrong_vcodes)
+    save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
     save_hits_to_be_extended(worker_list, extending_hits_file)
 
     print(f"   {len(accept_and_use_sessions)} answers are good to be used further {list(collections.Counter(not_using_further_reasons).items())}")
     print(f"   Data cleaning report is saved in: {report_file}")
 
     return worker_list, use_sessions
+
+
+# pcrowdv
+def add_wrong_vcodes(worker_list, wrong_vcodes):
+    if wrong_vcodes is None: return worker_list
+    print(worker_list)
+    wrong_vcodes['status'] = 'Submitted'
+    wrong_vcodes['Approve'] = ''
+    wrong_vcodes['Reject'] = 'x'
+    wrong_vcodes['accept'] = 0
+    wrong_vcodes.rename(columns={"assignmentId": "assignment"}, inplace=True)
+    print(wrong_vcodes)
+    df = pd.DataFrame(worker_list)
+    df = df.append(wrong_vcodes, ignore_index=True)
+    return df.to_dict(orient='records')
+
 
 # pcrowdv
 def evaluate_maximum_hits(data):
@@ -402,7 +419,7 @@ def evaluate_maximum_hits(data):
     return result
 
 
-def save_approve_rejected_ones_for_gui(data, path):
+def save_approve_rejected_ones_for_gui(data, path, wrong_vcodes):
     """
     save approved/rejected in file t be used in GUI
     :param data:
@@ -413,6 +430,12 @@ def save_approve_rejected_ones_for_gui(data, path):
     df = df[df.status == 'Submitted']
     small_df = df[['assignment', 'HITId', 'Approve', 'Reject']].copy()
     small_df.rename(columns={'assignment': 'assignmentId'}, inplace=True)
+    if wrong_vcodes is not None:
+        wrong_vcodes_assignments = wrong_vcodes[['AssignmentId', 'HITId']].copy()
+        wrong_vcodes_assignments["Approve"] = ""
+        wrong_vcodes_assignments["Reject"] = "wrong verification code"
+        wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)
+        small_df = small_df.append(wrong_vcodes_assignments, ignore_index=True)
     small_df.to_csv(path, index=False)
 
 
@@ -436,7 +459,7 @@ def save_approved_ones(data, path):
     small_df.to_csv(path, index=False)
 
 
-def save_rejected_ones(data, path):
+def save_rejected_ones(data, path, wrong_vcodes):
     """
     Save the rejected ones in the path
     :param data:
@@ -446,14 +469,23 @@ def save_rejected_ones(data, path):
     df = pd.DataFrame(data)
     df = df[df.accept == 0]
     c_rejected = df.shape[0]
+    if wrong_vcodes is not None:
+        c_rejected += len(wrong_vcodes.index)
     df = df[df.status == 'Submitted']
     if df.shape[0] == c_rejected:
         print(f'    {c_rejected} answers are rejected')
     else:
         print(f'    overall {c_rejected} answers are rejected, from them {df.shape[0]} were in submitted status')
+    if wrong_vcodes is not None:
+        print(f'         from them {len(wrong_vcodes.index)} due to wrong verification code')
     small_df = df[['assignment']].copy()
     small_df.rename(columns={'assignment': 'assignmentId'}, inplace=True)
-    small_df = small_df.assign(feedback= config['acceptance_criteria']['rejection_feedback'])
+    small_df = small_df.assign(feedback=config['acceptance_criteria']['rejection_feedback'])
+    if wrong_vcodes is not None:
+        wrong_vcodes_assignments = wrong_vcodes[['AssignmentId']].copy()
+        wrong_vcodes_assignments["feedback"] = "Wrong verificatioon code"
+        wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)
+        small_df = small_df.append(wrong_vcodes_assignments, ignore_index=True)
     small_df.to_csv(path, index=False)
 
 
@@ -882,12 +914,17 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
                                "AssignmentId": "hitapp_assignmentid",
                                "HITId": "hitapp_hitid",
                                "HITTypeId": "hitapp_hittypeid"},  inplace=True)
-
+    # remove stript vcodes entered by workers
+    amt_ans['Answer.v_code'] = amt_ans['Answer.v_code'].str.strip()
+    # check if there are submission without conuter part key in hitapp servers
+    not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
     merged = pd.merge(hitapp_ans, amt_ans, left_on='v_code', right_on='Answer.v_code')
+
+    merged.drop(columns=['Answer.v_code'], inplace=True)
 
     merged_ans_path = os.path.splitext(hitapp_ans_path)[0] + '_merged.csv'
     merged.to_csv(merged_ans_path, index=False)
-    return merged_ans_path
+    return merged_ans_path, not_in_hitapp
 
 
 def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req, quality_bonus):
@@ -903,9 +940,10 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
     global question_name_suffix
 
     suffixes = ['']
+    wrong_v_code = None
     if amt_ans_path:
-        answer_path = combine_amt_hit_server(amt_ans_path, answer_path)
-    full_data, accepted_sessions = data_cleaning(answer_path, test_method)
+        answer_path, wrong_v_code = combine_amt_hit_server(amt_ans_path, answer_path)
+    full_data, accepted_sessions = data_cleaning(answer_path, test_method, wrong_v_code)
 
     n_workers = number_of_uniqe_workers(full_data)
     print(f"{n_workers} workers participated in this batch.")
