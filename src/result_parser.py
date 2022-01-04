@@ -856,7 +856,11 @@ def calc_stats(input_file):
     :return:
     """
     df = pd.read_csv(input_file, low_memory=False)
-    median_time_in_sec = df["WorkTimeInSeconds"].median()
+    if 'Answer.time_page_hidden_sec' in df.columns:
+        df['time_diff'] = df["work_duration_sec"] - df['Answer.time_page_hidden_sec']
+        median_time_in_sec = df["time_diff"].median()
+    else:
+        median_time_in_sec = df["work_duration_sec"].median()
     payment_text = df['Reward'].values[0]
     paymnet = re.findall("\d+\.\d+", payment_text)
 
@@ -892,7 +896,8 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     hitapp_ans = pd.read_csv(hitapp_ans_path, low_memory=False)
 
     amt_ans.drop(amt_ans.columns.difference(['WorkerId', 'Answer.v_code', 'HITId',
-                                             'HITTypeId', 'AssignmentId']), 1, inplace=True)
+                                             'HITTypeId', 'AssignmentId', 'WorkTimeInSeconds',
+                                             'Reward']), 1, inplace=True)
     hitapp_ans.rename(columns={"WorkerId": "hitapp_workerid",
                                "AssignmentId": "hitapp_assignmentid",
                                "HITId": "hitapp_hitid",
@@ -903,7 +908,12 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
     merged = pd.merge(hitapp_ans, amt_ans, left_on='v_code', right_on='Answer.v_code')
 
-    merged.drop(columns=['Answer.v_code'], inplace=True)
+    columns_to_remove = ['Answer.v_code']
+    if "work_duration_sec" not in merged.columns:
+        merged.rename(columns={"WorkTimeInSeconds": "work_duration_sec"}, inplace=True)
+    else:
+        columns_to_remove.append("WorkTimeInSeconds")
+    merged.drop(columns=columns_to_remove, inplace=True)
 
     merged_ans_path = os.path.splitext(hitapp_ans_path)[0] + '_merged.csv'
     merged.to_csv(merged_ans_path, index=False)
@@ -931,7 +941,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
     n_workers = number_of_uniqe_workers(full_data)
     print(f"{n_workers} workers participated in this batch.")
     # disabled becuase of the HITAPP_server
-    #calc_stats(answer_path)
+    calc_stats(answer_path)
     # votes_per_file, votes_per_condition = transform(accepted_sessions)
     if len(accepted_sessions) > 1:
         condition_set = []
