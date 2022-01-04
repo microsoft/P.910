@@ -205,6 +205,51 @@ function shuffle(a) {
 	return a;
 }
 
+
+var overAllHiddenTime = 0;
+var startHiddenDate = null;
+var sessionId = null;
+var sessionIdVariableName=null;
+/**
+	monitor and record the status of page including being focus, and active time
+
+**/
+function initializeActivePageMonitoring(){
+	sessionId = Math.random().toString(36).substr(2, 9);
+	sessionIdVariableName = config.qualificationCookieName +"_sid";
+	createCookie(sessionIdVariableName,sessionId,70);
+
+	document.addEventListener("visibilitychange", function() {
+		var isHidden = document.hidden;
+		if (isHidden){
+			startHiddenDate = new Date();
+		}else{
+			//get back the focus
+			stopHiddenDate = new Date();
+			diff = stopHiddenDate -startHiddenDate;
+			overAllHiddenTime = overAllHiddenTime + diff;
+			$('#time_page_hidden_sec').val(overAllHiddenTime/1000);
+		}
+		console.log( "document_hidden: "+ document.hidden + "time: "+overAllHiddenTime);
+
+	});
+}
+
+/**
+	check if there is any parallel session available.
+**/
+function isAnyParallelSession(){
+	hit_num = readCookie(sessionIdVariableName);
+	if (hit_num != sessionId){
+		$('#any_parallel_session').val("true");
+		console.log("parallel session.")
+		return true;
+	}
+	return false;
+
+}
+
+
 /**
  central method to record errors
 **/
@@ -379,6 +424,7 @@ $(function() {
 		hitCounterIncreased = false;
 		cookie_debug_status=cookie_debug_status+"Counter:"+howManyHITsAnswered+"*";
 		addBrowserInfo(cookie_debug_status);
+		initializeActivePageMonitoring();
 
 
 	}catch(err){
@@ -839,6 +885,10 @@ function activate_hit(){
 	$("#hardware-spinner").hide();
 	$("#Survey").removeClass("disabled_section");
 	$("#qualification").removeClass("disabled_section");
+
+	start_time = new Date();
+	$("#start_working_time").val(start_time.toISOString());
+	console.log($("#start_working_time").val());
 }
 
 
@@ -1217,6 +1267,7 @@ function onValueChangeForTpQuestion(){
 */
 function playedVideoQ(id){
 	console.log("playedVideoQ "+id);
+	isAnyParallelSession();
 	let id_num= id.substring(1);
 	played= $("#video_n_finish_{0}".f(id)).val();
 	if (played== 0 )return;
@@ -1881,7 +1932,7 @@ $(function() {
 	$("source").on("error", function (e) {
         problematic_urls=problematic_urls+"<li>"+e.target.src+"</li>";
         //$("#error_details").html(problematic_urls);
-        recordError("on loading audio clips",e.target.src);
+        recordError("on loading video clips",e.target.src);
         //$("#error_loading_files").show();
     });
     velements_added = true;
@@ -1937,6 +1988,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="device_estimated_size_w" name="device_estimated_size_w" type="hidden" value="unknown" />
 <input id="device_estimated_size_h" name="device_estimated_size_h" type="hidden" value="unknown" />
 <input id="device_os" name="device_os" type="hidden" value="unknown" />
+
+<input id="time_page_hidden_sec" name="time_page_hidden_sec" type="hidden" value="0" />
+<input id="any_parallel_session" name="any_parallel_session" type="hidden" value="false" />
+
+<input id="start_working_time" name="start_working_time" type="hidden" value="" />
+
 
 <div id="meter" style="width:10cm"></div>
 <div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
@@ -2356,8 +2413,6 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="errors" name="errors" type="hidden" value="" />
 
 <input id="browser_info" name="browser_info" type="hidden" value="-1" maxlength="2000"/>
-<input id="webrtc_raw" name="webrtc_raw" type="hidden" value="-1" maxlength="2000"/>
-<input id="use_headset" name="use_headset" type="hidden" value="-1" />
 
 <!--- Rating task -->
 <section class="container disabled_section" id="rating_section">

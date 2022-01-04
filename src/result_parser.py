@@ -70,18 +70,17 @@ def outliers_z_score(votes):
 def check_if_session_accepted(data):
     """
     Check if the session can be acceptd given the criteria in config and the calculations
+    Note: check play_video, qualification and setup are skipped as they are checked in JS. They cannot continue if they do not pass.
     :param data:
     :return:
     """
+
     msg = "Make sure you follow the instruction:"
     accept = True
-    #if data['all_audio_played'] != int(config['acceptance_criteria']['all_audio_played_equal']):
-    #    accept = False
-    #    msg += "All clips should be played until the end;"
     if data['correct_matrix'] is not None and data['correct_matrix'] < \
             int(config['acceptance_criteria']['correct_matrix_bigger_equal']):
         accept = False
-        msg += "Gold or trapping clips question are answered wrongly;"
+        msg += "Setup section was unsuccessful."
     if data['correct_tps'] < int(config['acceptance_criteria']['correct_tps_bigger_equal']):
         accept = False
         msg += "Gold or trapping clips question are answered wrongly;"
@@ -108,17 +107,13 @@ def check_if_session_should_be_used(data):
     if 'correct_gold_question' in data and data['correct_gold_question'] < int(config['accept_and_use']['gold_standard_bigger_equal']):
         should_be_used = False
         failures.append('gold')
-    
-    #if data['correct_cmps'] is not None and data['correct_cmps'] < int(config['accept_and_use']['correct_cmp_bigger_equal']):
-    #    should_be_used = False
-    #    failures.append('comparisons')
-    
+
     return should_be_used, failures
 
-
-def check_audio_played(row, method):
+# pcrowdv
+def check_video_played(row, method):
     """
-    check if all audios for questions played until the end
+    check if all videos for questions played until the end
     :param row:
     :param method: acr,dcr, ot ccr
     :return:
@@ -127,19 +122,7 @@ def check_audio_played(row, method):
     try:
         if method == 'acr':
             for q_name in question_names:
-                if int(row[f'answer.audio_n_finish_{q_name}']) > 0:
-                    question_played += 1
-        elif method in ['p835', 'echo_impairment_test']:
-            for q_name in question_names:
-                if int(row[f'answer.audio_n_finish_{q_name}{question_name_suffix}_audio']) > 0:
-                    question_played += 1
-        elif method == "ccr":
-            for q_name in question_names:
-                if int(row[f'answer.audio_n_finish_q_{q_name[1:]}']) > 0:
-                    question_played += 1
-        else:
-            for q_name in question_names:
-                if int(row[f'answer.audio_n_finish_q_a{q_name[1:]}']) > 0 and int(row[f'answer.audio_n_finish_q_b{q_name[1:]}']) > 0:
+                if int(row[f'answer.video_n_finish_{q_name}']) > 0:
                     question_played += 1
     except:
         return False
@@ -252,7 +235,7 @@ def check_matrix(row):
     #    print(f'wrong matrix 2: c2 {c2_correct},{given_c2} | t2 {t2_correct},{given_t2}')
     return n_correct
 
-
+# *****
 def check_a_cmp(file_a, file_b, ans, audio_a_played, audio_b_played):
     """
     check if pair comparision answered correctly
