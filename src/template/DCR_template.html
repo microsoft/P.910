@@ -77,8 +77,8 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 .scale label { display:block;}
 .scale .c { text-align: center;}
 
-.bg1 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_a.png");}
-.bg2 {background-image: url("https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/clips/clips_b.png");}
+.bg1 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_a.png");}
+.bg2 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_b.png");}
 .bg { height: 100%; background-position: center; background-repeat: no-repeat;  background-size: cover;}
 /*--------- */
 .loader {
@@ -119,7 +119,7 @@ var config ={
 	// tablets will be included in PC, values:PC,MOBILE
 	device_accepted_device:{{cfg.accepted_device}},
 	viewing_distance:{
-		'img_path':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/distance/img3_{0}.jpg',
+		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
 		'base_id': '0',
 		'too_close':'3',
 		'normal':'5',
@@ -716,7 +716,7 @@ function initiate_visual_acuity_test(){
 }
 
 function reset_visual_acuity(){
-	$("#vat_step").attr("src","https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/step2.png");
+	$("#vat_step").attr("src","https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step2.png");
 	$('#setup_visual_acity').show();
 	$('#test_visual_acity').hide();
 	$('#setup_ready').show();
@@ -734,7 +734,7 @@ function continue_visual_acuity(){
 		return;
 	}
 
-	$("#vat_step").attr("src","https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/step2.png");
+	$("#vat_step").attr("src","https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step2.png");
 
 	$('#setup_visual_acity').hide();
 	$('#test_visual_acity').show();
@@ -1876,9 +1876,9 @@ $(function() {
 		titleTextTemplate='<tr><td>{1}</td></tr>';
 		insert='';
 		title='';
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
-		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
-		'<video id="video2_{0}" preload="true"  width="1" poster="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
+		'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -2018,7 +2018,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="panel-body">
 
 			 <b>Introduction</b>
-				<img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/info.png" alt="scale" class="center" style='width: 60%' >
+				<img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/info.png" alt="scale" class="center" style='width: 60%' >
 
 				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has one + three (just every now and then) sections:</p>
 				<ul>
@@ -2134,8 +2134,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<div class="table-responsive 2_lds">
 						  <table class="table" border="0" cellpadding="0" cellspacing="0" >
 							<tbody>	<tr>
-								<td style="width:50%;text-align:center"> <img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/3.jpg" alt="plate3" width="80%"> </td>
-								<td style="width:50%;text-align:center"> <img src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/4.jpg" alt="plate4" width="80%"> </td>
+								<td style="width:50%;text-align:center"> <img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/3.jpg" alt="plate3" width="80%"> </td>
+								<td style="width:50%;text-align:center"> <img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/4.jpg" alt="plate4" width="80%"> </td>
 							</tr><tr>
 								<td style="text-align:center"><input type="text" name="7_plate3" required="" class="nospace" autocomplete="off"></td>
 								<td style="text-align:center"><input type="text" name="7_plate4" required="" class="nospace" autocomplete="off"></td>
@@ -2150,7 +2150,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 				  		<div class="row" style="margin-top:20px">
 							<div class="col-md-2"></div>
-							<div class="col-md-8"> <img id="vat_step" src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/step1.png" width="80%"></div>
+							<div class="col-md-8"> <img id="vat_step" src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step1.png" width="80%"></div>
 							<div class="col-md-2"></div>
 						</div>
 
@@ -2161,7 +2161,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 							  <p>Adjust the distance between two dashed lines by clicking on the +/- button. The distance should be exactly 5.4 cm or 2″. Use a ruler or the short side of a debit/credit card.</p>
 							  <div class="row">
 								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="plus" style="float: left; margin-top:100px" >+</button></div>
-								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/card.png" alt="card" width="100%" ></div>
+								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/card.png" alt="card" width="100%" ></div>
 								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="minus" style="float: right;margin-top:100px">-</button></div>
 							  </div>
 						  </div>
@@ -2169,7 +2169,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 2. Distance to screen</h5>
 							  <p>Pleas make sure to keep your eyes about 50 to 75 cm (20"-30") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
-							  <img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
+							  <img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
 						  </div>
 						</div>
 					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
@@ -2177,9 +2177,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 							<p>We will show you couple of broken rings with gaps which making them similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
 							<div class="row" style="margin: 30px ">
 										<div class="col-md-3" style=""></div>
-										<div class="col-md-2" ><img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
-										<div class="col-md-2" ><img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
-										<div class="col-md-2" ><img class="center-img"  src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
 										<div class="col-md-3" ></div>
 							</div>
 
@@ -2198,7 +2198,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 									  </tr>
 									  <tr>
 										<td><button type="button" class="btn btn-default active lc" id ="c5" style="float: right;" onclick="landoltc_clicked(5);">&larr;</button></td>
-										<td><img class="center-img"  id="landoltc_img" src="https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/template/imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
+										<td><img class="center-img"  id="landoltc_img" src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
 										<td><button type="button" class="btn btn-default active lc" id ="c1" style="float: left;" onclick="landoltc_clicked(1);">&rarr;</button></td>
 									  </tr>
 									  <tr>
