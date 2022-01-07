@@ -19,6 +19,7 @@
 <style type="text/css">
 body{font-family:Tahoma,"Times New Roman", Times, serif;}
 
+.disabled_section {pointer-events: none; opacity: 0.4;}
 .table th, .table td {
      border-top: none !important;
 }
@@ -29,6 +30,30 @@ body{font-family:Tahoma,"Times New Roman", Times, serif;}
     width: 30%;
 }
 
+section {
+	margin-bottom:15px;
+	padding: 10px 10px;
+	font-family: Verdana, Geneva, sans-serif;
+	color:#333333;
+	font-size:0.9em;
+}
+fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+
+h5{font-weight: bold;}
+.center-button{display: flex;align-items: center;}
+.center-img {display: block; margin-left: auto; margin-right: auto; width: 70%;}
+.lc{ margin:20px;}
+.table-center { margin-left: auto; margin-right: auto;}
+
+.divided {margin: 20px; background: linear-gradient(transparent 60%, gray 10%, gray 10%, transparent 80%);}
+.divided span {padding: 10px 20px; color:#ffffff;  border-radius: 7px;}
+.divided span:last-of-type {float: right;}
+.active-step{background-color:#4F70F5}
+.future-step{background-color:#888888}
+
+.glyphicon-spin {-webkit-animation: spin 1000ms infinite linear; animation: spin 1000ms infinite linear;}
+
+/*--- velmnt ----- */
 .velmnt {margin:5px; display:inline-block; width:100px; }
 .velmnt .velmnt_table{display: inline;}
 
@@ -47,58 +72,155 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 .vcontainer .btn:hover{background-color: #999999;}
 .velmnt_finished {color: green;}
 
-.scale {font-size: 100%;}
-.scale td { text-align: left; padding:0;}
+.scale {font-size: 100%; padding:0px}
+.scale td { text-align: left; padding:0px;}
 .scale label { display:block;}
 .scale .c { text-align: center;}
-section {
-	margin-bottom:15px;
-	padding: 10px 10px;
-	font-family: Verdana, Geneva, sans-serif;
-	color:#333333;
-	font-size:0.9em;
-}
-fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5px; }
+.table > tbody > tr > td {padding:0;}
 
-h5{font-weight: bold;}
-.center-button{display: flex;align-items: center;}
-.center-img {display: block; margin-left: auto; margin-right: auto; width: 70%;}
-.lc{ margin:20px;}
-.table-center { margin-left: auto; margin-right: auto;}
+.bg1 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_a.png");}
+.bg2 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_b.png");}
+.bg { height: 100%; background-position: center; background-repeat: no-repeat;  background-size: cover;}
+/*--------- */
+.loader {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 </style>
 
 <script type="text/javascript">
 
-max_accepted_extra_playing_time_sec = 2;
-max_accepted_extra_playing_time_percent = 0.1;
-const videos_not_loaded_yet_set = new Set()
-
 var config ={
 	debug:"true",
-	min_screen_refresh_rate: 60,
-	min_resolution:{w: 1280, h:720},
+	cookieName:"{{cfg.cookie_name}}",
+	qualificationCookieName:"{{cfg.qual_cookie_name}}",
+	qualificationValidFor:43200,
+	qualificationValidFor:43200,
+    forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+
+	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
+	forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+    // could be 9 or 5
+    scale_points: {{cfg.scale_points}},
+    // qualification
+	min_screen_refresh_rate: {{cfg.min_screen_refresh_rate}},
+	min_resolution:{{cfg.min_device_resolution}},
 	// tablets will be included in PC, values:PC,MOBILE
-	device_accepted_device:["PC", "MOBILE"],
+	device_accepted_device:{{cfg.accepted_device}},
 	viewing_distance:{
-		'img_path':'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/distance/img3_{0}.jpg',
+		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
 		'base_id': '0',
 		'too_close':'3',
 		'normal':'5',
 		'too_far':'7'
 	},
 	block_matrix:{
-		'circles': '${t1_matrix_c}',
-		'triangles': '${t1_matrix_t}'
-	}
+		'img': '${t1_matrix_url}',
+		'circles': ${t1_matrix_c},
+		'triangles': ${t1_matrix_t},
+		'dummy':'dummy'
+	},
+
+	plates:{
+		"plate3":29,
+		"plate4":5
+	},
+	questionUrls: {{cfg.rating_urls}},
+    trainingUrls: {{cfg.training_urls}},
+
+    knownQuestionInTrainingUrl:"{{cfg.training_trap_urls}}",
+    knownQuestionInTrainingAns: "{{cfg.training_trap_ans}}",
+
+    knownQuestionUrl:"${TP_CLIP}",
+    knownQuestionAns: "${TP_ANS}",
+    goldAnswer:"{{cfg.gold_ans}}",
+    randomizeTrainingQuestions:"true",
+    randomizeRatingQuestions:"true",
+    emailAddress: "{{cfg.contact_email}}"
 }
 
+/*
+var config ={
+	debug:"true",
+	cookieName:"{{cfg.cookie_name}}",
+	qualificationCookieName:"{{cfg.qual_cookie_name}}",
+	qualificationValidFor:43200,
+	qualificationValidFor:43200,
+    forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
 
+	allowedMaxHITsInProject:10,
+	forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+    // could be 9 or 5
+    scale_points: 5,
+    // qualification
+	min_screen_refresh_rate: 10,
+	min_resolution:{w: 1280, h:720},
+	// tablets will be included in PC, values:PC,MOBILE
+	device_accepted_device:["PC"],
+	viewing_distance:{
+		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
+		'base_id': '0',
+		'too_close':'3',
+		'normal':'5',
+		'too_far':'7'
+	},
+	block_matrix:{
+		'img': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/matrices/YzozX3Q6MTA=.jpg',
+		'circles': 3,
+		'triangles': 10,
+		'dummy':'dummy'
+	},
+
+	plates:{
+		"plate3":29,
+		"plate4":5
+	},
+	questionUrls: ['https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_40.mp4',
+		'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_48.mp4'],
+    trainingUrls: ['https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_40.mp4',
+		'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_48.mp4',
+		'https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4'],
+
+    knownQuestionInTrainingUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4",
+    knownQuestionInTrainingAns: "1",
+
+    knownQuestionUrl:"${TP_CLIP}",
+    knownQuestionAns: "${TP_ANS}",
+    goldAnswer:"{{cfg.gold_ans}}",
+    randomizeTrainingQuestions:"true",
+    randomizeRatingQuestions:"true",
+    emailAddress: "{{cfg.contact_email}}"
+}
+*/
+
+//---- for video player
+max_accepted_extra_playing_time_sec = 2.5;
+const videos_not_loaded_yet_set = new Set()
+//--------------
 
 // Note: the measurements should be postponed until all images are loaded
-$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
+//$( window ).on( "load", function() { getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});})
+var startScreenRefreshRateMeasures = false;
 
+// record the errors happened in the page
+var generalErrorLog= "";
 
+// if performing of this assignment is already counted
+var hitCounterIncreased = false;
 
 //--------------- Utilities -----------------
 
@@ -139,7 +261,137 @@ function shuffle(a) {
 	}
 	return a;
 }
+
+
+var overAllHiddenTime = 0;
+var startHiddenDate = null;
+var sessionId = null;
+var sessionIdVariableName=null;
+/**
+	monitor and record the status of page including being focus, and active time
+
+**/
+function initializeActivePageMonitoring(){
+	sessionId = Math.random().toString(36).substr(2, 9);
+	sessionIdVariableName = config.qualificationCookieName +"_sid";
+	createCookie(sessionIdVariableName,sessionId,70);
+
+	document.addEventListener("visibilitychange", function() {
+		var isHidden = document.hidden;
+		if (isHidden){
+			startHiddenDate = new Date();
+		}else{
+			//get back the focus
+			stopHiddenDate = new Date();
+			diff = stopHiddenDate -startHiddenDate;
+			overAllHiddenTime = overAllHiddenTime + diff;
+			$('#time_page_hidden_sec').val(overAllHiddenTime/1000);
+		}
+		console.log( "document_hidden: "+ document.hidden + "time: "+overAllHiddenTime);
+
+	});
+}
+
+/**
+	check if there is any parallel session available.
+**/
+function isAnyParallelSession(){
+	hit_num = readCookie(sessionIdVariableName);
+	if (hit_num != sessionId){
+		$('#any_parallel_session').val("true");
+		console.log("parallel session.")
+		return true;
+	}
+	return false;
+
+}
+
+
+/**
+ central method to record errors
+**/
+function recordError(name, message, show_message){
+	generalErrorLog =generalErrorLog + " Error "+name+": "+message+";%0D%0A"
+	$('#errors').val(generalErrorLog);
+	if (show_message) {
+		$("#errorEmail").attr("href","mailto:"+config["emailAddress"]+"?subject=Error on HIT Load&body="+generalErrorLog);
+		$("#errorSection").show();
+	}
+}
+
+/*
+	Add a cookies with corresponding values
+*/
+function createCookie(name, value, minutes) {
+    var expires;
+    if (minutes) {
+        var date = new Date();
+        date.setTime(date.getTime() + (minutes * 60 * 1000));
+        expires = date.toGMTString();
+    } else {
+        expires = "";
+    }
+
+    let st =value +";"+ expires ;
+    console.log(st);
+    localStorage.setItem(name, st);
+}
+
+/*
+	Return the value of cookie, or null
+*/
+function readCookie(name) {
+	var storedValue = localStorage.getItem(name);
+	if (storedValue){
+		let infos = storedValue.toString().split(';');
+		let value = infos[0];
+		let validUntil = new Date(infos[1]);
+		let today = new Date();
+		if (today<=  validUntil)
+			return value;
+		else{
+			localStorage.removeItem(name);
+			return null;
+		}
+	}else
+		return null;
+}
+
+/*
+	Update the cookie which counts the number of Assignments performed by user. Increase it by "updateBy" value.
+*/
+function updateCounterCookie(name, updateBy){
+	expiry_in_a_month= 30*24*60
+	c = readCookie(name);
+	if (c==null){
+		createCookie(name, 1, expiry_in_a_month);
+		return 1;
+	}else{
+	 	console.log(c);
+	 	createCookie(name, Number(c)+updateBy, expiry_in_a_month);
+	}
+	return Number(c)+updateBy;
+}
+
+
+/*
+	Remove the variable from local storage
+*/
+function removeCookie(name) {
+	localStorage.removeItem(name);
+}
+
+/*
+	Reset all inputs in the page
+*/
+function clearInputs(){
+    $(':input').not(':button, :submit, :reset, :hidden, :checkbox, :radio').val('');
+    $(':checkbox, :radio').prop('checked', false);
+}
+
 //-------------------- Initialize page -------------------
+
+const Hide_HIT_REASON = Object.freeze({"MAX_ACHIVED":1, "QUALIFICATON":2, "QUALIFICATION_FAILED_NOW":3})
 
 /*
 	Initializing the page: generate and hide sections depending to the cookies value
@@ -152,57 +404,263 @@ $(function() {
 		}
 
 		initializeQualification();
+		initializeCalibration();
 		hardware_test();
+
 
 		// setup section
 		add_distance_test();
-		cmp_check_on_load();
+		//cmp_check_on_load();
+		initializeSetup();
+
+		loadTextPlaceHolders();
+		generate_training_section();
+		generate_rating_section();
+		avoidAnsweringBeforeWatchingThrough();
+
+		clearInputs();
+		cookie_debug_status="";
+
+		// check which sections should be shown
+		qual_passed= readCookie(config['qualificationCookieName']);
+		calibration_passed = false;
+		setup_passed = false;
+		training_passed  = false;
+
+		console.log(qual_passed);
+
+		if (qual_passed!==null && qual_passed=="true"){
+			$('.qualificationFieldset').prop("disabled", true);
+			$("#qualification").hide();
+			$("#qualification :input").removeAttr("required");
+			cookie_debug_status=cookie_debug_status+"Qualification Exist*";
+			activate_calibration_section(true);
+			$("#qualification_msg").hide();
+		}
+
+		// given cookie availability disable the calibration
+		if (readCookie(config['cookieName']+"_calibration")){
+			calibration_passed = true;
+			$("#calibration").hide();
+			$("#calibration :input").removeAttr("required");
+			cookie_debug_status=cookie_debug_status+"Calibration Exist*";
+			activate_setup_section(true);
+		}
+
+		// given cookie availability disable the setup
+		if (readCookie(config['cookieName']+"_setup")){
+			setup_passed = true;
+			$('.setupFieldset').prop("disabled", true);
+			$("#setup").hide();
+			$("#setup :input").removeAttr("required");
+			cookie_debug_status=cookie_debug_status+"Setup Exist*";
+			activate_training_section(true);
+			activate_rating_section(true);
+		}
+
+		// given cookie availability disable the training
+		if (readCookie(config['cookieName']+"_training")){
+			training_passed = true;
+			$('.trainingFieldset').prop("disabled", true);
+			$("#training").hide();
+			$("#training :input").removeAttr("required");
+			$('#instruction').collapse()
+			cookie_debug_status=cookie_debug_status+"Train Exist*";
+		}
+
+		hit_num = readCookie(config['cookieName']+"_counter");
+		howManyHITsAnswered =0;
+		if (hit_num != null ){
+			howManyHITsAnswered= Number(hit_num);
+			if (howManyHITsAnswered >= config['allowedMaxHITsInProject']){
+				disableTheHIT(Hide_HIT_REASON.MAX_ACHIVED);
+			}
+		}
+		if ((qual_passed!==null) && (qual_passed=="false")){
+			disableTheHIT(Hide_HIT_REASON.QUALIFICATON);
+		}
+
+		hitCounterIncreased = false;
+		cookie_debug_status=cookie_debug_status+"Counter:"+howManyHITsAnswered+"*";
+		addBrowserInfo(cookie_debug_status);
+		initializeActivePageMonitoring();
+
+
 	}catch(err){
 		console.error(err);
-		recordError(err.name,err.message);
+		recordError(err.name,err.message, true);
 	}
 });
+
+/*
+	Disable the HIS and show a proper message.
+	- used when the maximum number of HITs in project is reached
+	TODO: update it
+*/
+function disableTheHIT(c){
+	$("#Survey").hide();
+	$("#qualification").hide();
+	$("#calibration").hide();
+	$("#setup").hide();
+	$("#training").hide();
+	$("#rating_section").hide();
+	$("#thanks").hide();
+	$("#qualification_msg").hide();
+
+	if (c == Hide_HIT_REASON.MAX_ACHIVED)
+		$("#max_allowed_HITs_reached").show();
+	if (c == Hide_HIT_REASON.QUALIFICATON)
+		$("#qualification_rejected").show();
+	if (c == Hide_HIT_REASON.QUALIFICATION_FAILED_NOW)
+		$("#qualification_not_pass").show();
+
+}
+
+
+/*
+Store the following information in hidden input field which will be added to answerc.csv by AMT
+userAgent, cookieEnabled, appVersion, platform, language, status of 3 cookies.
+*/
+function addBrowserInfo(debug){
+	info="U_A:"+navigator.userAgent+";"+
+		"CookieEnabled:"+navigator.cookieEnabled+";"+
+		"AppV:"+navigator.appVersion+";"+
+		"Platform:"+navigator.platform+";"+
+		"LN:"+navigator.language+";"+
+		"cookie_debug:"+debug+";";
+
+	$('#browser_info').val(info);
+	console.log(info);
+
+}
 
 
 /*
 	Initialize the qualification section
 */
-var qualification_ans= new Set();
 function initializeQualification(){
 	//randomizeHearingtestItems();
     //makeCheckboxBeRequired();
     forceNoSpaceInInput();
     $("#qualification :input").on('change', isQualificationDone);
+    //isQualificationDone();
 }
 
 /*
-	TODO: check it
+	Initialize the calibration section
+*/
+function initializeCalibration(){
+    $("#calibration :input").on('change', isCalibrationDone);
+    //isCalibrationDone();
+}
+
+
+/*
+	Initialize the qualification section
+*/
+function initializeSetup(){
+    $("#setup-rest :input").on('change', isSetupDone);
+    //isSetupDone();
+}
+
+
+/*
+Change placeholders inside text with values from config file.
+*/
+function loadTextPlaceHolders(){
+	// update the instruction
+	$('.max_allowed_hits').html(config['allowedMaxHITsInProject']);
+	$('.setup_time').html(config['showSetupEveryMinutes']);
+	if (config['forceRetrainingInHours']==1)
+		$('.training_time').html(config['forceRetrainingInHours']+" hour" );
+	else
+		$('.training_time').html(config['forceRetrainingInHours']+" hours" );
+	$('.question_number_training').html(config['trainingUrls'].length);
+	$('.question_number').html(config['questionUrls'].length);
+	$('.instruction_device').html(config['device_accepted_device'].join());
+
+}
+
+/*
+	Called as a listener whenever an input is answered in qualification
 */
 function isQualificationDone(){
-	qualification_ans.add(this.name);
-	console.log("check if the qualification is done"+this.name+","+qualification_ans.size);
-	validateQualificationAnswer();
-	//if (qualification_ans.size==13)
-	//	validateQualificationAnswer();
+	if(!$("input[name='1_gender']").is(':checked')) return;
+	if(!$("input[name='2_birth_year']").val()) return;
+	if(!$("input[name='3_working_area']").is(':checked')) return;
+	if(!$("select[name='4_video_test'] option:selected").val()) return;
+	if(!$("input[name='5_device']").is(':checked')) return;
+
+
+	if(!$("input[name='6_device_size_h']").val()) return;
+	if(!$("input[name='6_device_size_w']").val()) return;
+
+	if(!$("input[name='7_plate3']").val()) return;
+	if(!$("input[name='7_plate4']").val()) return;
+	if (performed_visual_acuity_test)
+		validateQualificationAnswer();
 }
 
 /*
-	check the qualification passed
-	TODO: check it
+	Check the qualification passed
 */
 function validateQualificationAnswer(){
-	count_correct_plates=0;
-	if ($("input[name='plate3']").val().trim()==config.qualification.plate3)
-		count_correct_plates ++;
-	if ($("input[name='plate4']").val().trim()==config.qualification.plate4)
-		count_correct_plates ++;
+	count_correct_ans=0;
+	if ($("input[name='7_plate3']").val().trim()==config.plates.plate3)
+		count_correct_ans ++;
+	if ($("input[name='7_plate4']").val().trim()==config.plates.plate4)
+		count_correct_ans ++;
+	if ($("input[name='3_working_area']:checked").val()=="N") count_correct_ans ++;
+	if ($("select[name='4_video_test'] option:selected").val()!="0d") count_correct_ans ++;
 
-	//passed=  m_tongue_check && device_check && working_area_checked &&  hearing_self_report_check && count_correct_ht>= 3;
-	passed=  count_correct_plates ==2;
-	console.log(passed);
+	//if (visual_acuity_test_passed == null)
+	//	return false;
+	//else
+	if (visual_acuity_test_passed) count_correct_ans ++;
+
+	passed=  count_correct_ans == 5;
+	console.log("passed qualification? "+passed);
 	// add a qualification for 'qualificationValidFor' minutes
-	//createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+	if (passed)
+		createCookie(config.qualificationCookieName,passed,config.qualificationValidFor);
+
+	on_qualification_test(passed);
 }
+
+/*
+	Called as a listener whenever an input is answered in Calibration
+*/
+function isCalibrationDone(){
+	console.log("isCalibrationDone");
+	if(!$("input[name='calib_resolution']").is(':checked')) return;
+	if(!$("input[name='calib_color']").is(':checked')) return;
+	on_calibration_performed();
+}
+
+
+/*
+	Called as a listener whenever an input is answered in Setup
+*/
+function isSetupDone(){
+	if(!$("input[name='cmp1']").is(':checked')) return;
+	if(!$("input[name='cmp2']").is(':checked')) return;
+	if(!$("input[name='cmp3']").is(':checked')) return;
+
+	if(!$("input[name='t2_circles']").val()) return;
+	if(!$("input[name='t2_triangles']").val()) return;
+	validateSetupAnswer();
+}
+
+
+/*
+	Check the qualification passed
+*/
+function validateSetupAnswer(){
+	passed_cmp = validateCMPSection();
+	on_setup_performed(passed_cmp);
+}
+
+
 
 /*
 	Avoid space in text field
@@ -219,284 +677,18 @@ function forceNoSpaceInInput(){
         });
 }
 
-//---------------- v_elm.js -----------------
-// All functions needed for custom audio playback
-// NOTE: for longer videos fragmentation might be needed.
-// data-scale can be no-scale or max-height, default:no-scale
-const video_played_finished = new Map();
-const video_play_start_time = new Map();
-var videoElements=[];
-function clickManager(event) {
-	ae=event.data.ae;
-	var id=event.data.id;
-	if (ae.paused) {
-		pauseAll();
-		playVideo(ae);
-	} else {
-		pauseVideo(ae);
-	}
-};
-
-function fullscreen_closed(e,video,caller){
-    if (!document.fullscreenElement && /* Standard syntax */
-        !document.webkitFullscreenElement && /* Chrome, Safari and Opera syntax */
-        !document.mozFullScreenElement &&/* Firefox syntax */
-        !document.msFullscreenElement /* IE/Edge syntax */
-      ) {
-      	var idT=video.id;
-		var id=idT.substring(6,idT.length);
-		if (!(video.paused || video.ended))
-			pauseVideo(video);
-		//reload video if it has not been watched before
-		if (video_played_finished.get(id) != 1 ){
-			video.currentTime = 0;
-		}
-		$("#velmnt_"+id).show();
-
-        //restore the old height and weight
-        let oldH=video.getAttribute("oldheight");
-        let oldW=video.getAttribute("oldwidth");
-
-        video.setAttribute("width",oldW);
-        video.setAttribute("height",oldH);
-        video.removeAttribute("oldwidth");
-        video.removeAttribute("oldheight");
-	$( "#video_"+id ).closest( "td" ).addClass("vtd");
-	if (video_played_finished.get(id) != 1 ){
-      		alert("The video must be watched fully and in fullscreen mode.");
-    }
-
-   }
-}
-
-function playVideo(video){
-	var idT=video.id;
-	var id=idT.substring(6,idT.length);
-	$("#velmnt_s_"+id).removeClass("glyphicon-repeat");
-	$("#velmnt_s_"+id).removeClass("glyphicon-play");
-	$("#velmnt_s_"+id).addClass("glyphicon-pause");
-	$("#velmnt_"+id).addClass("btn-primary");
-	$("#video_n_play_"+id).val(parseInt($("#video_n_play_"+id).val())+1);
-	$("#velmnt_"+id).hide();
-
-	let caller= function (e){ fullscreen_closed(e,video,caller) }
-	let parent = document.getElementById(id);
-	if (parent.requestFullscreen) {
-        parent.requestFullscreen();
-      } else if (parent.msRequestFullscreen) {
-        parent.msRequestFullscreen();
-      } else if (parent.mozRequestFullScreen) {
-        parent.mozRequestFullScreen();
-      } else if (parent.webkitRequestFullscreen) {
-        parent.webkitRequestFullscreen();
-      }
-
-    let oldH=video.getAttribute("height");
-    let oldW=video.getAttribute("width");
-    let fullW=screen.width;
-    let fullH=screen.height;
-    //change height and width
-    video.setAttribute("oldwidth",oldW);
-    video.setAttribute("oldheight",oldH);
-	let scale_type = "";
-	if ($('#{0}'.f(id)).attr('data-scale')){
-		scale_type = $('#{0}'.f(id)).attr('data-scale');
-	}else{
-		scale_type = "no-scale";
-	}
-	if (scale_type=="max-height"){
-		$( "#video_"+id ).closest( "td" ).removeClass("vtd");
-		video.setAttribute("height",fullH);
-		video.setAttribute("width",fullW);
-	}
-
-    video.play();
-	video_play_start_time.set(id, Date.now());
-}
-
-function pauseVideo(video){
-	video.pause();
-	var idT=video.id;
-	var id=idT.substring(6,idT.length);
-	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
-	$("#velmnt_"+id).removeClass("btn-primary");
-	$("#velmnt_s_"+id).addClass("glyphicon-play");
-}
-
-function pauseAll(){
-	for (i = 0; i < videoElements.length; i++) {
-		if (!videoElements[i].paused){
-			pauseVideo(videoElements[i]);
-		}
-	}
-}
-
-function canPlay(event){
-	var ae=this;
-	var idText =this.id;
-	var id=idText.substring(6,idText.length);
-	$("#velmnt_l_d_"+id).text(" / " + (ae.duration).toString().toMMSS());
-	$("#velmnt_"+id).removeClass("disabled");
-	$("#velmnt_s_"+id).removeClass("glyphicon-repeat fast-right-spinner");
-	$("#velmnt_s_"+id).addClass("glyphicon-play");
-	videos_not_loaded_yet_set.delete(id);
-}
-
-function timeUpdate(){
-	var ae=this;
-	var idText =this.id;
-	var id=idText.substring(6,idText.length);
-	t = ae.currentTime.toString().toMMSS()
-	$("#velmnt_l_c_"+id).text(t);
-}
-
-function isended(){
-	var ae=this;
-	var idText =this.id;
-	var id=idText.substring(6,idText.length);
-
-	is_first_time = video_played_finished.get(id)==0;
-	video_played_finished.set(id, 1);
-
-	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
-	$("#velmnt_"+id).removeClass("btn-primary");
-	$("#velmnt_s_"+id).addClass("glyphicon-repeat");
-	$("#video_n_finish_"+id).val(parseInt($("#video_n_finish_"+id).val())+1);
-	if ($("#"+id).attr('data-onfinished')){
-		window[$("#"+id).attr('data-onfinished')](id);
-	}
-	document.exitFullscreen();
-
-	$("#velmnt_l_c_"+id).css('color','green');
-	$("#velmnt_l_d_"+id).css('color','green');
-	if (is_first_time){
-		now = Date.now();
-		play_duration = (Date.now()-  video_play_start_time.get(id))/1000;
-		$("#video_play_duration_"+id).val(play_duration);
-		$("#video_duration_"+id).val(this.duration);
-		extra_duration = play_duration-this.duration;
-		perc_delay = Math.abs(extra_duration)/this.duration;
-		if (extra_duration>max_accepted_extra_playing_time_sec ||
-			perc_delay > max_accepted_extra_playing_time_percent){
-				maximum_extra_playing_time_reached(id);
-		}
-	}
-}
-
-function issuePlayingVideo(videoElement, issue){
-	// todod log the data
-	console.log(videoElement.id+": "+issue);
-}
-
-
-
-// loading all video elements in the page
-$(function() {
-    $( ".velmnt" ).each(function(){
-		titleTextTemplate='<tr><td>{1}</td></tr>';
-		insert='';
-		title='';
-		a='<video id="video_{0}" preload="true"  width="1" poster="imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
-		'<input type="hidden" id="video_n_play_{0}" name="video_n_play_{0}" value="0">'+
-		'<input type="hidden" id="video_n_finish_{0}" name="video_n_finish_{0}" value="0">'+
-		'<input type="hidden" id="video_play_duration_{0}" name="video_play_duration_{0}" value="0">'+
-		'<input type="hidden" id="video_duration_{0}" name="video_duration_{0}" value="0">';
-		if ($(this).attr('title')){
-			insert=titleTextTemplate;
-			title=$(this).attr('title');
-		}
-		src=$(this).attr('data-src');
-		id=$(this).attr('id');
-
-		t='<table class="velmnt_table" border="0">'+insert+' <tr><td class="vtd"> <div class="vcontainer">'+a.f(id,src)+'<button id="velmnt_{0}" type="button" class="btn bn disabled"><span id ="velmnt_s_{0}" class="glyphicon glyphicon-repeat fast-right-spinner"></span></button></div></td></tr><tr><td><span id="velmnt_l_c_{0}" class="blabel" >00:00</span><span id="velmnt_l_d_{0}" class="blabel" > / 00:00</span></td></tr></table>';
-		$(this).append(t.f(id,title));
-		video_played_finished.set(id, 0);
-		videos_not_loaded_yet_set.add(id);
-
-		var videoElement = document.getElementById("video_"+id);
-		//save for later
-		videoElements.push(videoElement);
-		$( "#velmnt_"+id ).click({ae: videoElement, id: id},clickManager);
-		$( "#velmnt_"+id ).disabled=false;
-		videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
-		videoElement.addEventListener("canplaythrough",canPlay.bind(videoElement),false);
-		videoElement.addEventListener("timeupdate",timeUpdate.bind(videoElement),false);
-		videoElement.addEventListener("ended",isended.bind(videoElement),false);
-		videoElement.addEventListener( "loadedmetadata", function (e) {
-    		var width = this.videoWidth;
-        	var height = this.videoHeight;
-        	console.log("w:{0}, h:{1}".f(width,height));
-		}, false );
-
-
-
-		videoElement.addEventListener("stalled",function(){issuePlayingVideo(videoElement ,'stalled');},false);
-		videoElement.addEventListener("suspend",function(){issuePlayingVideo(videoElement ,'suspend');},false);
-		videoElement.addEventListener("abort",function(){issuePlayingVideo(videoElement ,'abort');},false);
-		videoElement.addEventListener("error",function(){issuePlayingVideo(videoElement ,'error');},false);
-
-		// set event listener to process exit of fullscreen
-		let caller= function (e){ fullscreen_closed(e,videoElement,caller) }
-		let parent = document.getElementById(id);
-		if (parent.requestFullscreen) {
-        	parent.addEventListener("fullscreenchange",caller)
-      	} else if (parent.msRequestFullscreen) {
-        	parent.addEventListener("onmsfullscreenchange",caller)
-      	} else if (parent.mozRequestFullScreen) {
-        	parent.addEventListener("mozfullscreenchange",caller)
-      	} else if (parent.webkitRequestFullscreen) {
-        	parent.addEventListener("webkitfullscreenchange",caller)
-      	}
-
-
-	});
-
-	$("source").on("error", function (e) {
-        console.log("Error at video tag level!"+e.target.src);
-        problematic_urls=problematic_urls+"<li>"+e.target.src+"</li>";
-        //$("#error_details").html(problematic_urls);
-        recordError("on loading audio clips",e.target.src);
-        //$("#error_loading_files").show();
-    });
-});
-var problematic_urls="";
-/*
-	Called when the scale item is clicked
-*/
-function alertForbiddenChange(){
-	alert('You should watch until the end.');
-	$(this).prop('checked', false);
-}
-
-/*
-	Users should not be able to vot before listening the audio clips until the end.
-*/
-function avoidAnsweringBeforeWatchingThrough(){
-	var i;
-	// Training section
-	for (i = 0; i < config['trainingUrls'].length; i++) {
-		$('input[name="t{0}"]'.f(i+1)).on('change', alertForbiddenChange);
-	}
-	// Rating section
-	for (i = 0; i < config['questionUrls'].length; i++) {
-		$('input[name="q{0}"]'.f(i+1)).on('change', alertForbiddenChange);
-	}
-}
-
-
-
-//---------------
+//------------------ for video
 /*
 	will be called when a video took extra time to be finished.
+	TODO: Inform the user or terminate the session.
 */
 function maximum_extra_playing_time_reached(id){
+	console.error("Playing time of the video {0} took more than what we expected.".f(id));
+	recordError("VIDEO_PLAY_ISSUE","Playing time of the video {0} took more than what we expected.".f(id), false);
 }
 
-function onFinish(t){
-	console.log(t);
-}
 
-
+//-------------- END for video
 //------------------------------- visual acuity test -----------------
 function card_plus(){
 	$("#card").width($("#card").width()+2);
@@ -551,6 +743,8 @@ function onMouseUp(){
    Initiate the listeners and default settings for the visual acuity test
 **/
 $(function() {
+	holdStarter = null
+
 	$('#minus').mousedown(function(){onMouseDown('minus');});
 	$('#plus').mousedown(function(){onMouseDown('plus');});
 
@@ -559,6 +753,19 @@ $(function() {
 	$('#minus').mouseout( function(){onMouseUp('minus');});
 	$('#plus').mouseout( function(){onMouseUp('plus');});
 
+	initiate_visual_acuity_test();
+});
+
+function initiate_visual_acuity_test(){
+	id_to_rotation_degree = new Map();
+	current_landoltc_id = -1
+	landoltc_results = [];
+	visual_acuity_test_passed=null;
+	interact_with_screen_size = false;
+	performed_visual_acuity_test= null;
+
+	$(".lc").prop("disabled",false);
+
 	// initiate id to rotation degree
 	degree= 0;
 	for (let i = 1; i <= 8; i++) {
@@ -566,18 +773,28 @@ $(function() {
 	  degree = degree+ 45;
 	}
 	set_random_landoltc();
-});
+}
 
+function reset_visual_acuity(){
+	$("#vat_step").attr("src","https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step2.png");
+	$('#setup_visual_acity').show();
+	$('#test_visual_acity').hide();
+	$('#setup_ready').show();
+	$('#setup_visual_acity').show();
+	initiate_visual_acuity_test();
+}
 
 /**
 	Load the step2 of visual acuity test.
 **/
 function continue_visual_acuity(){
-
 	if (!interact_with_screen_size){
 		alert("First, you need to interact with screen adjustment part.");
 		return;
 	}
+
+	$("#vat_step").attr("src","https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step2.png");
+
 	$('#setup_visual_acity').hide();
 	$('#test_visual_acity').show();
 	$('#setup_ready').hide();
@@ -603,10 +820,10 @@ function continue_visual_acuity(){
 	$("#landoltc_img").width(lc_px);
 }
 
-const id_to_rotation_degree = new Map();
+var id_to_rotation_degree = new Map();
 var current_landoltc_id = -1
 var landoltc_results = [];
-var visual_acuity_test_passed=false;
+var visual_acuity_test_passed=null;
 
 
 /**
@@ -641,7 +858,9 @@ function landoltc_clicked(num){
 			$(".lc").prop("disabled",true);
 			$("#lc_msg").html("<p style='color:green'>Visual acuity check passed.</p>");
 			visual_acuity_test_passed = true;
-			activate_setup();
+			performed_visual_acuity_test = true;
+			//activate_setup();
+			isQualificationDone();
 			return;
 		}else
 		 if (landoltc_results.length>=5){
@@ -649,6 +868,8 @@ function landoltc_clicked(num){
 		 	$(".lc").prop("disabled",true);
 		 	$("#lc_msg").html("<p style='color:red'>Visual acuity check failed.</p>");
 		 	visual_acuity_test_passed = false;
+		 	performed_visual_acuity_test = true;
+		 	isQualificationDone();
 		 	return;
 		 }
 	}
@@ -676,23 +897,58 @@ function add(accumulator, a) {
 	- the refresh_rate test are done asynchronously and will tiger this function
 **/
 function hardware_test(){
+	if (!velements_added){
+		window.setTimeout(hardware_test, 200);
+		return;
+	}
+	if (!startScreenRefreshRateMeasures){
+		if (videos_not_loaded_yet_set.size == 0){
+
+			getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
+			startScreenRefreshRateMeasures = true;
+
+		}else{
+
+			$("#remaining_videos").html(videos_not_loaded_yet_set.size);
+			window.setTimeout(hardware_test, 200);
+			return;
+		}
+	}
 	if(refresh_rate_passed === null) {
+
        window.setTimeout(hardware_test, 100);
     } else {
+
     	// 1. result of refresh rate check is ready
     	console.log("screen_test {0}".f(refresh_rate_passed));
+
     	// 2. resolution
     	resolution_check = check_resolution();
     	console.log(resolution_check);
+
 		// 3. device type
 		device_accepted = check_device_type();
 		console.log(device_accepted);
 
 		record_screen_size();
 		record_os();
-
+		if (refresh_rate_passed && resolution_check && device_accepted)
+			activate_hit();
+		else
+			alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
     }
 }
+
+function activate_hit(){
+	$("#hardware-spinner").hide();
+	$("#Survey").removeClass("disabled_section");
+	$("#qualification").removeClass("disabled_section");
+
+	start_time = new Date();
+	$("#start_working_time").val(start_time.toISOString());
+	console.log($("#start_working_time").val());
+}
+
 
 var refresh_rate_passed = null;
 /**
@@ -859,7 +1115,7 @@ function check_brightness_test(){
 	correct_ans = config['block_matrix'];
 	c = $("#t1_circles").val();
 	t = $("#t1_triangles").val();
-	if (c==parseInt(correct_ans['circles']) && t == parseInt(correct_ans['triangles'])){
+	if (c==correct_ans['circles'] && t == correct_ans['triangles']){
 		//alert('Great! Your answer is correct, continue!');
 		activate_rest_setup();
 	}else
@@ -867,15 +1123,19 @@ function check_brightness_test(){
 }
 
 function activate_rest_setup(){
-}
-
-function activate_setup(){
+	$("#alert-setup-step1").show();
+	$("#setup-rest").removeClass("disabled_section");
 }
 
 //----------------------------- viewing distance
 function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
-	template = '<fieldset  class="image_cmp"><label>{0}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
-	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div><div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" id="cmp{0}_img_b" width="100%"></div> </div>  <div class="row" > <div class="col-sm-5"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="o">Difference is <b>not detectable</b>.</label></div> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="b">Quality of <b>Image B</b> is better.</label></div> </div> <div class="col-sm-3"></div> </div>  </fieldset>';
+	template = '<fieldset  class="image_cmp setupFieldset"><label>{0}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
+	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div>'+
+	'<div class="col-sm-5"><h4 style="text-align: center;"> {4}</h4><img src="{2}" id="cmp{0}_img_b" width="100%"></div> </div>'+
+	'<div class="row" > <div class="col-sm-5"></div> <div class="col-sm-5"> 	<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="a">Quality of <b>Image A</b> is better.</label></div>'+
+	'<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="o">Difference is <b>not detectable</b>.</label></div>'+
+	'<div class="radio"><label><input type="radio" name="cmp{0}" required="" value="b">Quality of <b>Image B</b> is better.</label></div>'+
+	'</div> <div class="col-sm-3"></div> </div>  </fieldset>';
 
 	$('#distance_test_cmps').append(template.f(q_n,img_a, img_b, title_a, title_b));
 }
@@ -891,12 +1151,12 @@ function add_distance_test(){
 
 	urls = shuffle(urls);
 	base_img = cfg['img_path'].f(cfg['base_id']);
-	q = 3;
+	q = 1;
 	for (const url of urls){
 		if (Math.random()> 0.5){
-			add_viewing_distance_question(q, base_img, url, 'Image A', 'Image B');
+			add_viewing_distance_question(q, base_img, url, 'Image A', 'Image B', q+2);
 		}else{
-			add_viewing_distance_question(q, url, base_img, 'Image A', 'Image B');
+			add_viewing_distance_question(q, url, base_img, 'Image A', 'Image B', q+2);
 		}
 		q = q+1;
 	}
@@ -905,6 +1165,7 @@ function add_distance_test(){
 
 
 // add this to onload of page
+// TODO: should removed
 function cmp_check_on_load(){
 	$('#setup').find(':input').filter(':visible').each(function(){
 	  $(this).on('change', validateCMPSection);
@@ -968,12 +1229,814 @@ function validateCMPSection(){
 		}
 		pass_cmp = (pass_cmp && is_correct);
 	}
-	if (!pass_cmp)
-		alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
-	else
-		alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
+	//if (!pass_cmp)
+	//	alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
+	//else
+	//	alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
 	return pass_cmp;
 }
+
+//----------------- training section
+/*
+	Callback when "Next" in Training section is clicked.
+*/
+function showNextQuestionInTrainingSection(){
+	var count = $("#trainingTabs li").length;
+	id=$("#trainingTabs li.active").index();
+	if (id+1!=count){
+		id=id+2;
+		$('#trainingTabs li:nth-child('+id+') a').tab('show');
+	}else{
+		// last next is called
+		setTimeout(function (){
+			window.location.hash="navNextPre";
+		},  50);
+	}
+}
+
+/*
+	Callback when "Previous" in Training section is clicked.
+*/
+function showPreviousQuestionInTrainingSection(){
+	id=$("#trainingTabs li.active").index();
+	id=id;
+	$('#trainingTabs li:nth-child('+id+') a').tab('show');
+}
+
+
+var trainingStimulusPlayed;
+
+/*
+  If all training clips played until the end, add a cookie expiring after
+  config.forceRetrainingInHours
+  TODO: check trapping question
+*/
+function playedVideoTraining(id){
+	let id_num= id.substring(1);
+	played= $("#video_n_finish_{0}".f(id)).val();
+	$('input[name="{0}"]'.f(id)).off('change');
+	eval("trainingStimulusPlayed["+id_num+"-1]=1;");
+	if (trainingStimulusPlayed.reduce(getSum, 0) ==  trainingStimulusPlayed.length){
+		createCookie(config['cookieName']+"_training","un_important",config['forceRetrainingInHours']*60);
+	}
+	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionInTrainingUrl']){
+		element = $('input[name="t{0}"]'.f(id_num));
+		element.unbind();
+		element.on('change', onValueChangeForTpQuestionInTraining);
+	}
+}
+
+// help to calc the sum of elements in an array
+function getSum(total, num) {
+  	return total + num;
+}
+
+/*
+	Listener on value change for the trapping question in training.
+	if the answer is wrong, show a message.
+*/
+function onValueChangeForTpQuestionInTraining(){
+	if(!('knownQuestionInTrainingAns' in config))
+		return;
+	if ($( this ).val()  != config['knownQuestionInTrainingAns']){
+		alert('Error: your answer does not seem to be correct. Watch the video again carefully and follow the instruction?');
+		$(this).prop('checked', false);
+	}
+
+}
+
+/*
+	Listener on value change for the trapping question.
+	if the answer is correct, change the value of tp_check to 0.
+*/
+function onValueChangeForTpQuestion(){
+	if(!('knownQuestionAns' in config))
+		return;
+	if ($( this ).val()  == parseInt(config['knownQuestionAns']))
+		$('#tp_check').val(0);
+	else
+		$('#tp_check').val(-1);
+	//console.log("gc_check"+$('#tp_check').val())
+}
+
+/*
+	Called when a video in rating section by the given id is completely played.
+	Now user can rate the quality.
+*/
+function playedVideoQ(id){
+	console.log("playedVideoQ "+id);
+	isAnyParallelSession();
+	let id_num= id.substring(1);
+	played= $("#video_n_finish_{0}".f(id)).val();
+	if (played== 0 )return;
+	console.log("playedVideoQ  continue");
+
+	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionUrl']){
+		element = $('input[name="q{0}"]'.f(id_num));
+		element.unbind();
+		element.on('change', onValueChangeForTpQuestion);
+	}else{
+		$('input[name="q{0}"]'.f(id_num)).off('change');
+		console.log("playedVideoQ remove change listener");
+		// check if already this HIT is counted
+		if (!hitCounterIncreased){
+			updateCounterCookie(config['cookieName']+"_counter",1);
+			hitCounterIncreased=true
+		}
+	}
+}
+
+/*
+	Callback when "Next" in Rating section is clicked.
+*/
+function showNextQuestionInRatingSection(){
+	var count = $("#nav-tab-ul li").length;
+	id=$("#nav-tab-ul li.active").index();
+	if (id+2==count){
+		$('#next-rating').addClass('disabled');
+	}
+	id=id+2;
+	$('#nav-tab-ul li:nth-child('+id+') a').tab('show');
+
+}
+
+/*
+	Callback when "Previous" in Rating section is clicked.
+*/
+function showPreviousQuestionInRatingSection(){
+	id=$("#nav-tab-ul li.active").index();
+	id=id;
+	$('#nav-tab-ul li:nth-child('+id+') a').tab('show');
+	var count = $("#nav-tab-ul li").length;
+	if (id+1<=count)
+		$('#next-rating').removeClass('disabled');
+}
+
+
+
+</script>
+<script type="text/javascript">
+//----- all methods for hiding/showing sections
+
+function activate_calibration_section(activate){
+	if (activate)
+		$("#calibration").removeClass("disabled_section");
+	else
+		$("#calibration").addClass("disabled_section");
+}
+
+function activate_setup_section(activate){
+	if (activate)
+		$("#setup").removeClass("disabled_section");
+	else
+		$("#setup").addClass("disabled_section");
+}
+
+function activate_training_section(activate){
+	if (activate)
+		$("#training").removeClass("disabled_section");
+	else
+		$("#training").addClass("disabled_section");
+}
+
+function activate_rating_section(activate){
+	if (activate)
+		$("#rating_section").removeClass("disabled_section");
+	else
+		$("#rating_section").addClass("disabled_section");
+}
+
+var num_tried_qualification = 0;
+function on_qualification_test(success){
+	if (!success){
+		if (num_tried_qualification <= 1){
+			alert("Please review your responses in the qualification again.")
+			num_tried_qualification++;
+			if (!visual_acuity_test_passed) reset_visual_acuity();
+			return;
+		}
+		disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
+		createCookie(config.qualificationCookieName,success,config.qualificationValidFor);
+		return;
+	}
+	$("#alert-qualification").show();
+	activate_calibration_section(true);
+
+}
+
+function on_calibration_performed(){
+	$("#alert-calibration").show();
+	createCookie(config['cookieName']+"_calibration","un_important",config['showSetupEveryMinutes']);
+	activate_setup_section(true);
+}
+
+var setup_section_remaining_tries = 3;
+function on_setup_performed(success){
+	if (!success){
+		if (setup_section_remaining_tries> 1){
+			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that\n - you already calibrated your screen,\n - have a good lighting condition, and \n -is in a proper distance from screen.".f(setup_section_remaining_tries));
+			setup_section_remaining_tries--;
+			 $('#setup-rest :radio').prop('checked', false);
+
+		}else{
+			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
+			activate_setup_section(false);
+			//TODO block the user for X hours?
+		}
+		return;
+	}
+	$("#alert-setup-complete").show();
+	createCookie(config['cookieName']+"_setup","un_important",config['showSetupEveryMinutes']);
+	activate_training_section(true);
+	activate_rating_section(true);
+}
+
+
+
+
+</script>
+<script type="text/javascript">
+
+/*
+	Input could be 5 or 9
+*/
+
+function getACRScale(type, is_training){
+	let p ='q';
+	if (is_training) p = 't';
+
+	template5 =
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="5">Excellent</label></div></td><td class="c">5</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="4">Good</label></div></td><td class="c">4</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="3">Fair</label></div></td><td class="c">3</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="2">Poor</label></div></td><td class="c">2</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="1"required="">Bad</label></div></td><td class="c">1</td></tr>';
+
+
+	template9 =
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="9">Excellent</label></div></td><td class="c">9</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="8">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">8</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="7">Good</label></div></td><td class="c">7</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="6">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">6</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="5">Fair</label></div></td><td class="c">5</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">4</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="3">Poor</label></div></td><td class="c">3</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label></div></td><td class="c">2</td></tr>'+
+	'<tr><td><div class="radio" ><label ><input type="radio" name="'+p+'{0}" value="1"required="">Bad</label></div></td><td class="c">1</td></tr>';
+
+	if (type== 5){
+		return template5;
+	}
+	if (type== 9){
+		return template9;
+	}
+	return '';
+
+}
+
+/*
+	Generate the training section
+*/
+function generate_training_section(){
+	dcr_nav_tab = '<li class="nav-item {1}"><a class="nav-link " data-toggle="tab"  href="#T{0}-panel" id="T{0}-tab " role="tab" aria-controls="T{0}" {2}>Q. {0}</a></li>';
+	dcr_tab ='<div class="tab-pane fade {2}" id="T{0}-panel" role="tabpanel" aria-labelledby="T{0}-tab"><p></p>'+
+	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
+	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following video clip? </p> <div class="row"> <p align="center">'+
+	'<span class="velmnt" id="t{0}" data-src-clip="{1}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
+	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality is</th><th class="c" >Score</th></tr></thead><tbody>'+
+	getACRScale(config['scale_points'], true)+
+	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
+
+	// this will show which url was shown by in which question as their orther will be randomized
+	input_template= '<input id="T{0}_URL" name="T{0}_URL" type="hidden" value="{1}" />';
+
+    if (JSON.parse(config['randomizeTrainingQuestions']))
+		urls = shuffle(config['trainingUrls']);
+	else
+		urls = config['trainingUrls'];
+
+	var i;
+	for (i = 0; i < urls.length; i++) {
+		if (i==0){
+			$('#trainingTabs').append(dcr_nav_tab.f(i+1,'active', 'ria-selected="true"'));
+			$('#nav-tabContent').append(dcr_tab.f(i+1, urls[i],'in active'));
+		}else{
+			$('#trainingTabs').append(dcr_nav_tab.f(i+1,'',''));
+			$('#nav-tabContent').append(dcr_tab.f(i+1, urls[i],''));
+		}
+		$('#av-tabContent').append(input_template.f(i+1, urls[i]));
+	}
+
+	trainingStimulusPlayed = new Array(urls.length).fill(0);
+}
+
+/*
+	Generate rating section
+*/
+function generate_rating_section(){
+	dcr_nav_tab = '<li class="nav-item {1}"><a class="nav-link " data-toggle="tab"  href="#Q{0}-panel" id="Q{0}-tab " role="tab" aria-controls="Q{0}" {2}>Q. {0}</a></li>';
+	dcr_tab ='<div class="tab-pane fade {2}" id="Q{0}-panel" role="tabpanel" aria-labelledby="Q{0}-tab"><p></p>'+
+	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
+	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following video clip?? </p> <div class="row"> <p align="center">'+
+	'<span class="velmnt" id="Q{0}" data-src-clip="{1}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
+	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality is</th><th class="c" >Score</th></tr></thead><tbody>'+
+	getACRScale(config['scale_points'], false)+
+	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
+
+	// this will show which url was shown by in which question as their orther will be randomized
+	input_template= '<input id="Q{0}_URL" name="Q{0}_URL" type="hidden" value="{1}" />';
+
+	if (JSON.parse(config['randomizeRatingQuestions']))
+		urls = shuffle(config['questionUrls']);
+	else
+		urls = config['questionUrls'];
+
+	var i;
+	for (i = 0; i < urls.length; i++) {
+		if (i==0){
+			$('#nav-tab-ul').append(dcr_nav_tab.f(i+1,'active', 'ria-selected="true"'));
+			$('#nav-tabContent-rating').append(dcr_tab.f(i+1, urls[i],'in active'));
+		}else{
+			$('#nav-tab-ul').append(dcr_nav_tab.f(i+1,'',''));
+			$('#nav-tabContent-rating').append(dcr_tab.f(i+1, urls[i],''));
+		}
+		$('#nav-tabContent-rating').append(input_template.f(i+1, urls[i]));
+	}
+
+}
+</script>
+
+<script type="text/javascript">
+//---------------- v_elm.js ---------- update 14.11.2021-------
+// All functions needed for custom audio playback
+// NOTE: for longer videos fragmentation might be needed.
+// data-scale can be no-scale or max-height, default:no-scale
+const video_played_finished = new Map();
+const video_play_start_time = new Map();
+const video_play_time_update_listeners = new Map();
+
+var videoElements=[];
+var scheduled_video_play = null;
+var split_screen_timer = null;
+var tmp_caller_func = null;
+var dcr_clip_name_duration= 3100;
+function clickManager(event) {
+	ae=event.data.ae;
+	var id=event.data.id;
+	if (ae.paused) {
+		pauseAll();
+		idT = ae.id;
+		id = idT.substring(7,idT.length);
+		reset_videos(id);
+		playVideo(ae);
+	} else {
+		pauseVideo(ae);
+	}
+};
+
+function reset_videos(id){
+    //resetting the video1
+    tmp1_v = document.getElementById("video1_{0}".f(id));
+    tmp1_v.currentTime = 0;
+
+    // resetting video2 if exist
+    if ($("#{0}".f(id)).hasClass('dcr')){
+        tmp1_v = document.getElementById("video2_{0}".f(id));
+        tmp1_v.currentTime = 0;
+    }
+    duration = 0;
+	$("#velmnt_l_c_"+id).text(duration.toString().toMMSS());
+}
+
+
+function fullscreen_closed(e, video, caller){
+    if (!document.fullscreenElement && /* Standard syntax */
+        !document.webkitFullscreenElement && /* Chrome, Safari and Opera syntax */
+        !document.mozFullScreenElement &&/* Firefox syntax */
+        !document.msFullscreenElement /* IE/Edge syntax */
+      ) {
+      	var idT=video.id;
+		var id=idT.substring(7,idT.length);
+		reset_video_player(idT, video);
+
+		$("#velmnt_"+id).show();
+
+        //restore the old height and weight
+        let oldH=video.getAttribute("oldheight");
+        let oldW=video.getAttribute("oldwidth");
+        video.setAttribute("width",oldW);
+        video.setAttribute("height",oldH);
+        video.removeAttribute("oldwidth");
+        video.removeAttribute("oldheight");
+		$( "#video_"+id ).closest( "td" ).addClass("vtd");
+		if (video_played_finished.get(idT) != 1 ){
+				alert("The video must be watched fully and in fullscreen mode.");
+		}
+   }
+}
+
+function reset_video_player(idT, video){
+	if (scheduled_video_play)
+		clearTimeout(scheduled_video_play);
+	if (split_screen_timer)
+        clearTimeout(split_screen_timer);
+	if (!(video.paused || video.ended))
+		pauseVideo(video);
+
+	id = idT.substring(7,idT.length);
+	$("#video1_{0}".f(id)).show();
+	if ($("#{0}".f(id)).hasClass('dcr')){
+        $("#video2_{0}".f(id)).hide();
+	}
+
+	let parent = document.getElementById(id);
+	parent.classList.remove("bg");
+	parent.classList.remove("bg1");
+	parent.classList.remove("bg2");
+	$("#{0} .vcontainer".f(id)).show();
+
+	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
+	$("#velmnt_"+id).removeClass("btn-primary");
+	$("#velmnt_s_"+id).addClass("glyphicon-repeat");
+}
+
+function playVideo(video){
+	var idT=video.id;
+	var id=idT.substring(7,idT.length);
+	is_first_video = idT.indexOf('video1_')==0;
+	$("#velmnt_s_"+id).removeClass("glyphicon-repeat");
+	$("#velmnt_s_"+id).removeClass("glyphicon-play");
+	$("#velmnt_s_"+id).addClass("glyphicon-pause");
+	$("#velmnt_"+id).addClass("btn-primary");
+	$("#video_n_play_"+id).val(parseInt($("#video_n_play_"+id).val())+1);
+	$("#velmnt_"+id).hide();
+
+	let parent = document.getElementById(id);
+	if (is_first_video){
+		if (parent.requestFullscreen) {
+			parent.requestFullscreen();
+		  } else if (parent.msRequestFullscreen) {
+			parent.msRequestFullscreen();
+		  } else if (parent.mozRequestFullScreen) {
+			parent.mozRequestFullScreen();
+		  } else if (parent.webkitRequestFullscreen) {
+			parent.webkitRequestFullscreen();
+		  }
+	}
+
+	// set the listeners for when fullscreen is closed
+	previous_caller  =  tmp_caller_func;
+	tmp_caller_func = function (e){ fullscreen_closed(e,video, tmp_caller_func) };
+
+	if (parent.requestFullscreen) {
+		parent.removeEventListener("fullscreenchange",previous_caller);
+		parent.addEventListener("fullscreenchange",tmp_caller_func);
+	} else if (parent.msRequestFullscreen) {
+		parent.removeEventListener("onmsfullscreenchange",previous_caller);
+		parent.addEventListener("onmsfullscreenchange",tmp_caller_func);
+	} else if (parent.mozRequestFullScreen) {
+		parent.removeEventListener("mozfullscreenchange",previous_caller);
+		parent.addEventListener("mozfullscreenchange",tmp_caller_func);
+	} else if (parent.webkitRequestFullscreen) {
+		parent.removeEventListener("webkitfullscreenchange",previous_caller);
+		parent.addEventListener("webkitfullscreenchange",tmp_caller_func);
+	}
+
+    if ($("#{0}".f(id)).hasClass('dcr')){
+        parent.classList.add("bg1");
+        parent.classList.add("bg");
+        $("#{0} .vcontainer".f(id)).hide();
+        scheduled_video_play = setTimeout(function(){ playVideo_continue(id, video, true); }, dcr_clip_name_duration);
+        split_screen_timer = setTimeout(function(){ screen_splitter_timer(id); }, 1000);
+    }else{
+        playVideo_continue(id, video, false);
+    }
+}
+
+
+function screen_splitter_timer(id){
+    time = $("#velmnt_l_c_"+id).text().trim();;
+    sec = convertMS(time);
+    sec = sec +1 ;
+    t = sec.toString().toMMSS();
+	$("#velmnt_l_c_"+id).text(t);
+	split_screen_timer = setTimeout(function(){ screen_splitter_timer(id); }, 1000);
+}
+
+
+function convertMS(timeString){
+  const arr = timeString.split(":");
+  const seconds = Number(arr[0])*60+Number(arr[1]);
+  return seconds;
+}
+
+
+function playVideo_continue(id, video, is_dcr){
+    //console.log("playVideo_continue video {0}, time{1}".f(id, (new Date()).toISOString()));
+	scheduled_video_play = null;
+	if (split_screen_timer){
+        clearTimeout(split_screen_timer);
+        split_screen_timer = null;
+     }
+    if (is_dcr){
+    	let parent = document.getElementById(id);
+    	parent.classList.remove("bg");
+        parent.classList.remove("bg1");
+        parent.classList.remove("bg2");
+        $("#{0} .vcontainer".f(id)).show();
+    }
+    let oldH=video.getAttribute("height");
+    let oldW=video.getAttribute("width");
+    let fullW=screen.width;
+    let fullH=screen.height;
+    //change height and width
+    video.setAttribute("oldwidth",oldW);
+    video.setAttribute("oldheight",oldH);
+	let scale_type = "";
+	if ($('#{0}'.f(id)).attr('data-scale')){
+		scale_type = $('#{0}'.f(id)).attr('data-scale');
+	}else{
+		scale_type = "no-scale";
+	}
+	if (scale_type=="max-height"){
+		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
+		video.setAttribute("height",fullH);
+		video.setAttribute("width",fullW);
+	}
+
+    video.play();
+    if (video.id.indexOf('video1_')==0){
+	    video_play_start_time.set(id, Date.now());
+
+	 }
+}
+
+function pauseVideo(video){
+	video.pause();
+	var idT=video.id;
+	var id=idT.substring(7,idT.length);
+	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
+	$("#velmnt_"+id).removeClass("btn-primary");
+	$("#velmnt_s_"+id).addClass("glyphicon-play");
+}
+
+function pauseAll(){
+	for (i = 0; i < videoElements.length; i++) {
+		if (!videoElements[i].paused){
+			pauseVideo(videoElements[i]);
+		}
+	}
+}
+
+function canPlay(event){
+	var ae=this;
+	var idText =this.id;
+	var id=idText.substring(7,idText.length);
+	videos_not_loaded_yet_set.delete(idText);
+	id1 = "video1_{0}".f(id);
+	id2 = "video2_{0}".f(id);
+	if (videos_not_loaded_yet_set.has(id1) || videos_not_loaded_yet_set.has(id2)){
+		return;
+	}
+	duration = get_expected_duration(id, false);
+	$("#velmnt_l_d_"+id).text(" / " + (duration).toString().toMMSS());
+	$("#velmnt_"+id).removeClass("disabled");
+	$("#velmnt_s_"+id).removeClass("glyphicon-repeat fast-right-spinner");
+	$("#velmnt_s_"+id).addClass("glyphicon-play");
+}
+
+function timeUpdate(is_dcr){
+	var ae=this;
+	var idText =this.id;
+	var id=idText.substring(7,idText.length);
+	let time = ae.currentTime;
+	if (time == 0) return;
+	if (is_dcr){
+		if (idText.indexOf('video2_')==0){
+			video1 = document.getElementById("video1_{0}".f(id));
+			time = time + 2*(dcr_clip_name_duration/1000)+video1.duration;
+		}else{
+			time = time +(dcr_clip_name_duration/1000);
+		}
+	}
+	t = time.toString().toMMSS()
+	$("#velmnt_l_c_"+id).text(t);
+}
+
+function isended(){
+	var ae=this;
+	var idText =this.id;
+	var id=idText.substring(7,idText.length);
+    //console.log("is_ended video {0}, time{1}".f(id, (new Date()).toISOString()));
+	is_first_time = video_played_finished.get(idText)==0;
+	video_played_finished.set(idText, 1);
+	let is_first_video = idText.indexOf('video1_')==0;
+	//this.currentTime = 0
+
+ 	if (($("#{0}".f(id)).hasClass('dcr')) && is_first_video){
+ 		let parent = document.getElementById(id);
+        parent.classList.add("bg2");
+        parent.classList.add("bg");
+        $("#{0} .vcontainer".f(id)).hide();
+        $("#video1_{0}".f(id)).hide();
+        $("#video2_{0}".f(id)).show();
+        var video = document.getElementById("video2_"+id);
+
+        // set the listeners for when fullscreen is closed
+		previous_caller  =  tmp_caller_func;
+		tmp_caller_func = function (e){ fullscreen_closed(e,video, tmp_caller_func) };
+		if (parent.requestFullscreen) {
+			parent.removeEventListener("fullscreenchange",previous_caller);
+			parent.addEventListener("fullscreenchange",tmp_caller_func);
+		} else if (parent.msRequestFullscreen) {
+			parent.removeEventListener("onmsfullscreenchange",previous_caller);
+			parent.addEventListener("onmsfullscreenchange",tmp_caller_func);
+		} else if (parent.mozRequestFullScreen) {
+			parent.removeEventListener("mozfullscreenchange",previous_caller);
+			parent.addEventListener("mozfullscreenchange",tmp_caller_func);
+		} else if (parent.webkitRequestFullscreen) {
+			parent.removeEventListener("webkitfullscreenchange",previous_caller);
+			parent.addEventListener("webkitfullscreenchange",tmp_caller_func);
+		}
+
+        scheduled_video_play = setTimeout(function(){ playVideo_continue(id, video, true); }, dcr_clip_name_duration);
+        split_screen_timer = setTimeout(function(){ screen_splitter_timer(id); }, 1000);
+    }else{
+        end_video(id, is_first_video);
+    }
+}
+
+function get_expected_duration(id, is_from_play){
+    id1 = "video1_{0}".f(id);
+    duration = 0;
+	if($("#{0}".f(id)).hasClass('dcr')){
+	    id2 = "video2_{0}".f(id);
+		duration = (dcr_clip_name_duration/1000) + document.getElementById(id1).duration + document.getElementById(id2).duration ;
+		if (!is_from_play)
+		    duration+=dcr_clip_name_duration/1000
+
+	}else{
+	    duration = document.getElementById(id1).duration
+	}
+
+	return duration;
+}
+
+
+function end_video(id, is_first_video){
+    //console.log("end_video video {0}, time{1}".f(id, (new Date()).toISOString()));
+	$("#velmnt_s_"+id).removeClass("glyphicon-pause");
+	$("#velmnt_"+id).removeClass("btn-primary");
+	$("#velmnt_s_"+id).addClass("glyphicon-repeat");
+	$("#video_n_finish_"+id).val(parseInt($("#video_n_finish_"+id).val())+1);
+	if ($("#"+id).attr('data-onfinished')){
+		window[$("#"+id).attr('data-onfinished')](id);
+	}
+	document.exitFullscreen();
+
+	$("#velmnt_l_c_"+id).css('color','green');
+	$("#velmnt_l_d_"+id).css('color','green');
+	// for testing
+	is_first_time = true;
+	if (is_first_time){
+		now = Date.now();
+		play_duration = (Date.now()-  video_play_start_time.get(id))/1000;
+		$("#video_play_duration_"+id).val(play_duration);
+		expected_duration = get_expected_duration(id, true);
+		$("#video_duration_"+id).val(expected_duration);
+
+		extra_duration = play_duration-expected_duration;
+		perc_delay = Math.abs(extra_duration)/expected_duration;
+		if (extra_duration>max_accepted_extra_playing_time_sec ){
+			maximum_extra_playing_time_reached(id);
+		}
+	}
+	if (!is_first_video){
+		// it is a two video case and now it is a second video
+		$("#video1_{0}".f(id)).show();
+        $("#video2_{0}".f(id)).hide();
+	}
+	//reset_videos(id);
+}
+
+function issuePlayingVideo(videoElement, issue){
+	// todod log the data
+	console.log(videoElement.id+": "+issue);
+}
+
+
+var velements_added = false;
+// loading all video elements in the page
+$(function() {
+    $( ".velmnt" ).each(function(){
+		titleTextTemplate='<tr><td>{1}</td></tr>';
+		insert='';
+		title='';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
+		'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+
+		video_tag = one_video_template;
+		is_two_video = $(this).hasClass('dcr');
+		if(is_two_video){
+			video_tag = two_videos_template;
+		}
+
+		a=video_tag +
+		'<input type="hidden" id="video_n_play_{0}" name="video_n_play_{0}" value="0">'+
+		'<input type="hidden" id="video_n_finish_{0}" name="video_n_finish_{0}" value="0">'+
+		'<input type="hidden" id="video_play_duration_{0}" name="video_play_duration_{0}" value="0">'+
+		'<input type="hidden" id="video_duration_{0}" name="video_duration_{0}" value="0">';
+		if ($(this).attr('title')){
+			insert=titleTextTemplate;
+			title=$(this).attr('title');
+		}
+		id=$(this).attr('id');
+		if(is_two_video){
+			tmp = a.f(id, $(this).attr('data-src-ref'), $(this).attr('data-src-clip'))
+		}else{
+			tmp = a.f(id,$(this).attr('data-src-clip'));
+		}
+
+		t='<table class="velmnt_table" border="0">'+insert+' <tr><td class="vtd"> <div class="vcontainer">'+tmp+'<button id="velmnt_{0}" type="button" class="btn bn disabled"><span id ="velmnt_s_{0}" class="glyphicon glyphicon-repeat fast-right-spinner"></span></button></div></td></tr><tr><td><span id="velmnt_l_c_{0}" class="blabel" >00:00</span><span id="velmnt_l_d_{0}" class="blabel" > / 00:00</span></td></tr></table>';
+		$(this).append(t.f(id,title));
+		let video_id = "video1_"+id;
+		video_played_finished.set(video_id, 0);
+		videos_not_loaded_yet_set.add(video_id);
+
+		var videoElement = document.getElementById(video_id);
+		//save for later
+		videoElements.push(videoElement);
+		$( "#velmnt_"+id ).click({ae: videoElement, id: id},clickManager);
+		$( "#velmnt_"+id ).disabled=false;
+		addListenersToVideoElement(videoElement, is_two_video);
+
+
+		if(is_two_video){
+			let video_id = "video2_"+id;
+			video_played_finished.set(video_id, 0);
+			videos_not_loaded_yet_set.add(video_id);
+			var videoElement = document.getElementById(video_id);
+			//save for later
+			videoElements.push(videoElement);
+			$( "#velmnt_"+id ).disabled=false;
+			addListenersToVideoElement(videoElement, is_two_video);
+		}
+	});
+
+
+	$("source").on("error", function (e) {
+        problematic_urls=problematic_urls+"<li>"+e.target.src+"</li>";
+        //$("#error_details").html(problematic_urls);
+        recordError("on loading video clips",e.target.src, true);
+        //$("#error_loading_files").show();
+    });
+    velements_added = true;
+});
+
+function addListenersToVideoElement(videoElement, is_dcr){
+		//videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
+		videoElement.addEventListener("canplaythrough",canPlay.bind(videoElement),false);
+		videoElement.addEventListener("timeupdate",timeUpdate.bind(videoElement, is_dcr) ,false);
+		videoElement.addEventListener("ended",isended.bind(videoElement),false);
+		videoElement.addEventListener( "loadedmetadata", function (e) {
+    		var width = this.videoWidth;
+        	var height = this.videoHeight;
+        	console.log("w:{0}, h:{1}".f(width,height));
+		}, false );
+		videoElement.addEventListener("stalled",function(){issuePlayingVideo(videoElement ,'stalled');},false);
+		videoElement.addEventListener("suspend",function(){issuePlayingVideo(videoElement ,'suspend');},false);
+		videoElement.addEventListener("abort",function(){issuePlayingVideo(videoElement ,'abort');},false);
+		videoElement.addEventListener("error",function(){issuePlayingVideo(videoElement ,'error');},false);
+}
+
+var problematic_urls="";
+/*
+	Called when the scale item is clicked
+*/
+function alertForbiddenChange(){
+	alert('You should watch until the end.');
+	$(this).prop('checked', false);
+}
+
+/*
+	Users should not be able to vot before listening the audio clips until the end.
+*/
+function avoidAnsweringBeforeWatchingThrough(){
+	var i;
+	// Training section
+	for (i = 0; i < config['trainingUrls'].length; i++) {
+		$('input[name="t{0}"]'.f(i+1)).on('change', alertForbiddenChange);
+	}
+	// Rating section
+	for (i = 0; i < config['questionUrls'].length; i++) {
+		$('input[name="q{0}"]'.f(i+1)).on('change', alertForbiddenChange);
+	}
+}
+
+//-------------------------------------------
 </script>
 
 <!-- Hidden fields -->
@@ -984,10 +2047,25 @@ function validateCMPSection(){
 <input id="device_estimated_size_h" name="device_estimated_size_h" type="hidden" value="unknown" />
 <input id="device_os" name="device_os" type="hidden" value="unknown" />
 
+<input id="time_page_hidden_sec" name="time_page_hidden_sec" type="hidden" value="0" />
+<input id="any_parallel_session" name="any_parallel_session" type="hidden" value="false" />
+
+<input id="start_working_time" name="start_working_time" type="hidden" value="" />
+
+
 <div id="meter" style="width:10cm"></div>
+<div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
+	<div class="col-md-4"></div>
+	<div class="col-md-2" sytle="float: right"><div class="loader" width="30%"></div></div>
+	<div class="col-md-3" sytle="text-align: left;"> <h1>Loading</h1>
+		<p>Loading the videos and checking your hardware. </p>
+		<p><span id ="remaining_videos">0</span> remains.</p>
+		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
+	<div class="col-md-3"></div>
+</div>
 
 <!-- Instructions -->
-<section class="container" id="Survey">
+<section class="container disabled_section" id="Survey">
 	<div class="panel panel-primary">
 		<div class="panel-heading">
 			<h3 class="panel-title">
@@ -998,11 +2076,12 @@ function validateCMPSection(){
 			<div class="panel-body">
 
 			 <b>Introduction</b>
-				<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/process_3.png" alt="scale" class="center" style='width: 60%' >
+				<img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/info.png" alt="scale" class="center" style='width: 60%' >
 
-				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has two + two (just every now and then) sections:</p>
+				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has one + three (just every now and then) sections:</p>
 				<ul>
 					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
+					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
 					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
 					<li><b>Training (every <b class="training_time"> 0 </b> hour):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
 					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
@@ -1029,8 +2108,6 @@ function validateCMPSection(){
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
 
 
-				<button type="button" class="btn btn-primary" onclick="getresolution()" >Get resolution</button>
-				<div id="resolution"></div>
 			</div>
 		</div>
 
@@ -1039,7 +2116,7 @@ function validateCMPSection(){
 
 
 <!-- Qualification -->
-<section class="container" id="qualification">
+<section class="container disabled_section" id="qualification">
 	<div class="row col-xs-12 col-md-12">
 	<div class="panel panel-info">
 	  <div class="panel-heading">
@@ -1056,14 +2133,14 @@ function validateCMPSection(){
 				  <div class="radio">
 				  	<label><input type="radio" name="1_gender" value="F">Female</label>
 				  </div>
-				  <div class="radio disabled">
+				  <div class="radio">
 					  <label><input type="radio" name="1_gender" value="O">Other</label>
 				  </div>
 			  </fieldset>
 
 			  <fieldset class="qualificationFieldset"><label>2.&nbsp;In what year were you born? </label>
 				  <div class="form-group">
-					  <input type="text" class="form-control" name="2_birth_year" required="">
+					  <input type="text" class="form-control nospace" name="2_birth_year" required="">
 				  </div>
 			  </fieldset>
 
@@ -1090,7 +2167,7 @@ function validateCMPSection(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>* 5.&nbsp;What device are you using now to do this HIT?</label>
+			  <fieldset class="qualificationFieldset"><label>5.&nbsp;What device are you using now to do this HIT?</label>
 				  <div class="radio">
 					  <label> <input type="radio" name="5_device" value="mobile" required>Smartphone / Tablet</label>
 				  </div>
@@ -1099,10 +2176,14 @@ function validateCMPSection(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>* 6.&nbsp;Please measure the height and width of you screen:</label>
+			  <fieldset class="qualificationFieldset"><label>6.&nbsp;Please measure the height and width of you screen:</label>
 				  <div>
-					  <label>Height (cm): <input type="text" name="6_device_size_h" size="4" required></label>
-					  <label>Width (cm): <input type="text" name="6_device_size_w" size="4" required></label>
+					  <label>Height: <input type="text" class="nospace" name="6_device_size_h" size="4" required></label>
+					  <label>Width: <input type="text" class="nospace" name="6_device_size_w" size="4" required></label>
+					  <span style="margin:0px 30px"></span>
+					  <span> What is the unite of your measurement?</span>
+					  <span> <label><input type="radio" name="6_1_unit" value="IN" required="">inch</label></span>
+					  <span> <label><input type="radio" name="6_1_unit" value="CM">cm</label></span>
 				  </div>
 			  </fieldset>
 
@@ -1111,8 +2192,8 @@ function validateCMPSection(){
 					<div class="table-responsive 2_lds">
 						  <table class="table" border="0" cellpadding="0" cellspacing="0" >
 							<tbody>	<tr>
-								<td style="width:50%;text-align:center"> <img src="imgs/3.jpg" alt="plate3" width="80%"> </td>
-								<td style="width:50%;text-align:center"> <img src="imgs/4.jpg" alt="plate4" width="80%"> </td>
+								<td style="width:50%;text-align:center"> <img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/3.jpg" alt="plate3" width="80%"> </td>
+								<td style="width:50%;text-align:center"> <img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/4.jpg" alt="plate4" width="80%"> </td>
 							</tr><tr>
 								<td style="text-align:center"><input type="text" name="7_plate3" required="" class="nospace" autocomplete="off"></td>
 								<td style="text-align:center"><input type="text" name="7_plate4" required="" class="nospace" autocomplete="off"></td>
@@ -1125,21 +2206,28 @@ function validateCMPSection(){
 			  <!-- visual acuity check -->
 			  <fieldset class="qualificationFieldset"><label>8.&nbsp;This is a two-step visual acuity check. Please follow the setup instruction below and answer to the following 5 questions.</label>
 
+				  		<div class="row" style="margin-top:20px">
+							<div class="col-md-2"></div>
+							<div class="col-md-8"> <img id="vat_step" src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step1.png" width="80%"></div>
+							<div class="col-md-2"></div>
+						</div>
+
+
 						<div class="row" id ="setup_visual_acity">
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 1. Screen adjustment</h5>
 							  <p>Adjust the distance between two dashed lines by clicking on the +/- button. The distance should be exactly 5.4 cm or 2″. Use a ruler or the short side of a debit/credit card.</p>
 							  <div class="row">
 								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="plus" style="float: left; margin-top:100px" >+</button></div>
-								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="imgs/card.png" alt="card" width="100%" ></div>
+								  <div class="col-md-10" style="text-align:center;overflow: hidden;height: 200px"> <img class="center-img" id= "card" src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/card.png" alt="card" width="100%" ></div>
 								  <div class="col-md-1" ><button type="button" class="btn btn-default active hold-active" id ="minus" style="float: right;margin-top:100px">-</button></div>
 							  </div>
 						  </div>
 
 						  <div class="col-md-6" style="padding:30px;">
 							  <h5> 2. Distance to screen</h5>
-							  <p>Pleas make sure to keep your eyes about 50 to 100 cm (20"-40") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
-							  <img class="center-img"  src="imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
+							  <p>Pleas make sure to keep your eyes about 50 to 75 cm (20"-30") from the screen. The minimum distance is about an arm’s length as a rule of thumb.</p>
+							  <img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance.png" alt="distance" style="width:50%; margin-top:50px;" >
 						  </div>
 						</div>
 					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
@@ -1147,9 +2235,9 @@ function validateCMPSection(){
 							<p>We will show you couple of broken rings with gaps which making them similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
 							<div class="row" style="margin: 30px ">
 										<div class="col-md-3" style=""></div>
-										<div class="col-md-2" ><img class="center-img"  src="imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
-										<div class="col-md-2" ><img class="center-img"  src="imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
-										<div class="col-md-2" ><img class="center-img"  src="imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%; transform: rotate(90deg);" ></div>
+										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;transform: rotate(235deg);" ></div>
 										<div class="col-md-3" ></div>
 							</div>
 
@@ -1168,7 +2256,7 @@ function validateCMPSection(){
 									  </tr>
 									  <tr>
 										<td><button type="button" class="btn btn-default active lc" id ="c5" style="float: right;" onclick="landoltc_clicked(5);">&larr;</button></td>
-										<td><img class="center-img"  id="landoltc_img" src="imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
+										<td><img class="center-img"  id="landoltc_img" src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc"  style="width:5px; margin-top:15px" ></td>
 										<td><button type="button" class="btn btn-default active lc" id ="c1" style="float: left;" onclick="landoltc_clicked(1);">&rarr;</button></td>
 									  </tr>
 									  <tr>
@@ -1200,12 +2288,28 @@ function validateCMPSection(){
 </section>
 
 
+<section class="container" id="qualification_msg">
+	<div  class="alert alert-warning" role="alert" >
+		Next section will be activated when you successfully pass the qualification.
+	</div>
+</section>
+
+
+
+<section class="container" id="alert-qualification" hidden>
+	<div  class="alert alert-success" role="alert" >
+		Well-done! Now you can continue to next section.
+	</div>
+</section>
+
+
+
 <!-- Calibration section-->
-<section class="container" id="calibration">
+<section class="container disabled_section" id="calibration">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<a data-target="collapse" href="#calibration_panel" >Display calibration</a>
+					<a data-target="collapse" href="#calibration_panel" >Display calibration (every <b class="setup_time"> a </b> minutes)</a>
 				</h3>
 			</div>
 			<div  class="panel-collapse collapse in" id="calibration_panel">
@@ -1222,12 +2326,13 @@ function validateCMPSection(){
 					</ul>
 					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_resolution" onclick="on_resolution_change();" required>I followed the above description and changed the resolution of my display as recommended.</label></div></fieldset>
 
-					<p style="margin-top:20px"><b>2. Colors:</b> To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS.
+					<p style="margin-top:20px"><b>2. Colors:</b> To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS. Otherwise you may fail the steps in the setup section.
 					For further instructions use the following links:</p>
 
 					 <ul>
   						<li><b>Windows:</b> Run <a href="https://support.microsoft.com/en-us/windows/get-the-best-display-on-your-monitor-a18171c2-3b8d-d130-4d66-a1a56c068548" target="_blank">Display Color Calibration</a></li>
-  						<li><b>Mac:</b> Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a></li>
+  						<li><b>Mac:</b> Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a>. <b>Note:</b> for Mac OS 12.0.1, you can reach the Color Profile, from
+						 Settings -> Displays -> Display Settings… . Then continue from Step 2 of above document.</li>
 					</ul>
 					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_color" required>I followed the above description and calibrated the display color as recommended.</label></div></fieldset>
 				</div>
@@ -1236,12 +2341,18 @@ function validateCMPSection(){
 </section>
 <!-- Calibration section ends-->
 
+<section class="container" id="alert-calibration" hidden>
+	<div class="alert alert-success" role="alert">
+	  Well-done! Please continue to the next session.
+	</div>
+</section>
+
 <!-- Setup section-->
-<section class="container" id="setup">
+<section class="container disabled_section" id="setup">
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<a data-target="collapse" href="#setup_panel" >Setup</a>
+					<a data-target="collapse" href="#setup_panel" >Setup (every <b class="setup_time"> a </b> minutes)</a>
 				</h3>
 			</div>
 			<div  class="panel-collapse collapse in" id="setup_panel">
@@ -1275,6 +2386,11 @@ function validateCMPSection(){
 			  		<b>NOTE:</b> After that, you are not allowed to change the screen brightness anymore.
 				</div>
 
+				<div id="alert-setup-step1" class="alert alert-success" role="alert" hidden>
+  					Well-done! Now you can continue. For the next question you will not get a feedback, but your answer will be evaluated based on that beside others.
+				</div>
+
+				<div id="setup-rest" class="disabled_section">
 				<div class="row">
 					<div class="col-sm-6" style = "padding:50px"><p>Q2. How many <b>circles</b> and <b>triangles</b> do you see in the image?</p>
 						<div style="margin-left:20px">
@@ -1287,12 +2403,136 @@ function validateCMPSection(){
 				<!-- Distance check-->
 				<h4>Distance from screen</h4>
 				<div class="alert alert-info" role="alert">
-			  		Please make sure you are in a proper distance from your screen. For this HIT it is <b>1.5 to 3 times of height of you screen</b>.
+			  		Please make sure you are in a proper distance from your screen. For this HIT it is <b>1.5 to 3 times of the height of you screen</b>.
 				</div>
 				<div id="distance_test_cmps"></div>
+				</div>
 			</div>
 			</div>
 		</div>
 
 </section>
 <!-- Setup section ends-->
+
+<section class="container" id="alert-setup-complete" hidden>
+	<div class="alert alert-success" role="alert">
+	  Well-done! Now you can continue to next section.
+	</div>
+</section>
+
+<!-- Training section, appears once a day-->
+<section class="container disabled_section" id="training">
+		<div class="panel panel-primary">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<a data-target="#trainingS" data-toggle="collapse" >Training (every <b class="training_time"> 0 hour</b>)</a>
+				</h3>
+			</div>
+			<div  class="panel-collapse collapse in" id="trainingS">
+				<div class="panel-body">
+				<p> Please answer the following <b class="question_number_training"> 0 </b> questions.
+					<p>For each question, please carefully watch the video clip by clicking on the play button in full-screen mode.
+					At the end, you should judge its quality by using one of the <x class="scale_levels">9</x> levels of the given scale.
+					Observe carefully the entire video clip before making your judgment.</p>
+
+				   <p> <b>Note</b> that the scale will be activated when the corresponding video clip played until the end. </p>
+				   <p> There is no right or wrong answer as long as you watch the clips carefully and give your honest opinion. If you see a message follow the instruction as given in the message.</p>
+
+ 				<!-- will be generated -->
+				<ul class="nav nav-tabs" role="tablist" id="trainingTabs">
+				</ul>
+
+				<div class="tab-content" id="nav-tabContent">
+
+
+				</div>
+			<div style="margin-top:0px;font-size:90%;text-align:center">Click <b>next</b> to answer all <b class="question_number_training"> 0 </b> questions.</div>
+			<nav aria-label="..." id="navNextPreT">
+			  <ul class="pager">
+				<li class="previous" onclick="showPreviousQuestionInTrainingSection();"><a href="#trainingTabs" class="page-link"  role="button"><span aria-hidden="true">&larr;</span>Previous</a></li>
+				<li class="next" onclick="showNextQuestionInTrainingSection();"><a href="#trainingTabs" class="page-link"  role="button">Next <span aria-hidden="true">&rarr;</span></a></li>
+			  </ul>
+			</nav>
+
+			</div>
+			</div>
+		</div>
+
+</section>
+<!-- Training section ends-->
+
+<input id="t2_matrix_c" name="t2_matrix_c" type="hidden" value="${t2_matrix_c}" />
+<input id="t2_matrix_t" name="t2_matrix_t" type="hidden" value="${t2_matrix_t}" />
+
+<input id="tp_check" name="tp_check" type="hidden" value="-1" />
+<input id="gq_check" name="gq_check" type="hidden" value="0" />
+<input id="errors" name="errors" type="hidden" value="" />
+
+<input id="browser_info" name="browser_info" type="hidden" value="-1" maxlength="2000"/>
+
+<!--- Rating task -->
+<section class="container disabled_section" id="rating_section">
+		<div class="panel panel-primary">
+			<div class="panel-heading">
+				<h3 class="panel-title">Ratings</h3>
+			</div>
+			<div class="panel-body">
+				<p> Please answer the following <b class="question_number"> 0 </b> questions.</p>
+				<p>For each question, please carefully watch the video clip by clicking on the play button in full-screen mode.
+					At the end, you should judge its quality by using one of the <x class="scale_levels">9</x> levels of the given scale.
+					Observe carefully the entire video clip before making your judgment.</p>
+
+				   <p> <b>Note</b> that the scale will be activated when the corresponding video clip played until the end. </p>
+				   <p> There is no right or wrong answer as long as you watch the clips carefully and give your honest opinion. If you see a message follow the instruction as given in the message.</p>
+
+
+ 				<!-- will be generated -->
+				<ul class="nav nav-tabs" role="tablist" id="nav-tab-ul"> </ul>
+				<!-- will be generated -->
+				<div class="tab-content" id="nav-tabContent-rating">	</div>
+				<div style="margin-top:0px;font-size:90%;text-align:center">Click <b>next</b> to answer all <b class="question_number">0</b> questions, then submit your response.</div>
+				<nav aria-label="..." id="navNextPre">
+				  <ul class="pager">
+					<li class="previous" id="prev-rating" onclick="showPreviousQuestionInRatingSection();"><a href="#navNextPre" class="page-link"  role="button" ><span aria-hidden="true">&larr;</span>Previous</a></li>
+					<li class="next" id= "next-rating" onclick="showNextQuestionInRatingSection();" ><a href="#navNextPre" class="page-link"  role="button">Next <span aria-hidden="true">&rarr;</span></a></li>
+				  </ul>
+				</nav>
+
+			</div>
+		</div>
+</section>
+
+
+<section class="container" id="thanks">
+	<p>Thanks for your participation. Please perform more HITs from this group when they are available for you.</p>
+</section>
+
+<section class="container" id="max_allowed_HITs_reached" hidden>
+	<p><h2>Well done! </h2> You performed the maximum number of HITs that you were allowed to.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Performing more HITs
+		than what is explained in the description is forbidden and leads ro rejection of all of your submissions.
+			</div>
+
+</section>
+
+<section class="container" id="qualification_rejected" hidden>
+	<p>There is no assignments that match to your qualification. You may try other HITs from us.
+	We thank you for your participation.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads ro rejection of all of your submissions.
+			</div>
+</section>
+
+<section class="container" id="qualification_not_pass" hidden>
+	<p>Based on your responses, unfortunately you are not qualified for this HIT.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads ro rejection of all of your submissions.
+			</div>
+</section>

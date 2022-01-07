@@ -79,7 +79,7 @@ class AzureClipStorage:
     def make_clip_url(self, filename):
         return f"https://{self._account_name}.blob.core.windows.net/{self._container}/{filename}?{self._SAS_token}"
 
-
+# todo what about dcr
 class GoldSamplesInStore(AzureClipStorage):
     def __init__(self, config, alg):
         super().__init__(config, alg)
@@ -87,7 +87,7 @@ class GoldSamplesInStore(AzureClipStorage):
 
     async def get_dataframe(self):
         clips = await self.clip_names
-        df = pd.DataFrame(columns=['gold_clips', 'gold_clips_ans'])
+        df = pd.DataFrame(columns=['gold_clips_pvs', 'gold_clips_ans'])
         clipsList = []
         for clip in clips:
             clipUrl = self.make_clip_url(clip)
@@ -95,16 +95,16 @@ class GoldSamplesInStore(AzureClipStorage):
             if 'noisy' in clipUrl.lower():
                 rating = 1
 
-            clipsList.append({'gold_clips': clipUrl, 'gold_clips_ans': rating})
+            clipsList.append({'gold_clips_pvs': clipUrl, 'gold_clips_ans': rating})
 
         df = df.append(clipsList)
         return df
 
-
+# todo what about dcr
 class TrappingSamplesInStore(AzureClipStorage):
     async def get_dataframe(self):
         clips = await self.clip_names
-        df = pd.DataFrame(columns=['trapping_clips', 'trapping_ans'])
+        df = pd.DataFrame(columns=['trapping_pvs', 'trapping_ans'])
         clipsList = []
         for clip in clips:
             clipUrl = self.make_clip_url(clip)
@@ -124,12 +124,12 @@ class TrappingSamplesInStore(AzureClipStorage):
                     f"  TrappingSamplesInStore: could not extract correct rating for this trapping clip: {clip.lower()}")
             else:
                 clipsList.append(
-                    {'trapping_clips': clipUrl, 'trapping_ans': rating})
+                    {'trapping_pvs': clipUrl, 'trapping_ans': rating})
 
         df = df.append(clipsList)
         return df
 
-
+"""
 class PairComparisonSamplesInStore(AzureClipStorage):
     async def get_dataframe(self):
         clips = await self.clip_names
@@ -139,3 +139,4 @@ class PairComparisonSamplesInStore(AzureClipStorage):
 
         df = pd.DataFrame({'pair_a': pair_a_clips, 'pair_b': pair_b_clips})
         return df
+"""

@@ -362,21 +362,6 @@ def data_cleaning(filename, method, wrong_vcodes):
 
 
 # pcrowdv
-def add_wrong_vcodes(worker_list, wrong_vcodes):
-    if wrong_vcodes is None: return worker_list
-    print(worker_list)
-    wrong_vcodes['status'] = 'Submitted'
-    wrong_vcodes['Approve'] = ''
-    wrong_vcodes['Reject'] = 'x'
-    wrong_vcodes['accept'] = 0
-    wrong_vcodes.rename(columns={"assignmentId": "assignment"}, inplace=True)
-    print(wrong_vcodes)
-    df = pd.DataFrame(worker_list)
-    df = df.append(wrong_vcodes, ignore_index=True)
-    return df.to_dict(orient='records')
-
-
-# pcrowdv
 def evaluate_maximum_hits(data):
     df = pd.DataFrame(data)
     small_df = df[['worker_id']].copy()
@@ -672,24 +657,11 @@ def dict_value_to_key(d, value):
 
 method_to_mos = {
     "acr": 'MOS',
-    "ccr": 'CMOS',
-    "dcr": 'DMOS',
-    "p835_bak": 'MOS_BAK',
-    "p835_sig": 'MOS_SIG',
-    "p835_ovrl": 'MOS_OVRL',
-    "echo_impairment_test_echo": 'MOS_ECHO',
-    "echo_impairment_test_other": 'MOS_OTHER'
+    "dcr": 'DMOS'
 }
-
-p835_columns = ['condition_name', 'n', 'MOS_BAK', 'MOS_SIG', 'MOS_OVRL', 'std_bak', 'std_sig', 'std_ovrl',
-                '95%CI_bak', '95%CI_sig', '95%CI_ovrl']
-echo_impairment_test_columns = ['condition_name', 'n', 'MOS_ECHO', 'MOS_OTHER', 'std_echo', 'std_other',
-                '95%CI_echo', '95%CI_other']
 
 question_names = []
 question_name_suffix = ''
-p835_suffixes = ['_bak', '_sig', '_ovrl']
-echo_impairment_test_suffixes = ['_echo', '_other']
 create_per_worker = True
 
 
@@ -981,7 +953,6 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
                     df = df.drop(columns='n')
                     full_set_conditions = pd.merge(full_set_conditions, df, left_on='condition_name', right_on='condition_name')
             votes_per_all_cond_path = os.path.splitext(answer_path)[0] + f'_votes_per_cond_all.csv'
-            column_names = p835_columns if test_method == 'p835' else echo_impairment_test_columns
             full_set_conditions.to_csv(votes_per_all_cond_path, index=False,
                                        columns=['condition_name', 'n', 'MOS_BAK', 'MOS_SIG', 'MOS_OVRL', 'std_bak',
                                                 'std_sig', 'std_ovrl', '95%CI_bak', '95%CI_sig', '95%CI_ovrl'])

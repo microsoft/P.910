@@ -76,6 +76,7 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 .scale td { text-align: left; padding:0;}
 .scale label { display:block;}
 .scale .c { text-align: center;}
+.table > tbody > tr > td {padding:0;}
 
 .bg1 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_a.png");}
 .bg2 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_b.png");}
@@ -1403,7 +1404,7 @@ function on_setup_performed(success){
 	Input could be 5 or 9
 */
 
-function getScale(type, is_training){
+function getDCRScale(type, is_training){
 	let p ='q';
 	if (is_training) p = 't';
 
@@ -1447,7 +1448,7 @@ function generate_training_section(){
 	'<span class="velmnt dcr" id="t{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
-	getScale(config['scale_points'], true)+
+	getDCRScale(config['scale_points'], true)+
 	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
 
 	// this will show which url was shown by in which question as their orther will be randomized
@@ -1484,7 +1485,7 @@ function generate_rating_section(){
 	'<span class="velmnt dcr" id="Q{0}" data-src-ref="{1}" data-src-clip="{2}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The impairment is</th><th class="c" >Score</th></tr></thead><tbody>'+
-	getScale(config['scale_points'], false)+
+	getDCRScale(config['scale_points'], false)+
 	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
 
 	// this will show which url was shown by in which question as their orther will be randomized

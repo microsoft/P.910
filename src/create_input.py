@@ -203,7 +203,7 @@ def create_input_for_acr(cfg, df, output_path):
     :param output_path:
     :return:
     """
-    clips = df['rating_clips'].dropna()
+    clips = df['pvs'].dropna()
     n_clips = clips.count()
     n_clips_per_session = int(cfg['number_of_clips_per_session'])
     output_df = pd.DataFrame()
@@ -218,35 +218,22 @@ def create_input_for_acr(cfg, df, output_path):
     n_sessions = math.ceil(n_clips / int(cfg['number_of_clips_per_session']))
     print(f'{n_clips} clips and {n_sessions} sessions')
 
-    # create math
-    math_source = df['math'].dropna()
-    math_output = np.tile(math_source.to_numpy(), (n_sessions // math_source.count()) + 1)[:n_sessions]
+    # block_matrix
+    nPairs = 2 * n_sessions
+    urls = df['block_matrix_url'].dropna()
+    circles = df['circles'].dropna()
+    triangles = df['triangles'].dropna()
 
-    # CMPs: 4 pairs are needed for 1 session
-    nPairs = 4 * n_sessions
-    pair_a = df['pair_a'].dropna()
-    pair_b = df['pair_b'].dropna()
-    pair_a_extended = np.tile(pair_a.to_numpy(), (nPairs // pair_a.count()) + 1)[:nPairs]
-    pair_b_extended = np.tile(pair_b.to_numpy(), (nPairs // pair_b.count()) + 1)[:nPairs]
+    urls_extended = np.tile(urls.to_numpy(), (nPairs // urls.count()) + 1)[:nPairs]
+    circles_extended = np.tile(circles.to_numpy(), (nPairs // circles.count()) + 1)[:nPairs]
+    triangles_extended = np.tile(triangles.to_numpy(), (nPairs // triangles.count()) + 1)[:nPairs]
 
-    # randomly select pairs and swap a and b
-    swap_me = np.random.randint(2, size=nPairs)
-    tmp = np.copy(pair_a_extended)
-    pair_a_extended[swap_me == 1] = pair_b_extended[swap_me == 1]
-    pair_b_extended[swap_me == 1] = tmp[swap_me == 1]
-
-    full_array = np.transpose(np.array([pair_a_extended, pair_b_extended]))
-    new_4 = np.reshape(full_array, (n_sessions, 8))
-    for i in range(n_sessions):
-        new_4[i] = np.roll(new_4[i], random.randint(1, 3) * 2)
-
-    output_df = output_df.assign(**{'CMP1_A': new_4[:, 0], 'CMP1_B': new_4[:, 1],
-                                    'CMP2_A': new_4[:, 2], 'CMP2_B': new_4[:, 3],
-                                    'CMP3_A': new_4[:, 4], 'CMP3_B': new_4[:, 5],
-                                    'CMP4_A': new_4[:, 6], 'CMP4_B': new_4[:, 7]})
-
-    # add math
-    output_df['math'] = math_output
+    full_array = np.transpose(np.array([urls_extended, circles_extended, triangles_extended]))
+    new_2 = np.reshape(full_array, (n_sessions, 6))
+    np.random.shuffle(new_2)
+    output_df = output_df.assign(
+        **{'t1_matrix_url': new_2[:, 0], 't1_matrix_c': new_2[:, 1], 't1_matrix_t': new_2[:, 2],
+           't2_matrix_url': new_2[:, 3], 't2_matrix_c': new_2[:, 4], 't2_matrix_t': new_2[:, 5]})
 
     # trappings
     if int(cfg['number_of_trapping_per_session']) > 0:
@@ -254,10 +241,10 @@ def create_input_for_acr(cfg, df, output_path):
             print("more than one TP is not supported for now - continue with 1")
         # n_trappings = int(cfg['general']['number_of_trapping_per_session']) * n_sessions
         n_trappings = n_sessions
-        tmp = df[['trapping_clips', 'trapping_ans']].copy()
+        tmp = df[['trapping_pvs', 'trapping_ans']].copy()
         tmp.dropna(inplace=True)
         tmp = tmp.sample(n=n_trappings, replace=True)
-        trap_source = tmp['trapping_clips'].dropna()
+        trap_source = tmp['trapping_pvs'].dropna()
         trap_ans_source = tmp['trapping_ans'].dropna()
 
         full_trappings = np.tile(trap_source.to_numpy(), (n_trappings // trap_source.count()) + 1)[:n_trappings]
@@ -268,7 +255,7 @@ def create_input_for_acr(cfg, df, output_path):
         random.shuffle(full_tp)
 
         full_trappings, full_trappings_answer = zip(*full_tp)
-        output_df['TP'] = full_trappings
+        output_df['TP_CLIP'] = full_trappings
         output_df['TP_ANS'] = full_trappings_answer
 
     # gold_clips
@@ -276,7 +263,7 @@ def create_input_for_acr(cfg, df, output_path):
         if int(cfg['number_of_gold_clips_per_session']) > 1:
             print("more than one gold_clip is not supported for now - continue with 1")
         n_gold_clips = n_sessions
-        gold_clip_source = df['gold_clips'].dropna()
+        gold_clip_source = df['gold_clips_pvs'].dropna()
         gold_clip_ans_source = df['gold_clips_ans'].dropna()
 
         full_gold_clips = np.tile(gold_clip_source.to_numpy(),
@@ -287,8 +274,8 @@ def create_input_for_acr(cfg, df, output_path):
         random.shuffle(full_gc)
 
         full_gold_clips, full_gold_clips_answer = zip(*full_gc)
-        output_df['gold_clips'] = full_gold_clips
-        output_df['gold_clips_ans'] = full_gold_clips_answer
+        output_df['GOLD_CLIP'] = full_gold_clips
+        output_df['GOLD_ANS'] = full_gold_clips_answer
 
     output_df.to_csv(output_path, index=False)
     return len(output_df)
