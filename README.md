@@ -1,5 +1,5 @@
-# P.CrowdV
-The P.CrowdV Toolkit is a software package that enables users to run subjective video quality assessment test
+# P.910 Crowd
+The P.910-Crowd Toolkit is a software package that enables users to run subjective video quality assessment test
 in Amazon Mechanical Turk (AMT) crowdsourcing platform. It is intended to be counter part of the ITU-T Recommendation P.910 
 for crowdsourcing. The package can be also used in combination with [HITAPP Server](https://github.com/babaknaderi/hitapp_server)
 to conduct test on any other crowdsourcing platforms.

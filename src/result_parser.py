@@ -197,7 +197,7 @@ def check_gold_question(row, method):
                     correct_gq = 1
                     return correct_gq
     except Exception as e:
-        print('GOld Question error: '+ e)
+        print('Gold Question error: '+ e)
         return None
     return correct_gq
 
@@ -278,11 +278,9 @@ def data_cleaning(filename, method, wrong_vcodes):
 
     worker_list = []
     use_sessions = []
-    count_sig_bak = 0
     not_using_further_reasons = []
 
     for row in reader:
-        correct_cmp_ans = 0
         setup_was_hidden = row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
 
@@ -293,7 +291,7 @@ def data_cleaning(filename, method, wrong_vcodes):
 
         # TODOD: is it needed?
         # step1. check if audio of all X questions are played at least once
-        # d['all_audio_played'] = 1 if check_audio_played(row, method) else 0
+        d['all_audio_played'] = 1 if check_video_played(row, method) else 0
 
         # check if setup was shown
         if setup_was_hidden:
@@ -994,7 +992,7 @@ if __name__ == '__main__':
     parser.add_argument('--quality_bonus', help="Quality bonus will be calculated. Just use it with your final download"
                                                 " of answers and when the project is completed", action="store_true")
     args = parser.parse_args()
-    methods = ['dcr']
+    methods = ['dcr', 'acr']
     test_method = args.method.lower()
     assert test_method in methods, f"No such a method supported, please select between 'dcr' "
 
