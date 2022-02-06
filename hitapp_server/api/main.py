@@ -1,7 +1,14 @@
-from fastapi import FastAPI,  Response, Request,  status, HTTPException, BackgroundTasks
-from fastapi import File, UploadFile, Form
+"""
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+"""
+
+from fastapi import FastAPI,  Response, Request,  status, BackgroundTasks
+from fastapi import Form
 from fastapi.staticfiles import StaticFiles
-from fastapi.params import Body
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time,random
@@ -14,7 +21,6 @@ import json
 from shutil import copyfile
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
