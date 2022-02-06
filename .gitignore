@@ -130,3 +130,9 @@ dmypy.json
 .idea
 
 .ttf
+__pycache__
+.venv
+
+static/**/*.html
+static/**/*.csv
+.env

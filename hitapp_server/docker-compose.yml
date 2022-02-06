@@ -1,0 +1,41 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    command: uvicorn api.main:app --reload --workers 1 --host api --port 8000
+    container_name: api
+    env_file:
+      - ./.env
+    depends_on:
+      - dbx
+    ports:
+      - 8000:8000
+    volumes:
+      - ./static:/code/api/static
+  dbx:
+    image: postgres:14-alpine
+    restart: always
+    container_name: dbx
+    volumes:
+      - dev_data2:/var/lib/postgresql/data
+      - ./db/sql/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    env_file:
+      - ./.env
+    ports:
+      - 5432:5432
+  frontend:
+    build: ./front-end/.
+    container_name: front-end
+    volumes:
+      - ./front-end/html/:/usr/share/nginx/html
+      - ./front-end/.htpasswd:/var/www/.htpasswd
+    ports:
+      - 80:80
+    depends_on:
+      - dbx
+      - api
+volumes:
+   dev_data2:
+

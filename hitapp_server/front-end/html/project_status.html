@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+.left_space{margin:3px 20px}
+
+.loader {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.container {margin: 20px 50px}
+</style>
+<script type="text/javascript">
+BASE_URL = "./api";
+
+function getURLParam( name, defaultValue ) {
+   var regexS = "[\?&]"+name+"=([^&#]*)";
+   var regex = new RegExp( regexS );
+   var tmpURL = window.location.href;
+   var results = regex.exec( tmpURL );
+   if( results == null ) {
+     return defaultValue;
+   } else {
+     return results[1];
+   }
+}
+
+
+function update_status(){
+	project_id = getURLParam('id', -1);
+	$.get(BASE_URL+"/projects/"+project_id, function(data, status){
+		console.log(data);
+		project = data['project']
+		data_for_amt = project['data_for_amt']
+		if (data_for_amt ==null){
+			setTimeout(update_status, 3000);
+		}else{
+			update_page(project);
+		}
+
+	});
+}
+
+function get_answer_count(){
+	project_id = getURLParam('id', -1);
+	$.get(BASE_URL+"/projects/"+project_id+"/answers/count", function(data, status){
+		console.log(data);
+		ans_count = data['count'];
+		$("#answers").html(ans_count);
+		console.log(all_assignment)
+		if (all_assignment!=0){
+			p  = (ans_count/all_assignment)*100;
+			$("#percent").html("(% "+p.toFixed(2)+")");
+		}
+	});
+}
+
+
+
+var all_assignment= 0;
+
+
+function update_page(project){
+	$("#name").val(project["name"]);
+	$("#nAssignment").val(project["n_assignment"]);
+	$("#platform").val(project["platform"]);
+	$("#status").val(project["status"]);
+	$("#nhits").val(project["n_hits"]);
+
+	$("#hit_download").html('<a href="'+project["data_for_amt"]["html"]+'" target="_blank" download>'+project["data_for_amt"]["html"]+'</a>');
+	$("#csv_download").html('<a href="'+project["data_for_amt"]["csv"]+'" target="_blank" download>'+project["data_for_amt"]["csv"]+'</a>');
+	$("#loader").hide();
+	$("#note").hide();
+
+	all_assignment = project["n_hits"] * project["n_assignment"];
+	$("#all_assignment").html(all_assignment);
+}
+
+
+$(function() {
+	$.ajaxSetup({ cache: false });
+	project_id = getURLParam('id', -1);
+	update_status();
+	get_answer_count()
+});
+
+
+
+function server_prep_download(){
+	project_id = getURLParam('id', -1);
+	$.get(BASE_URL+"/projects/"+project_id+"/answers/download", function(data, status){
+	});
+}
+
+function update_answer_links(){
+	project_id = getURLParam('id', -1);
+	console.log(project_id);
+	$.get(BASE_URL+"/projects/"+project_id, function(data, status){
+		console.log(data);
+
+		project = data['project']
+		console.log();
+		if (!project) return;
+		last_created_answer = project['answer_link_created_at'];
+		console.log(last_created_answer);
+		if (last_created_answer ==null){
+			setTimeout(update_status, 3000);
+		}else{
+			create_at = Date.parse(last_created_answer);
+
+			diff_min = (Date.now()- create_at)/60000;
+			console.log(diff_min);
+			if (diff_min>1) {
+				// the answer is too old, wait for the new one
+				setTimeout(update_answer_links, 3000);
+			}else {
+				$("#download_ans").html('<a href="'+project["answer_link"]+'" target="_blank" download>'+project["answer_link"]+'</a>')
+				$("#loader_ans").hide()
+			}
+		}
+
+	});
+}
+
+
+
+function prepare_ans_download(){
+	console.log("prepare_ans_download");
+	$("#ans_section").show();
+	server_prep_download();
+	update_answer_links();
+}
+
+
+</script>
+
+<body>
+	<section class="container">
+		<button type="button" class="btn btn-dark"  onclick="location.href='index.html'">List of projects</button>
+		<button type="button" class="btn btn-dark"  onclick="location.href='create_project.html'" >New project</button>
+	</section>
+
+    <section class="container">
+
+		<div class="row col-xs-12 col-md-12">
+			<div class="panel panel-info">
+	  			<div class="panel-heading">
+					<h3 class="panel-title">
+			<a data-toggle="collapse" href="#collapse1">Project status</a>
+		</h3>
+	  			</div>
+	  			<div id="collapse1" class="panel-collapse collapse in">
+		  				<div class="panel-body">
+
+						  <div class="row">
+							  <div class="col-sm-2"></div>
+							  <div class="col-sm-12">
+								  <div class="row">
+									  <div class="col-sm-3"><b>Project status</b></div>
+									  <div class="col-sm-1"><div id="loader" class="loader" style="float: right; clear:both;"></div> </div>
+									  <div class="col-sm-8"><small id="note">It may take sometime to create all HITs...</small></div>
+
+								  </div>
+
+								  <table class="left_space">
+									  <tr><td>Name:</td><td><input id="name" class="left_space" disabled></td></tr>
+									  <tr><td>Number of assignment per HIT:</td><td><input id="nAssignment" class="left_space" disabled></td></tr>
+									  <tr><td>Platform:</td><td><input id="platform" class="left_space" disabled></td></tr>
+									  <tr><td>Status</td><td><input id="status" class="left_space" disabled></td></tr>
+									  <tr><td>Number of HITs</td><td><input id="nhits" class="left_space" disabled></td></tr>
+									  <tr><td>Answers</td><td><p class="left_space"> <b id="answers" >?</b> / <b id="all_assignment">?</b> <b id="percent"></b> </p></td>
+
+									  <td id="ans_download" ><button type="button" class="btn btn-primary" onclick="prepare_ans_download()">Download</button></td>
+
+									  </tr>
+								  </table>
+
+								  <div id="ans_section" hidden>
+									  <p style="margin:50px 0px"></p>
+								  		<p><b>Answers</b></p>
+								  		<table class="left_space">
+											  <tr><td>Download answers</td><td><div id="download_ans" class="left_space">Preparing answers ...</div></td>
+											  <td id="loader_ans"><div class="loader" style="float: right; clear:both;"></div> </td>
+
+											  </tr>
+										</table>
+
+								  </div>
+								  <p style="margin:50px 0px"></p>
+								  <p><b>AMT resources</b> download the following resources to create your job in AMT</p>
+								  <table class="left_space">
+									  <tr><td>AMT HIT</td><td><div id="hit_download" class="left_space">Loading...</div></td></tr>
+									  <tr><td>AMT input file</td><td><div id="csv_download" class="left_space">Loading...</div></td></tr>
+								  </table>
+							  </div>
+						  </div>
+						</div>
+				</div>
+			</div>
+		</div>
+    </section>
+
+
+
+</body>
+</html>

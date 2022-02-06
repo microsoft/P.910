@@ -21,14 +21,14 @@ which participant should be Accepted/rejected or get bonuses.
 
 
 ## Create the test on HITAPP Server
-Get your [HITApp Server](https://github.com/babaknaderi/hitapp_server) started and follow next steps to publish your HIT App
+Get your [HITApp Server](../hitapp_server/README.md) started and follow next steps to publish your HIT App
 on that:
 
 1. Use a web browser and open your website. Login with the username and password your set (or default one) and go to "**New Project**".
 
 1. Fill in the form and upload `YOUR_PROJECT_NAME_dcr.html` as HTML file, and `YOUR_PROJECT_NAME_publish_batch.csv` as CSF file. Finally click on **Submit**.
 
-    **Note:** The _Number of assignment per HIT_ refers to the target number of participants.
+    **Note:** The _Number of assignment per HIT_ refers to the target number of participants. Here it only be used to provide statistics on the number of submitted answers.
 
 
 1. Now your HIT App will be created. As soon as the process is finished, you will see **AMT resources** links for download in the **Project Status** page. 

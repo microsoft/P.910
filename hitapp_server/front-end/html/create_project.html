@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+.left_space{margin:3px 20px}
+
+.loader {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.container {margin: 20px 50px}
+#page{margin: 20px 0px }
+
+.project td{padding-right:60px}
+.project{background-color:#cccccc; padding:20px; border-radius: 10px; margin:10px;}
+
+</style>
+
+<html lang="en">
+
+
+
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+
+
+<body>
+
+	<section class="container">
+		<button type="button" class="btn btn-dark"  onclick="location.href='index.html'">List of projects</button>
+		<button type="button" class="btn btn-dark"  onclick="location.href='create_project.html'" >New project</button>
+	</section>
+
+
+
+<form id="hit-form" method = "post" action= "./api/projects" enctype="multipart/form-data">
+
+<!---
+<form id="hit-form" method = "post" action= "http://localhost:8000/projects" enctype="multipart/form-data">
+inside html
+-->
+
+    <section class="container">
+
+
+        <div class="row col-xs-12 col-md-12">
+	<div class="panel panel-info">
+	  <div class="panel-heading">
+		<h3 class="panel-title">
+			<a data-toggle="collapse" href="#collapse1">Step1 - Create Project</a>
+		</h3>
+	  </div>
+	  <div id="collapse1" class="panel-collapse collapse in">
+		  <div class="panel-body">
+
+                  <fieldset class="qualificationFieldset"><label>Project name</label>
+				  <div class="form-group">
+					  <input type="text" class="form-control nospace" name="project_name" required="" value="test_project">
+				  </div>
+			  </fieldset>
+
+            <fieldset class="qualificationFieldset"><label>Number of assignments</label>
+				  <div class="form-group">
+					  <input type="text" class="form-control nospace" name="num_assignment" required="" value="20">
+				  </div>
+			  </fieldset>
+
+            <fieldset class="qualificationFieldset">
+				  <div class="form-group">
+					  <label for="platform">Crowdsourcing platform</label>
+					  <select class="form-control" id="platform" name="platform" required="">
+							<option value="">Please select</option>
+							<option value="AMT" selected>Amazon Mechanical Turk</option>
+							<option value="CW">Clickworker</option>
+							<option value="outside">Open call</option>
+
+					  </select>
+				  </div>
+			  </fieldset>
+
+            <fieldset class="qualificationFieldset">
+                <div class="custom-file">
+                    <label class="custom-file-label" for="html_template">Choose HTML file</label>
+                    <input type="file" class="custom-file-input" id="html_template" name="html_template" accept="text/html">
+
+                  </div>
+			  </fieldset>
+
+
+
+			 <fieldset class="qualificationFieldset">
+                <div class="custom-file">
+                    <label class="custom-file-label" for="csv_variables">Choose CSV file with variables</label>
+                    <input type="file" class="custom-file-input" id="csv_variables" name="csv_variables" accept="text/csv">
+                  </div>
+			  </fieldset>
+
+
+
+
+          </div>
+		</div>
+
+	</div>
+	</div>
+    </section>
+
+<p class="text-center" id = "submit_id"><input type="submit" id="submitButton" class="btn btn-primary" value="Submit" onclick="form_submit_check"/></p>
+
+</form>
+
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+# app
+fastapi
+uvicorn
+jinja2
+python-multipart
+aiofiles
+pandas
+
+#utils
+python-dotenv
+pathlib
+# db
+psycopg2
