@@ -133,6 +133,6 @@ dmypy.json
 __pycache__
 .venv
 
-static/**/*.html
-static/**/*.csv
+hitapp_server/static/**/*.html
+hitapp_server/static/**/*.csv
 .env

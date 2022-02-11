@@ -29,21 +29,21 @@ from fastapi import File, UploadFile
 app = FastAPI()
 
 
-origins = [
-    "",
-    "http://localhost",
-    "localhost",
-    "http://localhost:8000",
-    "http://localhost:8080"
-]
+#origins = [
+#    "",
+#    "http://localhost",
+#    "localhost",
+#    "http://localhost:8000",
+#   "http://localhost:8080"
+#]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+#app.add_middleware(
+#    CORSMiddleware,
+#    allow_origins=origins,
+#    allow_credentials=True,
+#    allow_methods=["*"],
+#    allow_headers=["*"]
+#)
 
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=Path(BASE_DIR, "static")), name="static")
