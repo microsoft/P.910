@@ -276,6 +276,115 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     print(f"  [{out_path}] is created")
 
 
+async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg):
+    """
+    Create the ACR-HR.html file corresponding to this project
+    :param master_cfg:
+    :param template_path:
+    :param out_path:
+    :param training_path:
+    :param trap_path:
+    :param general_cfg:
+    :return:
+    """
+    print("Start creating custom acr-hr.html")
+
+    create_input_cfg = master_cfg['create_input']
+    hit_app_html_cfg = master_cfg['hit_app_html']
+    viewing_condition_cfg = master_cfg['viewing_condition']
+
+    config = {}
+    config['cookie_name'] = hit_app_html_cfg['cookie_name'] if 'cookie_name' in hit_app_html_cfg else \
+        f'acr_{get_rand_id()}'
+    config['qual_cookie_name'] = hit_app_html_cfg['qual_cookie_name'] if 'qual_cookie_name' in hit_app_html_cfg else \
+        f'qul_{get_rand_id()}'
+
+    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project']
+    config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
+        "ic3ai@outlook.com"
+
+    config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
+    config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']
+    config['quantity_bonus'] = hit_app_html_cfg['quantity_bonus']
+    config['quality_top_percentage'] = hit_app_html_cfg['quality_top_percentage']
+    config['quality_bonus'] = float(hit_app_html_cfg['quality_bonus']) + float(hit_app_html_cfg['quantity_bonus'])
+    config['sum_quantity'] = float(hit_app_html_cfg['quantity_bonus']) + float(hit_app_html_cfg['hit_base_payment'])
+    config['sum_quality'] = config['quality_bonus'] + float(hit_app_html_cfg['hit_base_payment'])
+
+    config['min_screen_refresh_rate'] = viewing_condition_cfg[
+        'min_screen_refresh_rate'] if 'min_screen_refresh_rate' in viewing_condition_cfg else 30
+    config['min_device_resolution'] = viewing_condition_cfg[
+        'min_device_resolution'] if 'min_device_resolution' in viewing_condition_cfg else '{w: 1280, h:720}'
+    config['accepted_device'] = viewing_condition_cfg[
+        'accepted_device'] if 'accepted_device' in viewing_condition_cfg else '["PC"]'
+    config['scale_points'] = hit_app_html_cfg['scale'] if 'scale' in hit_app_html_cfg else 5
+
+
+    config = {**config, **general_cfg}
+
+    # rating urls
+    n_clips = int(create_input_cfg['number_of_clips_per_session'])
+    n_traps = int(create_input_cfg['number_of_trapping_per_session'])
+    n_gold = int(create_input_cfg['number_of_gold_clips_per_session']) if 'number_of_gold_clips_per_session' in \
+                                                                          create_input_cfg else 0
+    rating_urls = []
+    for i in range(0, n_clips):
+        rating_urls.append('${Q'+str(i)+'}')
+    ref_urls = []
+    for i in range(0, n_clips):
+        ref_urls.append('${Q' + str(i) + '_R}')
+
+    if n_traps > 1:
+        raise Exception("More than 1 trapping question is not supported.")
+    if n_traps == 1:
+        rating_urls.append('${TP_CLIP}')
+
+    if n_gold > 1:
+        raise Exception("more than 1 gold question is not supported.")
+    if n_gold == 1:
+        rating_urls.append('${GOLD_CLIP}')
+        config['gold_ans'] = "${GOLD_ANS}"
+    else:
+        config['gold_ans'] = ""
+    config['rating_urls'] = rating_urls
+    config['ref_urls'] = ref_urls
+
+    # trappings
+    if trap_path and os.path.exists(trap_path):
+        df_trap = pd.read_csv(trap_path, nrows=1)
+    else:
+        trap_clips_store = TrappingSamplesInStore(master_cfg['TrappingQuestions'], 'TrappingQuestions')
+        df_trap = await trap_clips_store.get_dataframe()
+    # trapping clips are required, at list 1 clip should be available here
+    if len(df_trap.index) < 1 and int(create_input_cfg['number_of_clips_per_session']) > 0:
+        raise Exception("At least one trapping clip is required")
+    for _, row in df_trap.head(n=1).iterrows():
+        trap_url = row['trapping_pvs']
+        trap_ans = row['trapping_ans']
+
+    config['training_trap_urls'] = trap_url
+    config['training_trap_ans'] = trap_ans
+
+    # training urls
+    df_train = pd.read_csv(training_path)
+    train_urls = []
+    for _, row in df_train.iterrows():
+        train_urls.append(row['training_pvs'])
+    train_urls.append(trap_url)
+
+    config['training_urls'] = train_urls
+
+    with open(template_path, 'r') as file:
+        content = file.read()
+        file.seek(0)
+    t = Template(content)
+    html = t.render(cfg=config)
+
+    with open(out_path, 'w') as file:
+        file.write(html)
+    print(f"  [{out_path}] is created")
+
+
 # checked
 async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, general):
     """
@@ -351,6 +460,11 @@ def get_path(test_method):
     acr_cfg_template_path = os.path.join(os.path.dirname(__file__),
                                          'assets_master_script/result_parser_template.cfg')
 
+    # for acr-hr
+    acrhr_template_path = os.path.join(os.path.dirname(__file__), 'template/ACRHR_template.html')
+    acrhr_cfg_template_path = os.path.join(os.path.dirname(__file__),
+                                           'assets_master_script/result_parser_template.cfg')
+
     #   for dcr
     dcr_template_path = os.path.join(os.path.dirname(__file__), 'template/DCR_template.html')
     dcr_ccr_cfg_template_path = os.path.join(os.path.dirname(__file__),
@@ -359,6 +473,7 @@ def get_path(test_method):
     method_to_template = { # (method, is_p831_fest)
         ('acr'): (acr_template_path, acr_cfg_template_path),
         ('dcr'): (dcr_template_path, dcr_ccr_cfg_template_path),
+        ('acr-hr'): (acrhr_template_path, acrhr_cfg_template_path),
     }
 
     template_path, cfg_path = method_to_template[(test_method)]
@@ -426,6 +541,9 @@ async def main(cfg, test_method, args):
                                      general_cfg)
     elif test_method == 'acr':
         await create_hit_app_acr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
+                                 general_cfg)
+    elif test_method == 'acr-hr':
+        await create_hit_app_acrhr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
                                  general_cfg)
     else:
         print('Method is not supported yet.')

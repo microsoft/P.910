@@ -36,8 +36,13 @@ def validate_inputs(cfg, df, method):
     # tps are always the references.
     required_columns_dcr = ['pvs', 'src', 'block_matrix_url', 'circles', 'triangles', 'trapping_ans', 'trapping_pvs',
                             'trapping_src', 'gold_clips_pvs', 'gold_clips_src', 'gold_clips_ans']
+
+    required_columns_acrhr = ['pvs', 'src', 'block_matrix_url', 'circles', 'triangles', 'trapping_ans', 'trapping_pvs',
+                              'gold_clips_pvs', 'gold_clips_ans']
     if method in ['acr']:
         req = required_columns_acr
+    elif method in ['dcr']:
+        req = required_columns_dcr
     else:
         req = required_columns_dcr
 
@@ -164,6 +169,7 @@ def add_clips_random(clips, n_clips_per_session, output_df):
     n_clips = clips.count()
     n_sessions = math.ceil(n_clips / n_clips_per_session)
     needed_clips = n_sessions * n_clips_per_session
+
     all_clips = np.tile(clips.to_numpy(), (needed_clips // n_clips) + 1)[:needed_clips]
     #   check the method: clips_selection_strategy
     random.shuffle(all_clips)
@@ -195,6 +201,27 @@ def add_clips_random_dcr(clips, refs, n_clips_per_session, output_df):
         output_df[f'Q{q}_R'] = refs_sessions[:, q]
 
 
+# checked
+def add_clips_random_acrhr(clips, refs, n_clips_per_session, output_df):
+    n_clips = clips.count()
+    n_sessions = math.ceil(n_clips / n_clips_per_session)
+    needed_clips = n_sessions * n_clips_per_session
+
+    full_clips = np.tile(clips.to_numpy(), (needed_clips // n_clips) + 1)[:needed_clips]
+    full_refs = np.tile(refs.to_numpy(), (needed_clips // n_clips) + 1)[:needed_clips]
+
+    full = list(zip(full_clips, full_refs))
+    random.shuffle(full)
+    full_clips, full_refs = zip(*full)
+
+    clips_sessions = np.reshape(full_clips, (n_sessions, n_clips_per_session))
+    refs_sessions = np.reshape(full_refs, (n_sessions, n_clips_per_session))
+
+    for q in range(n_clips_per_session):
+        output_df[f'Q{q}'] = clips_sessions[:, q]
+        output_df[f'Q{q}_R'] = refs_sessions[:, q]
+
+
 def create_input_for_acr(cfg, df, output_path):
     """
     create the input for the acr methods
@@ -216,6 +243,108 @@ def create_input_for_acr(cfg, df, output_path):
         add_clips_random(clips, n_clips_per_session, output_df)
 
     n_sessions = math.ceil(n_clips / int(cfg['number_of_clips_per_session']))
+    print(f'{n_clips} clips and {n_sessions} sessions')
+
+    # block_matrix
+    nPairs = 2 * n_sessions
+    urls = df['block_matrix_url'].dropna()
+    circles = df['circles'].dropna()
+    triangles = df['triangles'].dropna()
+
+    urls_extended = np.tile(urls.to_numpy(), (nPairs // urls.count()) + 1)[:nPairs]
+    circles_extended = np.tile(circles.to_numpy(), (nPairs // circles.count()) + 1)[:nPairs]
+    triangles_extended = np.tile(triangles.to_numpy(), (nPairs // triangles.count()) + 1)[:nPairs]
+
+    full_array = np.transpose(np.array([urls_extended, circles_extended, triangles_extended]))
+    new_2 = np.reshape(full_array, (n_sessions, 6))
+    np.random.shuffle(new_2)
+    output_df = output_df.assign(
+        **{'t1_matrix_url': new_2[:, 0], 't1_matrix_c': new_2[:, 1], 't1_matrix_t': new_2[:, 2],
+           't2_matrix_url': new_2[:, 3], 't2_matrix_c': new_2[:, 4], 't2_matrix_t': new_2[:, 5]})
+
+    # trappings
+    if int(cfg['number_of_trapping_per_session']) > 0:
+        if int(cfg['number_of_trapping_per_session']) > 1:
+            print("more than one TP is not supported for now - continue with 1")
+        # n_trappings = int(cfg['general']['number_of_trapping_per_session']) * n_sessions
+        n_trappings = n_sessions
+        tmp = df[['trapping_pvs', 'trapping_ans']].copy()
+        tmp.dropna(inplace=True)
+        tmp = tmp.sample(n=n_trappings, replace=True)
+        trap_source = tmp['trapping_pvs'].dropna()
+        trap_ans_source = tmp['trapping_ans'].dropna()
+
+        full_trappings = np.tile(trap_source.to_numpy(), (n_trappings // trap_source.count()) + 1)[:n_trappings]
+        full_trappings_answer = np.tile(trap_ans_source.to_numpy(), (n_trappings // trap_ans_source.count()) + 1)[
+                                :n_trappings]
+
+        full_tp = list(zip(full_trappings, full_trappings_answer))
+        random.shuffle(full_tp)
+
+        full_trappings, full_trappings_answer = zip(*full_tp)
+        output_df['TP_CLIP'] = full_trappings
+        output_df['TP_ANS'] = full_trappings_answer
+
+    # gold_clips
+    if int(cfg['number_of_gold_clips_per_session']) > 0:
+        if int(cfg['number_of_gold_clips_per_session']) > 1:
+            print("more than one gold_clip is not supported for now - continue with 1")
+        n_gold_clips = n_sessions
+        gold_clip_source = df['gold_clips_pvs'].dropna()
+        gold_clip_ans_source = df['gold_clips_ans'].dropna()
+
+        full_gold_clips = np.tile(gold_clip_source.to_numpy(),
+                                  (n_gold_clips // gold_clip_source.count()) + 1)[:n_gold_clips]
+        full_gold_clips_answer = np.tile(gold_clip_ans_source.to_numpy(), (n_gold_clips // gold_clip_ans_source.count())
+                                         + 1)[:n_gold_clips]
+        full_gc = list(zip(full_gold_clips, full_gold_clips_answer))
+        random.shuffle(full_gc)
+
+        full_gold_clips, full_gold_clips_answer = zip(*full_gc)
+        output_df['GOLD_CLIP'] = full_gold_clips
+        output_df['GOLD_ANS'] = full_gold_clips_answer
+
+    output_df.to_csv(output_path, index=False)
+    return len(output_df)
+
+
+def create_input_for_acrhr(cfg, df, output_path):
+    """
+    create the input for the acrhr methods
+    :param cfg:
+    :param df:
+    :param output_path:
+    :return:
+    """
+    clips = df['pvs'].dropna()
+    refs = df['src'].dropna()
+    n_clips = clips.count()
+    if n_clips != refs.count():
+        raise SystemExit('size of "pvs" and "src" are not equal.')
+
+    unique_refs = refs.drop_duplicates()
+    tmp_clips = pd.concat([clips, unique_refs], ignore_index=True, axis=0)
+    tmp_clips = tmp_clips.rename('pvs')
+    tmp_refs = pd.concat([refs, unique_refs], ignore_index=True, axis=0)
+    full = pd.concat([tmp_clips, tmp_refs], axis=1, join='inner')
+    clips = full['pvs']
+    refs = full['src']
+
+    n_clips = clips.count()
+
+    n_clips_per_session = int(cfg['number_of_clips_per_session'])
+    output_df = pd.DataFrame()
+    packing_strategy = cfg.get("clip_packing_strategy", "random").strip().lower()
+
+    #  the packing is similar to the dcr/ccr.
+    if packing_strategy == "balanced_block":
+        # to be checked
+        add_clips_balanced_block_ccr(clips, refs, cfg["condition_pattern"], cfg.get("block_keys", cfg["condition_keys"])
+                                     , n_clips_per_session, output_df)
+    elif packing_strategy == "random":
+        add_clips_random_acrhr(clips, refs, n_clips_per_session, output_df)
+
+    n_sessions = math.ceil(n_clips / n_clips_per_session)
     print(f'{n_clips} clips and {n_sessions} sessions')
 
     # block_matrix
@@ -329,6 +458,8 @@ def create_input_for_dcr(cfg, df, output_path):
 
     # rating_clips
     #   repeat some clips to have a full design
+    ## TODO: check why they are added here as well, they actually should be added in  add_clips_random_dcr(...) above
+    """
     n_questions = int(cfg['number_of_clips_per_session'])
     needed_clips = n_sessions * n_questions
 
@@ -345,7 +476,7 @@ def create_input_for_dcr(cfg, df, output_path):
     for q in range(n_questions):
         output_df[f'Q{q}_P'] = clips_sessions[:, q]
         output_df[f'Q{q}_R'] = refs_sessions[:, q]
-
+    """
     # trappings
     if int(cfg['number_of_trapping_per_session']) > 0:
         if int(cfg['number_of_trapping_per_session']) > 1:
@@ -414,8 +545,12 @@ def create_input_for_mturk(cfg, df, method, output_path):
     """
     if method in ['acr']:
         return create_input_for_acr(cfg, df, output_path)
-    else:
+    elif method in ['dcr']:
         return create_input_for_dcr(cfg, df, output_path)
+    elif method in ['acr-hr']:
+        return create_input_for_acrhr(cfg, df, output_path)
+    else:
+        return None
 
 
 #checked

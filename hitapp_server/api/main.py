@@ -378,4 +378,14 @@ async def store_recordings(assignment_id: str = Form(...) , file: UploadFile = F
 async def store_recordings2(response: Response, info : Request):
     req_info = await info.json()
     print(req_info)
+
+
+@app.get("/rec_exist/{assignment_id}")
+def check_recording_exist(response: Response, assignment_id:str):
+    out_file_path_html = Path(BASE_DIR, f"static/rec/{assignment_id}.wav")
+    if os.path.isfile(out_file_path_html):
+        return {'exist': 1}
+    else:
+        return {'exist': 0}
+
 """
