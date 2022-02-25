@@ -108,6 +108,10 @@ def check_if_session_should_be_used(data):
         should_be_used = False
         failures.append('gold')
 
+    if 'percent_over_play_duration' in data and data['percent_over_play_duration'] > float(config['accept_and_use']['viewing_duration_over']):
+        should_be_used = False
+        failures.append('viewing_duration')
+
     return should_be_used, failures
 
 # pcrowdv
@@ -120,7 +124,7 @@ def check_video_played(row, method):
     """
     question_played = 0
     try:
-        if method == 'acr':
+        if method in ['acr', 'acr-hr']:
             for q_name in question_names:
                 if int(row[f'answer.video_n_finish_{q_name}']) > 0:
                     question_played += 1
@@ -235,7 +239,13 @@ def check_matrix(row):
     #    print(f'wrong matrix 2: c2 {c2_correct},{given_c2} | t2 {t2_correct},{given_t2}')
     return n_correct
 
-# *****
+
+def check_play_duration(row):
+    total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
+    total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
+    return total_play_duration/total_duration
+
+
 def check_a_cmp(file_a, file_b, ans, audio_a_played, audio_b_played):
     """
     check if pair comparision answered correctly
@@ -317,6 +327,8 @@ def data_cleaning(filename, method, wrong_vcodes):
         # step6. check variance in a session rating
         d['variance_in_ratings'] = check_variance(row)
 
+        d['percent_over_play_duration'] = check_play_duration(row)
+
         if check_if_session_accepted(d):
             d['accept'] = 1
             d['Approve'] = 'x'
@@ -362,6 +374,7 @@ def data_cleaning(filename, method, wrong_vcodes):
 # pcrowdv
 def evaluate_maximum_hits(data):
     df = pd.DataFrame(data)
+
     small_df = df[['worker_id']].copy()
     grouped = small_df.groupby(['worker_id']).size().reset_index(name='counts')
     grouped = grouped[grouped.counts > int(config['acceptance_criteria']['allowedMaxHITsInProject'])]
@@ -655,12 +668,14 @@ def dict_value_to_key(d, value):
 
 method_to_mos = {
     "acr": 'MOS',
-    "dcr": 'DMOS'
+    "dcr": 'DMOS',
+    "acr-hr": 'MOS'
 }
 
 question_names = []
 question_name_suffix = ''
 create_per_worker = True
+pvs_src_map = {}
 
 
 def transform(test_method, sessions, agrregate_on_condition, is_worker_specific):
@@ -673,10 +688,17 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
     data_per_file = {}
     global max_found_per_file
     global file_to_condition_map
+    global pvs_src_map
     file_to_condition_map ={}
     data_per_condition = {}
     data_per_worker = []
     mos_name = method_to_mos[f"{test_method}{question_name_suffix}"]
+
+    input_question_names = [f"q{i}" for i in range(0, int(config['general']['number_of_questions_in_rating']))]
+    for session in sessions:
+        for question in input_question_names:
+            if f'input.{question}_r' in session:
+                pvs_src_map[session[f'input.{question}']] = session[f'input.{question}_r']
 
     for session in sessions:
         found_gold_question = False
@@ -689,6 +711,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                     session[config['gold_question']['url_found_in']] == session[f'answer.{question}_url']:
                 found_gold_question = True
                 continue
+
             short_file_name = session[f'answer.{question}_url'].rsplit('/', 1)[-1]
             file_name = session[f'answer.{question}_url']
             if file_name not in data_per_file:
@@ -778,7 +801,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 votes = outliers_z_score(votes)
                 v_len_after = len(votes)
                 if v_len != v_len_after:
-                    print(f'Condition{tmp["condition_name"]}: {v_len-v_len_after} votes are removed, remains {v_len_after}')
+                    print(f'Condition {tmp["condition_name"]}: {v_len-v_len_after} votes are removed, remains {v_len_after}')
             tmp = {**tmp, **condition_detail[key]}
             tmp['n'] = len(votes)
             if tmp['n'] > 0:
@@ -867,7 +890,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     amt_ans.drop(amt_ans.columns.difference(['WorkerId', 'Answer.v_code', 'HITId',
                                              'HITTypeId', 'AssignmentId', 'WorkTimeInSeconds',
-                                             'Reward']), 1, inplace=True)
+                                             'Reward', 'Answer.hitapp_assignmentId']), 1, inplace=True)
     hitapp_ans.rename(columns={"WorkerId": "hitapp_workerid",
                                "AssignmentId": "hitapp_assignmentid",
                                "HITId": "hitapp_hitid",
@@ -887,7 +910,27 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     merged_ans_path = os.path.splitext(hitapp_ans_path)[0] + '_merged.csv'
     merged.to_csv(merged_ans_path, index=False)
+    #todo: check if the assignment ids are also equal
     return merged_ans_path, not_in_hitapp
+
+
+def add_dmos_acrhr(agg_per_file_path, cfg):
+    global pvs_src_map
+    df = pd.DataFrame({'keys':pvs_src_map.keys() ,'val':pvs_src_map.values()})
+    df.to_csv(agg_per_file_path.replace('.csv', '_dict.csv'), index=False)
+    per_file = pd.read_csv(agg_per_file_path, low_memory=False)
+    mos_dict = dict(zip(per_file.file_url, per_file.MOS))
+    dmos_list = []
+    scale_max = int(cfg['general']['scale'])
+
+    for index, row in per_file.iterrows():
+        mos_ref = mos_dict[pvs_src_map[row['file_url']]]
+        mos_pvs = mos_dict[row['file_url']]
+        dmos = min([mos_pvs - mos_ref + scale_max, scale_max])
+        dmos_list.append(dmos)
+
+    per_file = per_file.assign(DMOS=dmos_list)
+    per_file.to_csv(agg_per_file_path, index=False)
 
 
 def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req, quality_bonus):
@@ -901,6 +944,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
     :return:
     """
     global question_name_suffix
+
 
     suffixes = ['']
     wrong_v_code = None
@@ -934,6 +978,10 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
             headers = create_headers_for_per_file_report(test_method, condition_keys)
             write_dict_as_csv(votes_per_file, votes_per_file_path, headers=headers)
             print(f'   Votes per files are saved in: {votes_per_file_path}')
+
+            if test_method in ['acr-hr']:
+                add_dmos_acrhr(votes_per_file_path, config)
+
             if use_condition_level:
                 vote_per_condition = sorted(vote_per_condition, key=lambda i: i['condition_name'])
                 write_dict_as_csv(vote_per_condition, votes_per_cond_path)
@@ -941,19 +989,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
                 condition_set.append(pd.DataFrame(vote_per_condition))
             if create_per_worker:
                 write_dict_as_csv(data_per_worker, os.path.splitext(answer_path)[0] + f'_votes_per_worker_{question_name_suffix}.csv')
-        if use_condition_level and len(suffixes) > 1:
-            # aggregate multiple conditions into one file for p.835
-            full_set_conditions = None
-            for df in condition_set:
-                if full_set_conditions is None:
-                    full_set_conditions = df
-                else:
-                    df = df.drop(columns='n')
-                    full_set_conditions = pd.merge(full_set_conditions, df, left_on='condition_name', right_on='condition_name')
-            votes_per_all_cond_path = os.path.splitext(answer_path)[0] + f'_votes_per_cond_all.csv'
-            full_set_conditions.to_csv(votes_per_all_cond_path, index=False,
-                                       columns=['condition_name', 'n', 'MOS_BAK', 'MOS_SIG', 'MOS_OVRL', 'std_bak',
-                                                'std_sig', 'std_ovrl', '95%CI_bak', '95%CI_sig', '95%CI_ovrl'])
+
 
         bonus_file = os.path.splitext(answer_path)[0] + '_quantity_bonus_report.csv'
         quantity_bonus_df = calc_quantity_bonuses(full_data, list_of_req, bonus_file)
@@ -976,7 +1012,7 @@ if __name__ == '__main__':
     parser.add_argument("--cfg", required=True,
                         help="Contains the configurations see acr_result_parser.cfg as an example")
     parser.add_argument("--method", required=True,
-                        help="one of the test methods: 'acr', 'dcr'")
+                        help="one of the test methods: 'acr','acr-hr', 'dcr'")
     parser.add_argument("--answers", required=True,
                         help="Answers csv file from HIT App Server, path relative to current directory")
     parser.add_argument("--amt_answers", required=True,
@@ -992,7 +1028,7 @@ if __name__ == '__main__':
     parser.add_argument('--quality_bonus', help="Quality bonus will be calculated. Just use it with your final download"
                                                 " of answers and when the project is completed", action="store_true")
     args = parser.parse_args()
-    methods = ['dcr', 'acr']
+    methods = ['dcr', 'acr', 'acr-hr']
     test_method = args.method.lower()
     assert test_method in methods, f"No such a method supported, please select between 'dcr' "
 

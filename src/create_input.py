@@ -43,8 +43,8 @@ def validate_inputs(cfg, df, method):
         req = required_columns_acr
     elif method in ['dcr']:
         req = required_columns_dcr
-    else:
-        req = required_columns_dcr
+    elif method in ['acr-hr']:
+        req = required_columns_acrhr
 
     for column in req:
         assert column in columns, f"No column found with '{column}' in input file"
