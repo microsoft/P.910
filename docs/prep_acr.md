@@ -1,8 +1,8 @@
-[Home](../README.md) > [Preparation](preparation.md) > Preparation for Absolute Category Rating (ACR)
+[Home](../README.md) > [Preparation](preparation.md) > Preparation for Absolute Category Rating (ACR) and ACR-HR
 
 # Preparation of DCR test
 
-The following steps should be performed to prepare the ACR test setup.
+The following steps should be performed to prepare the ACR and ACR-HR test setup.
 For all the resource files (steps 1-4) an example is provided in `sample_inputs` directory using 
 the [MCL-JCV Dataset](http://mcl.usc.edu/mcl-jcv-dataset/).  
 
@@ -24,7 +24,11 @@ For list of supported encoding check [here](https://developer.mozilla.org/en-US/
         name in the clip's file name e.g. xxx_c01_xxxx.mp4. When you provide the corresponding pattern, the analyzes script 
         will create aggregated results over conditions as well.
           
-
+    **NOTE for ACR-HR method**:
+    * Upload your source video clips also  in a cloud server and make them publicly available. 
+    * Add a second column `src` to your `rating_clips.csv`. For each PVS the URL to its source video should be added in column `src`.
+    * See [rating_clips_dcr.csv](../sample_inputs/rating_clips_dcr.csv) as an example.
+    
 1. Upload your **training clips** in a cloud server and create the `training_clips.csv` file which contains all URLs in a 
 column name `training_pvs` (see [training_clips_acr.csv](../sample_inputs/training_clips_acr.csv) as an example).
     
@@ -86,7 +90,9 @@ column named `trapping_ans` (see [trapping_clips.csv](../sample_inputs/trapping_
             --gold_clips gold_clips.csv ^
             --trapping_clips trapping_clips.csv              
         ```
-        Note: file paths are expected to be relative to the current working directory.
+        **Note:** file paths are expected to be relative to the current working directory.
+        
+        **Note:** for **ACR-HR** method, please use `--method acr-hr` 
     
     1. Double check the outcome of the script. A folder should be created with YOUR_PROJECT_NAME in current working 
     directory which contains: 

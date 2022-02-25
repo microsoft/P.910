@@ -29,5 +29,5 @@ You may use [Azure Virtual Machine](https://azure.microsoft.com/en-us/services/v
       project is necessary. 
 
 1.  Follow the rest of preparation process based on the test methodology you want to apply:    
-    - [Preparation for Absolute Category Rating (ACR)](prep_acr.md)
+    - [Preparation for Absolute Category Rating (ACR) and ACR-HR](prep_acr.md)
     - [Preparation for Degradation Category Rating (DCR)](prep_dcr.md)
