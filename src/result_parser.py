@@ -112,6 +112,12 @@ def check_if_session_should_be_used(data):
         should_be_used = False
         failures.append('viewing_duration')
 
+    if 'correct_matrix_bigger_equal' in config['accept_and_use']:
+        # for backward compatibility
+        if data['correct_matrix'] is not None and data['correct_matrix'] < int(config['accept_and_use']['correct_matrix_bigger_equal']):
+            should_be_used = False
+            failures.append('correct_matrix_all')
+
     return should_be_used, failures
 
 # pcrowdv
@@ -888,9 +894,10 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     amt_ans = pd.read_csv(amt_ans_path, low_memory=False)
     hitapp_ans = pd.read_csv(hitapp_ans_path, low_memory=False)
 
-    amt_ans.drop(amt_ans.columns.difference(['WorkerId', 'Answer.v_code', 'HITId',
+    columns_to_remove = amt_ans.columns.difference(['WorkerId', 'Answer.v_code', 'HITId',
                                              'HITTypeId', 'AssignmentId', 'WorkTimeInSeconds',
-                                             'Reward', 'Answer.hitapp_assignmentId']), 1, inplace=True)
+                                             'Reward', 'Answer.hitapp_assignmentId'])
+    amt_ans.drop(columns=columns_to_remove, inplace=True)
     hitapp_ans.rename(columns={"WorkerId": "hitapp_workerid",
                                "AssignmentId": "hitapp_assignmentid",
                                "HITId": "hitapp_hitid",
