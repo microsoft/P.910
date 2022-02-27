@@ -99,7 +99,7 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 </style>
 
 <script type="text/javascript">
-
+/*
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -150,8 +150,8 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
+*/
 
-/*
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -205,7 +205,7 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-*/
+
 
 //---- for video player
 max_accepted_extra_playing_time_sec = 2.5;
@@ -280,12 +280,13 @@ function initializeActivePageMonitoring(){
 		var isHidden = document.hidden;
 		if (isHidden){
 			startHiddenDate = new Date();
-		}else{
+		}else if (startHiddenDate>0){
 			//get back the focus
 			stopHiddenDate = new Date();
 			diff = stopHiddenDate -startHiddenDate;
 			overAllHiddenTime = overAllHiddenTime + diff;
 			$('#time_page_hidden_sec').val(overAllHiddenTime/1000);
+			startHiddenDate = 0;
 		}
 		console.log( "document_hidden: "+ document.hidden + "time: "+overAllHiddenTime);
 
@@ -402,7 +403,7 @@ $(function() {
 			console.log = function() {};
 			console.error = function() {};
 		}
-
+		initializeActivePageMonitoring();
 		initializeQualification();
 		initializeCalibration();
 		hardware_test();
@@ -483,7 +484,7 @@ $(function() {
 		hitCounterIncreased = false;
 		cookie_debug_status=cookie_debug_status+"Counter:"+howManyHITsAnswered+"*";
 		addBrowserInfo(cookie_debug_status);
-		initializeActivePageMonitoring();
+
 
 
 	}catch(err){
@@ -792,7 +793,7 @@ function continue_visual_acuity(){
 		alert("First, you need to interact with screen adjustment part.");
 		return;
 	}
-
+	record_screen_size_credit_card();
 	$("#vat_step").attr("src","https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step2.png");
 
 	$('#setup_visual_acity').hide();
@@ -1090,13 +1091,28 @@ function record_os(){
 function record_screen_size(){
 	let pixPer10CM = $('#meter').width();
 	let CMPerPix = 10 / pixPer10CM;
-	let widthCM = screen.width * CMPerPix;
+	let widthCM = Math.floor(screen.width * CMPerPix);
 	let w = window.screen.width * window.devicePixelRatio;
 	let widthCM_dpr = Math.floor(w * CMPerPix);
 	let heightCM= Math.floor(screen.height * CMPerPix);
 
 	$("#device_estimated_size_w").val(widthCM);
 	$("#device_estimated_size_h").val(heightCM);
+}
+
+/**
+	Estimate the screen size
+**/
+
+function record_screen_size_credit_card(){
+	let pixPerCard = $('#card').width();
+	let CMPerPix = 5.74 / pixPerCard;
+
+	let widthCM = Math.floor(screen.width * CMPerPix);
+	let heightCM= Math.floor(screen.height * CMPerPix);
+
+	$("#device_estimated_size_w_cc").val(widthCM);
+	$("#device_estimated_size_h_cc").val(heightCM);
 }
 
 /**
@@ -2045,6 +2061,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="device_refresh_rate" name="device_refresh_rate" type="hidden" value="unknown" />
 <input id="device_estimated_size_w" name="device_estimated_size_w" type="hidden" value="unknown" />
 <input id="device_estimated_size_h" name="device_estimated_size_h" type="hidden" value="unknown" />
+
+<input id="device_estimated_size_w_cc" name="device_estimated_size_w_cc" type="hidden" value="unknown" />
+<input id="device_estimated_size_h_cc" name="device_estimated_size_h_cc" type="hidden" value="unknown" />
+
 <input id="device_os" name="device_os" type="hidden" value="unknown" />
 
 <input id="time_page_hidden_sec" name="time_page_hidden_sec" type="hidden" value="0" />
@@ -2083,7 +2103,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
 					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
 					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
-					<li><b>Training (every <b class="training_time"> 0 </b> hour):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
+					<li><b>Training (every <b class="training_time"> 0 </b>):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
 					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
 				</ul>
 				<p>Note that you should watch the videos in full screen size.</p>

@@ -848,14 +848,9 @@ def create_headers_for_per_file_report(test_method, condition_keys):
     return header
 
 
-def calc_stats(input_file):
-    """
-    calc the statistics considering the time worker spend
-    :param input_file:
-    :return:
-    """
-    df = pd.read_csv(input_file, low_memory=False)
+def calc_payment_stat(df):
     if 'Answer.time_page_hidden_sec' in df.columns:
+        df['Answer.time_page_hidden_sec'].where(df['Answer.time_page_hidden_sec'] < 3600, 0, inplace=True)
         df['time_diff'] = df["work_duration_sec"] - df['Answer.time_page_hidden_sec']
         median_time_in_sec = df["time_diff"].median()
     else:
@@ -865,7 +860,37 @@ def calc_stats(input_file):
 
     avg_pay = 3600*float(paymnet[0])/median_time_in_sec
     formatted_time = time.strftime("%M:%S", time.gmtime(median_time_in_sec))
-    print(f"Stats: work duration (median) {formatted_time} (MM:SS), payment per hour: ${avg_pay:.2f}")
+
+    return formatted_time, avg_pay
+
+
+def calc_stats(input_file):
+    """
+    calc the statistics considering the time worker spend
+    :param input_file:
+    :return:
+    """
+    df = pd.read_csv(input_file, low_memory=False)
+    df_full = df.copy()
+    overall_time, overall_pay = calc_payment_stat(df)
+
+    # full
+    df_full = df_full[df_full['Answer.2_birth_year']> 0]
+    full_time, full_pay = calc_payment_stat(df_full)
+
+    # no qual
+    df_no_qual = df[df['Answer.2_birth_year'].isna()]
+    df_no_qual_no_setup = df_no_qual[df_no_qual['Answer.t1_circles'].isna()]
+    only_rating = df_no_qual_no_setup[df_no_qual_no_setup['Answer.t1'].isna()].copy()
+    only_r_time, only_r_pay = calc_payment_stat(only_rating)
+
+    data = {'Case':['All submissions', 'All sections', 'Only rating'],
+            'Percent of submissions':[1, len(df_full.index)/len(df.index), len(only_rating.index)/len(df.index)],
+            'Work duration (median) MM:SS': [overall_time, full_time, only_r_time ],
+            'payment per hour ($)': [overall_pay, full_pay, only_r_pay]}
+    stat = pd.DataFrame.from_dict(data)
+    print('Payment statistics:')
+    print(stat.to_string(index=False))
 
 
 def calc_correlation(cs, lab):
