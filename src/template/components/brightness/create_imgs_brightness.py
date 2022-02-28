@@ -110,10 +110,10 @@ def create_block(background, level, shape):
     canvas.save('tmp.png')
 
 
-def create_matrix_image():
+def create_matrix_image(level):
     backgrounds = [15, 72, 128, 185, 240]
     #levels = [2, 3, 4]
-    levels = [4]
+    # levels = [4]
     shapes = [NO_SHAPE, CIRCLE, TRIANGLE]
     count_circle = 0
     count_triangle = 0
@@ -125,7 +125,7 @@ def create_matrix_image():
         for bg in bgs:
             if (x==4): continue
             shape = random.choice(shapes)
-            level = random.choice(levels)
+            # level = random.choice(levels)
             if (shape == CIRCLE):
                 count_circle += 1
             elif (shape == TRIANGLE ):
@@ -138,7 +138,7 @@ def create_matrix_image():
     name_coded = base64.b64encode(name.encode('ascii')).decode('ascii')
     canvas.save(f'{name_coded}.jpg')
     print(f" c:{count_circle}, t:{count_triangle}")
-
+    return {'c':{count_circle}, 't':{count_triangle}, 'name': {f'{name_coded}.jpg'}}
 
 def method1_numbers():
     """
@@ -164,8 +164,13 @@ def method2_shapes():
     create matrix of images with shapes
     :return:
     """
+    list = []
+    difference_to_bg = 4
     for i in range(100):
-        create_matrix_image()
+        info = create_matrix_image(difference_to_bg)
+        list.append(info)
+    df = pd.DataFrame(list)
+    df.to_csv(f'matrix_files-details_{difference_to_bg}.csv')
 
 
 def print_matrix_name():
@@ -182,8 +187,8 @@ def print_matrix_name():
 
 if __name__ == '__main__':
     #method1_numbers()
-    #method2_shapes()
-    print_matrix_name()
+    method2_shapes()
+    #print_matrix_name()
 
 
 

@@ -416,6 +416,12 @@ $(function() {
 			cookie_debug_status=cookie_debug_status+"Train Exist*";
 		}
 
+		// given cookie availability disable the impairment instruction
+		if (readCookie(config['cookieName']+"_impInstruct")){
+			$('#instructionImp').collapse()
+		}
+
+
 		hit_num = readCookie(config['cookieName']+"_counter");
 		howManyHITsAnswered =0;
 		if (hit_num != null ){
@@ -1249,6 +1255,15 @@ function playedVideoTraining(id){
 	}
 }
 
+const play_video_ins = new Set()
+function playedVideoIns(id){
+	play_video_ins.add(id);
+	if (play_video_ins.size == 3){
+		createCookie(config['cookieName']+"_impInstruct","un_important",config['forceRetrainingInHours']*60);
+	}
+}
+
+
 // help to calc the sum of elements in an array
 function getSum(total, num) {
   	return total + num;
@@ -1356,10 +1371,13 @@ function activate_setup_section(activate){
 }
 
 function activate_training_section(activate){
-	if (activate)
+	if (activate){
 		$("#training").removeClass("disabled_section");
-	else
+		$("#impairments").removeClass("disabled_section");
+	}else{
 		$("#training").addClass("disabled_section");
+		$("#impairments").addClass("disabled_section");
+	}
 }
 
 function activate_rating_section(activate){
@@ -2386,6 +2404,67 @@ function avoidAnsweringBeforeWatchingThrough(){
 	<div class="alert alert-success" role="alert">
 	  Well-done! Now you can continue to next section.
 	</div>
+</section>
+
+<!-- Instruction about impairments-->
+<section class="container disabled_section" id="impairments">
+		<div class="panel panel-primary">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<a data-target="#instructionImp" data-toggle="collapse" >Instructions about ratings (only once)</a>
+
+				</h3>
+			</div>
+			<div  class="panel-collapse collapse in" id="instructionImp">
+			<div class="panel-body">
+			<p>Almost ready to start. </p>
+			<p>Here are <b>some</b> of impairments that you may observe within the test with an example. Please read the followings carefully and watch the videos before continuing:
+			</p>
+
+			<ul>
+
+			<li> The video (or part of it) can be <b>fragmented</b>. It means that part of the video sample is played <b>blocky</b> and <b>dismembered</b>.</li>
+
+			<div class="row">
+				<p>Here is an example:</p>
+				<p align="center">
+						<span class="velmnt" id="ins_id1" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
+				</p>
+			</div>
+
+
+			<li> The video (or part of it) could be <b>not smooth</b> rather <b>jerky</b>, <b>stuttering</b>, and <b>wobbly</b>. In anotehr term, partly <b>discountinud</b>. </li>
+			<div class="row">
+				<p>Here is an example:</p>
+				<p align="center">
+						<span class="velmnt" id="ins_id2" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
+				</p>
+			</div>
+
+				<li> The video (or part of it) cloud be <b>blurred</b>, <b>unclear</b> or <b>washed out</b>.</li>
+			<div class="row">
+				<p>Here is an example:</p>
+				<p align="center">
+						<span class="velmnt" id="ins_id3" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
+				</p>
+			</div>
+
+			<li> It could also be a case that a combination of the above impairments happen.</li>
+
+			</ul>
+
+			<b>Important notes:</b>
+			<ul>
+				<li> Impairments can happen in specific area (corners or center of image) and for a short period of time within a video clip.
+					So it is very important that when watching a video, fully concentrate on the entire scene. If something distracting you,
+					please watch the video again.</li>
+				<li>Your ratings will be used for scientific work, <u>please treat them very serious to contribute with valid results </u>.</li>
+				<li>You may think that an impairment your recognized was due to your Internet connection, but whatever you see in the
+					videos are created beforehand, and <b>not related to your network</b>, so <u>consider them all when you rate the <b>overall quality</b></u>.</li>
+			</ul>
+			</div>
+			</div>
+		</div>
 </section>
 
 <!-- Training section, appears once a day-->
