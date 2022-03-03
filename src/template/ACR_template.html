@@ -99,7 +99,8 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 </style>
 
 <script type="text/javascript">
-/*
+
+
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -150,12 +151,13 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-*/
 
+
+/*
 var config ={
 	debug:"true",
-	cookieName:"{{cfg.cookie_name}}",
-	qualificationCookieName:"{{cfg.qual_cookie_name}}",
+	cookieName:"{{cfg.cookie_namexxx}}",
+	qualificationCookieName:"{{cfg.qual_cookie_namexxx}}",
 	qualificationValidFor:43200,
 	qualificationValidFor:43200,
     forceRetrainingInHours:1,
@@ -189,11 +191,11 @@ var config ={
 		"plate3":29,
 		"plate4":5
 	},
-	questionUrls: ['https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_40.mp4',
-		'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_48.mp4'],
-    trainingUrls: ['https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_40.mp4',
-		'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_48.mp4',
-		'https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4'],
+	questionUrls: ['https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc11_chrc01.mp4',
+'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc14_chrc01.mp4'],
+    trainingUrls: ['https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc11_chrc01.mp4',
+'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc14_chrc01.mp4' ,
+'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_src01_hrc01.mp4'],
 
     knownQuestionInTrainingUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4",
     knownQuestionInTrainingAns: "1",
@@ -205,7 +207,7 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-
+*/
 
 //---- for video player
 max_accepted_extra_playing_time_sec = 2.5;
@@ -1967,7 +1969,9 @@ $(function() {
 		titleTextTemplate='<tr><td>{1}</td></tr>';
 		insert='';
 		title='';
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		//one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>';
 		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
 		'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
 
@@ -1999,6 +2003,7 @@ $(function() {
 		video_played_finished.set(video_id, 0);
 		videos_not_loaded_yet_set.add(video_id);
 
+		load_videos_to_storage('video1_{0}'.f(id));
 		var videoElement = document.getElementById(video_id);
 		//save for later
 		videoElements.push(videoElement);
@@ -2028,6 +2033,30 @@ $(function() {
     });
     velements_added = true;
 });
+
+
+/*
+	Download the video and create local link
+*/
+function load_videos_to_storage(video_id){
+	var id = video_id;
+	console.log("1 start loading "+id);
+	src = $('#{0}'.f(video_id)).attr('data-src');
+	var req = new XMLHttpRequest();
+	req.open('GET', src, true);
+	req.responseType = 'blob';
+	req.onload = function(){
+		if (this.status === 200) {
+		  var videoBlob = this.response;
+		  var vurl = URL.createObjectURL(videoBlob);
+		  document.getElementById(id).src = vurl;
+	   }
+	};
+	req.onerror = function() {
+	   console.log('Error on loading '+id);
+	}
+	req.send();
+}
 
 function addListenersToVideoElement(videoElement, is_dcr){
 		//videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
@@ -2479,7 +2508,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id1" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id1" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -2488,7 +2517,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id2" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id2" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -2496,7 +2525,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id3" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id3" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
