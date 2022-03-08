@@ -249,6 +249,8 @@ def check_matrix(row):
 def check_play_duration(row):
     total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
     total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
+    if total_duration == 0:
+        return float('inf')
     return total_play_duration/total_duration
 
 

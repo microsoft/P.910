@@ -140,6 +140,7 @@ def create_matrix_image(level):
     print(f" c:{count_circle}, t:{count_triangle}")
     return {'c':{count_circle}, 't':{count_triangle}, 'name': {f'{name_coded}.jpg'}}
 
+
 def method1_numbers():
     """
     create images with numbers
@@ -165,8 +166,8 @@ def method2_shapes():
     :return:
     """
     list = []
-    difference_to_bg = 4
-    for i in range(100):
+    difference_to_bg = 5
+    for i in range(10):
         info = create_matrix_image(difference_to_bg)
         list.append(info)
     df = pd.DataFrame(list)
@@ -187,6 +188,7 @@ def print_matrix_name():
 
 if __name__ == '__main__':
     #method1_numbers()
+    random.seed(10)
     method2_shapes()
     #print_matrix_name()
 
