@@ -1174,7 +1174,11 @@ function check_brightness_test(){
 	correct_ans = config['block_matrix'];
 	c = $("#t1_circles").val();
 	t = $("#t1_triangles").val();
-	if (c==correct_ans['circles'] && t == correct_ans['triangles']){
+
+	$("#matrix_t1_circle_history").val($("#matrix_t1_circle_history").val()+','+c);
+	$("#matrix_t1_triangle_history").val($("#matrix_t1_triangle_history").val()+','+t);
+
+	if (c==(correct_ans['circles'] -2)&& t == (correct_ans['triangles']-3)){
 		//alert('Great! Your answer is correct, continue!');
 		activate_rest_setup();
 	}else
@@ -2161,6 +2165,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="start_video_loading_time" name="start_video_loading_time" type="hidden" value="" />
 <input id="video_loading_duration" name="video_loading_duration_ms" type="hidden" value="" />
 <input id="internet_speed_estimate" name="internet_speed_estimate_Mb" type="hidden" value="" />
+
+<!-- just for backup -->
+<input id="matrix_t1_circle_history" name="matrix_t1_circle_history" type="hidden" value="" />
+<input id="matrix_t1_triangle_history" name="matrix_t1_triangle_history" type="hidden" value="" />
 
 
 <div id="meter" style="width:10cm"></div>

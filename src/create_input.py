@@ -261,6 +261,9 @@ def create_input_for_acr(cfg, df, output_path):
     output_df = output_df.assign(
         **{'t1_matrix_url': new_2[:, 0], 't1_matrix_c': new_2[:, 1], 't1_matrix_t': new_2[:, 2],
            't2_matrix_url': new_2[:, 3], 't2_matrix_c': new_2[:, 4], 't2_matrix_t': new_2[:, 5]})
+    # to obfuscate the correct answer
+    output_df['t1_matrix_c'] = output_df['t1_matrix_c'] + 2
+    output_df['t1_matrix_t'] = output_df['t1_matrix_t'] + 3
 
     # trappings
     if int(cfg['number_of_trapping_per_session']) > 0:
