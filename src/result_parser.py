@@ -298,6 +298,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     use_sessions = []
     not_using_further_reasons = []
 
+
     for row in reader:
         setup_was_hidden = row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
@@ -319,6 +320,8 @@ def data_cleaning(filename, method, wrong_vcodes):
         else:
             # step2. check math
             d['correct_matrix'] = check_matrix(row)
+            #--------------tmp
+            #------------------------
             # step3. check pair comparision,
             # how?
             #for i in range(1, 5):
@@ -343,8 +346,21 @@ def data_cleaning(filename, method, wrong_vcodes):
         else:
             d['accept'] = 0
             d['Approve'] = ''
-
         should_be_used, failures = check_if_session_should_be_used(d)
+        #--------------------------
+        #if 'ablation' in config:
+
+        """
+        failures = []
+        if d['variance_in_ratings'] <0.3:
+            d['accept'] = 1
+            should_be_used = True
+        else:
+            d['accept'] = 0
+            should_be_used = False
+        """
+        # --------------------------
+
         not_using_further_reasons.extend(failures)
         if should_be_used:
             d['accept_and_use'] = 1
@@ -1049,7 +1065,7 @@ if __name__ == '__main__':
                         help="one of the test methods: 'acr','acr-hr', 'dcr'")
     parser.add_argument("--answers", required=True,
                         help="Answers csv file from HIT App Server, path relative to current directory")
-    parser.add_argument("--amt_answers", required=True,
+    parser.add_argument("--amt_answers",
                         help="Answers csv file from AMT, path relative to current directory")
 
     parser.add_argument('--quantity_bonus', help="specify status of answers which should be counted when calculating "

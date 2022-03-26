@@ -109,7 +109,8 @@ var config ={
 	qualificationValidFor:43200,
     forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
-
+    // to be found out
+	maxAllowedLoadingTimeSec:45,
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -152,8 +153,8 @@ var config ={
     emailAddress: "{{cfg.contact_email}}"
 }
 
-
 /*
+
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_namexxx}}",
@@ -162,7 +163,8 @@ var config ={
 	qualificationValidFor:43200,
     forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
-
+	    // to be found out
+	maxAllowedLoadingTimeSec:3,
 	allowedMaxHITsInProject:10,
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -269,11 +271,18 @@ var overAllHiddenTime = 0;
 var startHiddenDate = null;
 var sessionId = null;
 var sessionIdVariableName=null;
+const start_page_load = Date.now();
+
 /**
 	monitor and record the status of page including being focus, and active time
 
 **/
 function initializeActivePageMonitoring(){
+	// start time monitoring
+	$("#start_video_loading_time").val((new Date()).toISOString());
+	page_loading_timer = setTimeout(show_message_too_long_loading, config['maxAllowedLoadingTimeSec']*1000);
+
+
 	sessionId = Math.random().toString(36).substr(2, 9);
 	sessionIdVariableName = config.qualificationCookieName +"_sid";
 	createCookie(sessionIdVariableName,sessionId,70);
@@ -946,8 +955,35 @@ function hardware_test(){
 			alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
     }
 }
+//just tmp for test
+var video_size_MB = 0;
+var page_loading_timer =null;
+function show_message_too_long_loading(){
+	if(page_loading_timer){
+		clearTimeout(page_loading_timer);
+		page_loading_timer= null;
+	}
+	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
+}
 
 function activate_hit(){
+	if(page_loading_timer){
+		clearTimeout(page_loading_timer);
+		page_loading_timer= null;
+	}
+	page_loading_duration = Date.now()- start_page_load;
+	$("#video_loading_duration").val(page_loading_duration);
+	let loading_time_sec = page_loading_duration/1000;
+	console.log("video_loading_duration sec: "+loading_time_sec)
+	let speed_M_bits = 8 * video_size_MB / loading_time_sec;
+	$("#internet_speed_estimate").val(speed_M_bits);
+	console.log("internet_speed_estimate Mb:: "+speed_M_bits);
+
+	if (loading_time_sec> config['maxAllowedLoadingTimeSec']){
+		show_message_too_long_loading();
+		return;
+	}
+
 	$("#hardware-spinner").hide();
 	$("#Survey").removeClass("disabled_section");
 	$("#qualification").removeClass("disabled_section");
@@ -2045,8 +2081,12 @@ function load_videos_to_storage(video_id){
 	var req = new XMLHttpRequest();
 	req.open('GET', src, true);
 	req.responseType = 'blob';
+
 	req.onload = function(){
 		if (this.status === 200) {
+			let size = this.getResponseHeader('content-length');
+			let tmp = ((size /1024)/1024)
+			video_size_MB = video_size_MB + tmp;
 		  var videoBlob = this.response;
 		  var vurl = URL.createObjectURL(videoBlob);
 		  document.getElementById(id).src = vurl;
@@ -2117,6 +2157,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="any_parallel_session" name="any_parallel_session" type="hidden" value="false" />
 
 <input id="start_working_time" name="start_working_time" type="hidden" value="" />
+
+<input id="start_video_loading_time" name="start_video_loading_time" type="hidden" value="" />
+<input id="video_loading_duration" name="video_loading_duration_ms" type="hidden" value="" />
+<input id="internet_speed_estimate" name="internet_speed_estimate_Mb" type="hidden" value="" />
 
 
 <div id="meter" style="width:10cm"></div>
