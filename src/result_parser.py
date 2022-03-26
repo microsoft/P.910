@@ -48,14 +48,14 @@ def outliers_modified_z_score(votes):
     v = v[(x < threshold)]
     return v.tolist()
 
-
+#todo add boxplot as well
 def outliers_z_score(votes):
     """
     return  outliers, using z-score
     :param votes:
     :return:
     """
-    if len(votes) == 0:
+    if len(votes) == 0 or statistics.stdev(votes) == 0:
         return votes
 
     threshold = 3.29
@@ -758,10 +758,20 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
     # convert the format: one row per file
     group_per_file = []
     condition_detail = {}
+    outlier_removed_count = 0
     for key in data_per_file.keys():
         tmp = dict()
         votes = data_per_file[key]
         vote_counter = 1
+        # outlier removal per file
+        if (not (is_worker_specific) and 'outlier_removal' in config['accept_and_use']) \
+                and (config['accept_and_use']['outlier_removal'].lower() in ['true', '1', 't', 'y', 'yes']):
+            v_len = len(votes)
+            if v_len >5:
+                votes = outliers_z_score(votes)
+            v_len_after = len(votes)
+            if v_len != v_len_after:
+                outlier_removed_count += v_len - v_len_after
 
         # extra step:: add votes to the per-condition dict
         tmp_n = conv_filename_to_condition(key)
@@ -810,9 +820,11 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
         if tmp['n'] > max_found_per_file:
             max_found_per_file = tmp['n']
         group_per_file.append(tmp)
-
+    if outlier_removed_count != 0:
+        print(f'  Overall {outlier_removed_count} outliers are removed in per file aggregation.')
     # convert the format: one row per condition
     group_per_condition = []
+    outlier_removed_count = 0
     if agrregate_on_condition:
         for key in data_per_condition.keys():
             tmp = dict()
@@ -825,7 +837,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 votes = outliers_z_score(votes)
                 v_len_after = len(votes)
                 if v_len != v_len_after:
-                    print(f'Condition {tmp["condition_name"]}: {v_len-v_len_after} votes are removed, remains {v_len_after}')
+                    outlier_removed_count += v_len-v_len_after
             tmp = {**tmp, **condition_detail[key]}
             tmp['n'] = len(votes)
             if tmp['n'] > 0:
@@ -841,7 +853,8 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 tmp[f'95%CI{question_name_suffix}'] = None
 
             group_per_condition.append(tmp)
-
+        if outlier_removed_count != 0:
+            print(f'  Overall {outlier_removed_count} outliers are removed in per condition aggregation.')
     return group_per_file, group_per_condition, data_per_worker
 
 # p835
