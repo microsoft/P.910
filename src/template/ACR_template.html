@@ -154,7 +154,6 @@ var config ={
 }
 
 /*
-
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_namexxx}}",
@@ -164,7 +163,7 @@ var config ={
     forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
 	    // to be found out
-	maxAllowedLoadingTimeSec:3,
+	maxAllowedLoadingTimeSec:45,
 	allowedMaxHITsInProject:10,
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -673,8 +672,8 @@ function isSetupDone(){
 	Check the qualification passed
 */
 function validateSetupAnswer(){
-	passed_cmp = validateCMPSection();
-	on_setup_performed(passed_cmp);
+	status = validateCMPSection();
+	on_setup_performed(status);
 }
 
 
@@ -1247,6 +1246,11 @@ function validateCMPSection(){
 	cfg = config["viewing_distance"];
 	base_url = cfg['img_path'].f(cfg['base_id']);
 	let pass_cmp = true;
+
+	let too_close_pass = false;
+	let fair_distance_pass = false;
+	let too_far_pass = false;
+
 	for (i = 1; i < 4; i++) {
 		link_a = $('#cmp{0}_img_a'.f(i)).attr('src');
 		link_b = $('#cmp{0}_img_b'.f(i)).attr('src');
@@ -1273,6 +1277,7 @@ function validateCMPSection(){
 
 		switch(state){
 			case 'too_close':
+				too_close_pass = is_correct;
 				if (cmp_answers[i-1]!= 'o'){
 					console.log("cmp {0}, are you sure, you might be too close to the screen".f(i));
 				}else{
@@ -1280,11 +1285,13 @@ function validateCMPSection(){
 				}
 				break;
 			case 'normal':
+				fair_distance_pass = is_correct;
 				if  (!is_correct){
 					console.log("cmp {0}, are you sure? Does not seem to be correct".f(i));
 				}
 				break;
 			case 'too_far':
+				too_far_pass = is_correct;
 				if  (!is_correct){
 					console.log("cmp {0}, are you sure? you might be too far from screen".f(i));
 				}
@@ -1296,8 +1303,17 @@ function validateCMPSection(){
 	//	alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
 	//else
 	//	alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
-	return pass_cmp;
+
+	if (pass_cmp && too_close_pass)
+		return VIEWING_DISTANCE.TOO_CLOSE;
+	if (pass_cmp)
+		return VIEWING_DISTANCE.SUCCESS;
+	if (too_far_pass && !fair_distance_pass)
+		return VIEWING_DISTANCE.TOO_FAR;
+	return VIEWING_DISTANCE.UNKNOWN;
 }
+
+const VIEWING_DISTANCE = Object.freeze({"TOO_CLOSE":1, "TOO_FAR":3, "UNKNOWN": 4, 'SUCCESS':5})
 
 //----------------- training section
 /*
@@ -1506,8 +1522,21 @@ function on_calibration_performed(){
 }
 
 var setup_section_remaining_tries = 3;
-function on_setup_performed(success){
-	if (!success){
+function on_setup_performed(status){
+
+	if (status == VIEWING_DISTANCE.TOO_CLOSE){
+		alert('You might be too close to your screen. Please make sure to keep a distance of 1.5 to 3 times of your screen height fromy our device.')
+	}else if (status == VIEWING_DISTANCE.TOO_FAR){
+		if (setup_section_remaining_tries> 1){
+			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. You might need to get closer to your screen and keep a your distance equal to 1.5 to 3 times of the height of your screen.".f(setup_section_remaining_tries));
+			setup_section_remaining_tries--;
+			$('#setup-rest :radio').prop('checked', false);
+		}else{
+			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
+			activate_setup_section(false);
+		}
+		return;
+	}else if (status==VIEWING_DISTANCE.UNKNOWN){
 		if (setup_section_remaining_tries> 1){
 			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that\n - you already calibrated your screen,\n - have a good lighting condition, and \n -is in a proper distance from screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
@@ -1516,7 +1545,7 @@ function on_setup_performed(success){
 		}else{
 			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
 			activate_setup_section(false);
-			//TODO block the user for X hours?
+
 		}
 		return;
 	}
@@ -1524,6 +1553,7 @@ function on_setup_performed(success){
 	createCookie(config['cookieName']+"_setup","un_important",config['showSetupEveryMinutes']);
 	activate_training_section(true);
 	activate_rating_section(true);
+
 }
 
 
