@@ -223,6 +223,11 @@ def check_matrix(row):
 
     c1_correct = float(row['input.t1_matrix_c'])
     t1_correct = float(row['input.t1_matrix_t'])
+    # it might be that answer of matrix1 is obfuscated
+    if 'matrix_ans_obfuscated' in config['acceptance_criteria'] \
+            and int(config['acceptance_criteria']['matrix_ans_obfuscated']) ==1:
+        c1_correct -= 2
+        t1_correct -= 3
 
     c2_correct = float(row['input.t2_matrix_c'])
     t2_correct = float(row['input.t2_matrix_t'])
@@ -389,9 +394,12 @@ def data_cleaning(filename, method, wrong_vcodes):
     save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
     save_hits_to_be_extended(worker_list, extending_hits_file)
 
-    print(f"   {len(accept_and_use_sessions)} answers are good to be used further {list(collections.Counter(not_using_further_reasons).items())}")
+    not_used_reasons_list = list(collections.Counter(not_using_further_reasons).items())
+    print(f"   {len(accept_and_use_sessions)} answers are good to be used further {not_used_reasons_list}")
     print(f"   Data cleaning report is saved in: {report_file}")
-
+    tmp_path = os.path.splitext(filename)[0] + '_not_used_reasons.csv'
+    with open(tmp_path, 'w') as fp:
+        fp.write('\n'.join('%s %s' % x for x in not_used_reasons_list))
     return worker_list, use_sessions
 
 
@@ -913,9 +921,13 @@ def calc_stats(input_file):
     df_no_qual = df[df['Answer.2_birth_year'].isna()]
     df_no_qual_no_setup = df_no_qual[df_no_qual['Answer.t1_circles'].isna()]
     only_rating = df_no_qual_no_setup[df_no_qual_no_setup['Answer.t1'].isna()].copy()
-    only_r_time, only_r_pay = calc_payment_stat(only_rating)
 
-    data = {'Case':['All submissions', 'All sections', 'Only rating'],
+    if len(only_rating)>0:
+        only_r_time, only_r_pay = calc_payment_stat(only_rating)
+    else:
+        only_r_time = 'No-case'
+        only_r_pay = 'No-case'
+    data = {'Case': ['All submissions', 'All sections', 'Only rating'],
             'Percent of submissions':[1, len(df_full.index)/len(df.index), len(only_rating.index)/len(df.index)],
             'Work duration (median) MM:SS': [overall_time, full_time, only_r_time ],
             'payment per hour ($)': [overall_pay, full_pay, only_r_pay]}
