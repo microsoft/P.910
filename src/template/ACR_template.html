@@ -129,7 +129,8 @@ var config ={
 		'img': '${t1_matrix_url}',
 		'circles': ${t1_matrix_c},
 		'triangles': ${t1_matrix_t},
-		'dummy':'dummy'
+		'dummy':'dummy',
+		'max_tries': 4
 	},
 
 	plates:{
@@ -520,12 +521,20 @@ function disableTheHIT(c){
 	$("#thanks").hide();
 	$("#qualification_msg").hide();
 
+	$("#alert-calibration").hide();
+	$("#alert-qualification").hide();
+	$("#alert-setup-complete").hide();
+	$("#impairments").hide();
+	$("#submit_id").hide();
+
 	if (c == Hide_HIT_REASON.MAX_ACHIVED)
 		$("#max_allowed_HITs_reached").show();
 	if (c == Hide_HIT_REASON.QUALIFICATON)
 		$("#qualification_rejected").show();
-	if (c == Hide_HIT_REASON.QUALIFICATION_FAILED_NOW)
+	if (c == Hide_HIT_REASON.QUALIFICATION_FAILED_NOW){
+		createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
 		$("#qualification_not_pass").show();
+	}
 
 }
 
@@ -583,6 +592,7 @@ Change placeholders inside text with values from config file.
 function loadTextPlaceHolders(){
 	// update the instruction
 	$('.max_allowed_hits').html(config['allowedMaxHITsInProject']);
+	$('#matirx_tries').html(config['block_matrix']['max_tries']);
 	$('.setup_time').html(config['showSetupEveryMinutes']);
 	if (config['forceRetrainingInHours']==1)
 		$('.training_time').html(config['forceRetrainingInHours']+" hour" );
@@ -1166,6 +1176,7 @@ function on_resolution_change(){
 /**
 	Check the answer of the first matrix block and activate the rest of page
 **/
+var num_tries_block_matrix = 0;
 function check_brightness_test(){
 	correct_ans = config['block_matrix'];
 	c = $("#t1_circles").val();
@@ -1178,7 +1189,14 @@ function check_brightness_test(){
 		//alert('Great! Your answer is correct, continue!');
 		activate_rest_setup();
 	}else
-		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!');
+		num_tries_block_matrix++;
+		if (correct_ans['max_tries']-num_tries_block_matrix == 0){
+			disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
+			return;
+		}
+		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!\n'+
+		'You can try {0} more time(s).'.f(correct_ans['max_tries']-num_tries_block_matrix));
+
 }
 
 function activate_rest_setup(){
@@ -2203,6 +2221,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 	<div class="col-md-4"></div>
 	<div class="col-md-2" sytle="float: right"><div class="loader" width="30%"></div></div>
 	<div class="col-md-3" sytle="text-align: left;"> <h1>Loading</h1>
+		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
 		<p><span id ="remaining_videos">0</span> remains.</p>
 		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
@@ -2521,6 +2540,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 							<div> <label> Circles: <input type="number" id="t1_circles" name="t1_circles" size="4" required></label></div>
 							<div> <label> Triangles: <input type="number" id="t1_triangles" name="t1_triangles" size="4" required></label></div>
 							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" >Check my answer</button>
+							<p>You can try it up to <b id="matirx_tries">3</b> times.</p>
 						</div>
 
 					</div>
