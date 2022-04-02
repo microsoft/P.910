@@ -1,4 +1,4 @@
-# HITTApp Server
+# HITApp Server
 
 This application provides back-end for external crowdsourcing job. 
 A typical Amazon Mechanical Turk (AMT) task can be deployed in this server; participants answers will be stored
