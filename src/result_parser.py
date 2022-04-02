@@ -55,7 +55,7 @@ def outliers_z_score(votes):
     :param votes:
     :return:
     """
-    if len(votes) == 0 or statistics.stdev(votes) == 0:
+    if len(votes) < 2 or statistics.stdev(votes) == 0:
         return votes
 
     threshold = 3.29
@@ -180,7 +180,7 @@ def check_variance(row):
         except:
             pass
     try:
-        v = statistics.variance(r)
+        v = statistics.variance(r) if len(r)> 1 else 1
         return v
     except:
         pass
@@ -303,7 +303,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     use_sessions = []
     not_using_further_reasons = []
 
-
+    #--------
+    failed_workers = []
+    #--------
     for row in reader:
         setup_was_hidden = row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
@@ -354,18 +356,22 @@ def data_cleaning(filename, method, wrong_vcodes):
         should_be_used, failures = check_if_session_should_be_used(d)
         #--------------------------
         #if 'ablation' in config:
-
         """
+
         failures = []
-        if d['variance_in_ratings'] <0.3:
+        #if d['correct_matrix'] == 1 or (d['correct_matrix'] is None and d['worker_id'] in failed_workers):
+        if d['percent_over_play_duration'] >= 1.15 :
+            #failed_workers.append(d['worker_id'])
             d['accept'] = 1
             should_be_used = True
         else:
+            #if d['worker_id'] in failed_workers:
+            #    failed_workers.remove(d['worker_id'])
             d['accept'] = 0
             should_be_used = False
-        """
-        # --------------------------
 
+        # --------------------------
+        """
         not_using_further_reasons.extend(failures)
         if should_be_used:
             d['accept_and_use'] = 1

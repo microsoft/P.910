@@ -1187,6 +1187,7 @@ function check_brightness_test(){
 
 	if (c==(correct_ans['circles'] -2)&& t == (correct_ans['triangles']-3)){
 		//alert('Great! Your answer is correct, continue!');
+		$("#check_matrix").prop("disabled",true);
 		activate_rest_setup();
 	}else
 		num_tries_block_matrix++;
@@ -2539,7 +2540,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 						<div style="margin-left:20px">
 							<div> <label> Circles: <input type="number" id="t1_circles" name="t1_circles" size="4" required></label></div>
 							<div> <label> Triangles: <input type="number" id="t1_triangles" name="t1_triangles" size="4" required></label></div>
-							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" >Check my answer</button>
+							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" id="check_matrix">Check my answer</button>
 							<p>You can try it up to <b id="matirx_tries">3</b> times.</p>
 						</div>
 
