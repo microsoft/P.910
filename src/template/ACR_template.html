@@ -1189,7 +1189,7 @@ function check_brightness_test(){
 		//alert('Great! Your answer is correct, continue!');
 		$("#check_matrix").prop("disabled",true);
 		activate_rest_setup();
-	}else
+	}else{
 		num_tries_block_matrix++;
 		if (correct_ans['max_tries']-num_tries_block_matrix == 0){
 			disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
@@ -1197,7 +1197,7 @@ function check_brightness_test(){
 		}
 		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!\n'+
 		'You can try {0} more time(s).'.f(correct_ans['max_tries']-num_tries_block_matrix));
-
+	}
 }
 
 function activate_rest_setup(){
