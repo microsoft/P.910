@@ -400,7 +400,7 @@ function clearInputs(){
 
 //-------------------- Initialize page -------------------
 
-const Hide_HIT_REASON = Object.freeze({"MAX_ACHIVED":1, "QUALIFICATON":2, "QUALIFICATION_FAILED_NOW":3})
+const Hide_HIT_REASON = Object.freeze({"MAX_ACHIVED":1, "QUALIFICATON":2, "QUALIFICATION_FAILED_NOW":3, "AUTO_TEST_FAILED":4})
 
 /*
 	Initializing the page: generate and hide sections depending to the cookies value
@@ -411,6 +411,7 @@ $(function() {
 			console.log = function() {};
 			console.error = function() {};
 		}
+		$("#submit_id").hide;
 		initializeActivePageMonitoring();
 		initializeQualification();
 		initializeCalibration();
@@ -535,7 +536,16 @@ function disableTheHIT(c){
 		createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
 		$("#qualification_not_pass").show();
 	}
-
+	if (c == Hide_HIT_REASON.AUTO_TEST_FAILED){
+		var hrd_cookie_name = config['qualificationCookieName']+"_hrd1st";
+		let failed_before = readCookie(hrd_cookie_name);
+		if (failed_before!==null){
+			createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
+		}else{
+			createCookie(failed_before,true,config.qualificationValidFor);
+		}
+		$("#automatic_test_failed").show();
+	}
 }
 
 
@@ -955,10 +965,12 @@ function hardware_test(){
 
 		record_screen_size();
 		record_os();
-		if (refresh_rate_passed && resolution_check && device_accepted)
+		if (refresh_rate_passed && resolution_check && device_accepted){
 			activate_hit();
-		else
-			alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
+		}else{
+			//alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
+			disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+		}
     }
 }
 //just tmp for test
@@ -997,6 +1009,7 @@ function activate_hit(){
 	start_time = new Date();
 	$("#start_working_time").val(start_time.toISOString());
 	console.log($("#start_working_time").val());
+	$("#submit_id").show;
 }
 
 
@@ -2758,6 +2771,16 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 <section class="container" id="qualification_not_pass" hidden>
 	<p>Based on your responses, unfortunately you are not qualified for this HIT.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of all of your submissions.
+			</div>
+</section>
+
+
+<section class="container" id="automatic_test_failed" hidden>
+	<p>Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
