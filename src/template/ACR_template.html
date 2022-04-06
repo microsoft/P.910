@@ -150,8 +150,8 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-
 /*
+
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_namexxx}}",
@@ -513,6 +513,7 @@ $(function() {
 	TODO: update it
 */
 function disableTheHIT(c){
+	$("#hardware-spinner").hide();
 	$("#Survey").hide();
 	$("#qualification").hide();
 	$("#calibration").hide();
@@ -528,6 +529,8 @@ function disableTheHIT(c){
 	$("#impairments").hide();
 	$("#submit_id").hide();
 
+	$('#test_failed').val(c);
+
 	if (c == Hide_HIT_REASON.MAX_ACHIVED)
 		$("#max_allowed_HITs_reached").show();
 	if (c == Hide_HIT_REASON.QUALIFICATON)
@@ -541,8 +544,10 @@ function disableTheHIT(c){
 		let failed_before = readCookie(hrd_cookie_name);
 		if (failed_before!==null){
 			createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
+			console.log('failed for second tiome');
 		}else{
-			createCookie(failed_before,true,config.qualificationValidFor);
+			createCookie(hrd_cookie_name,true,config.qualificationValidFor);
+			console.log('failed for first tiome');
 		}
 		$("#automatic_test_failed").show();
 	}
@@ -715,9 +720,18 @@ function forceNoSpaceInInput(){
 	will be called when a video took extra time to be finished.
 	TODO: Inform the user or terminate the session.
 */
+var maximum_extra_playing_time_reached_counter= 0;
+
 function maximum_extra_playing_time_reached(id){
 	console.error("Playing time of the video {0} took more than what we expected.".f(id));
 	recordError("VIDEO_PLAY_ISSUE","Playing time of the video {0} took more than what we expected.".f(id), false);
+	if (maximum_extra_playing_time_reached_counter==0){
+		alert('Playback of this video took significantly longer than its duration.\n Please make sure that you system is not affected by any parallel activity.');
+	}
+	maximum_extra_playing_time_reached_counter = maximum_extra_playing_time_reached_counter+1;
+	if (maximum_extra_playing_time_reached_counter>3){
+		createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
+	}
 }
 
 
@@ -982,6 +996,7 @@ function show_message_too_long_loading(){
 		page_loading_timer= null;
 	}
 	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
+	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
 function activate_hit(){
@@ -1208,7 +1223,7 @@ function check_brightness_test(){
 			disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
 			return;
 		}
-		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!\n'+
+		alert('hmm! not correct, try to change your screen brightness, light in the room, or your position, and try again!\n'+
 		'You can try {0} more time(s).'.f(correct_ans['max_tries']-num_tries_block_matrix));
 	}
 }
@@ -1557,7 +1572,7 @@ function on_setup_performed(status){
 		alert('You might be too close to your screen. Please make sure to keep a distance of 1.5 to 3 times of your screen height fromy our device.')
 	}else if (status == VIEWING_DISTANCE.TOO_FAR){
 		if (setup_section_remaining_tries> 1){
-			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. You might need to get closer to your screen and keep a your distance equal to 1.5 to 3 times of the height of your screen.".f(setup_section_remaining_tries));
+			alert("Unfortunately you did not pass the setup test, you can try it {0} more times. You might need to get closer to your screen and keep a your distance equal to 1.5 to 3 times of the height of your screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
 			$('#setup-rest :radio').prop('checked', false);
 		}else{
@@ -2038,6 +2053,7 @@ function end_video(id, is_first_video){
 		now = Date.now();
 		play_duration = (Date.now()-  video_play_start_time.get(id))/1000;
 		$("#video_play_duration_"+id).val(play_duration);
+		console.log('play time:::'+play_duration);
 		expected_duration = get_expected_duration(id, true);
 		$("#video_duration_"+id).val(expected_duration);
 
@@ -2228,6 +2244,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 <!-- just for backup -->
 <input id="matrix_t1_circle_history" name="matrix_t1_circle_history" type="hidden" value="" />
 <input id="matrix_t1_triangle_history" name="matrix_t1_triangle_history" type="hidden" value="" />
+
+<!-- debug -->
+<input id="test_failed" name="test_failed" type="hidden" value="" />
 
 
 <div id="meter" style="width:10cm"></div>
@@ -2780,7 +2799,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <section class="container" id="automatic_test_failed" hidden>
-	<p>Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
+	<p>Unfortunately your hardware/connection did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
