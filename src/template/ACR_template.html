@@ -107,7 +107,7 @@ var config ={
 	qualificationCookieName:"{{cfg.qual_cookie_name}}",
 	qualificationValidFor:43200,
     // to be found out
-	maxAllowedLoadingTimeSec:45,
+	maxAllowedLoadingTimeSec:40,
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -507,12 +507,14 @@ $(function() {
 	}
 });
 
+var loading_page_error = false;
 /*
 	Disable the HIS and show a proper message.
 	- used when the maximum number of HITs in project is reached
 	TODO: update it
 */
 function disableTheHIT(c){
+	loading_page_error = true;
 	$("#hardware-spinner").hide();
 	$("#Survey").hide();
 	$("#qualification").hide();
@@ -950,7 +952,7 @@ function hardware_test(){
 	}
 	if (!startScreenRefreshRateMeasures){
 		if (videos_not_loaded_yet_set.size == 0){
-
+			record_video_loading_time();
 			getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
 			startScreenRefreshRateMeasures = true;
 
@@ -999,7 +1001,10 @@ function show_message_too_long_loading(){
 	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
-function activate_hit(){
+/**
+	called when all videos are loaded
+**/
+function record_video_loading_time(){
 	if(page_loading_timer){
 		clearTimeout(page_loading_timer);
 		page_loading_timer= null;
@@ -1017,6 +1022,13 @@ function activate_hit(){
 		return;
 	}
 
+
+}
+
+function activate_hit(){
+	if (loading_page_error){
+		return;
+	}
 	$("#hardware-spinner").hide();
 	$("#Survey").removeClass("disabled_section");
 	$("#qualification").removeClass("disabled_section");
