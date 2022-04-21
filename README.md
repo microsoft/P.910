@@ -10,8 +10,23 @@ which can serve the experiment. Consequently you can use AMT or any other crowds
 For more information about the ITU-T Rec. P.910 please read:
 
 [ITU-T Recommendation P.910, _Subjective video quality assessment methods for multimedia applications._](https://www.itu.int/rec/T-REC-P.910/en) 
-Geneva: International Telecommunication Union, 2008.
+Geneva: International Telecommunication Union, 2021.
 
+Technical description of the implementation and validation is given in this paper:
+
+* [A crowdsourced implementation of ITU-T P.910](https://arxiv.org/pdf/2204.06784.pdf) Babak Naderi, Ross Cutler, arXiv preprint arXiv:2204.06784 (2022).
+
+## Citation
+If you use this tool in your research please cite it with the following references:
+
+```BibTex
+@article{naderi2022,
+  title={A crowdsourced implementation of ITU-T P.910},
+  author={Naderi, Babak and Cutler, Ross},
+  journal={arXiv preprint arXiv:2204.06784},
+  year={2020}
+}
+```
 
 ## Getting Started
 * [Preparation](docs/preparation.md)

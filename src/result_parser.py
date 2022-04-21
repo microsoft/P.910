@@ -173,7 +173,7 @@ def check_variance(row):
     for q_name in question_names:
         if 'gold_question' in config and row[config['gold_question']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
-        if row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
+        if 'trapping' in config and row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
         try:
             r.append(int(row[f'answer.{q_name}{question_name_suffix}']))
@@ -284,6 +284,7 @@ def check_a_cmp(file_a, file_b, ans, audio_a_played, audio_b_played):
         answer_is_correct = True
     return answer_is_correct
 
+
 # pcrowd
 def data_cleaning(filename, method, wrong_vcodes):
    """
@@ -303,9 +304,10 @@ def data_cleaning(filename, method, wrong_vcodes):
     use_sessions = []
     not_using_further_reasons = []
 
-    #--------
+   #"""
     failed_workers = []
-    #--------
+   #in_df.sort_values(by=['answer.visual_acuity_result'], ascending=False, inplace=True)
+   #"""
     for row in reader:
         setup_was_hidden = row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
@@ -315,9 +317,8 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['assignment'] = row['assignmentid']
         d['status'] = row['assignmentstatus']
 
-        # TODOD: is it needed?
         # step1. check if audio of all X questions are played at least once
-        d['all_audio_played'] = 1 if check_video_played(row, method) else 0
+        d['all_videos_played'] = 1 if check_video_played(row, method) else 0
 
         # check if setup was shown
         if setup_was_hidden:
@@ -327,16 +328,6 @@ def data_cleaning(filename, method, wrong_vcodes):
         else:
             # step2. check math
             d['correct_matrix'] = check_matrix(row)
-            #--------------tmp
-            #------------------------
-            # step3. check pair comparision,
-            # how?
-            #for i in range(1, 5):
-            #   if check_a_cmp(row[f'input.cmp{i}_a'], row[f'input.cmp{i}_b'], row[f'answer.cmp{i}'],
-            #                  row[f'answer.audio_n_play_cmp{i}_a'],
-            #                   row[f'answer.audio_n_play_cmp{i}_b']):
-            #        correct_cmp_ans += 1
-            #d['correct_cmps'] = correct_cmp_ans
         # step 4. check tps
         d['correct_tps'] = check_tps(row, method)
         # step5. check gold_standard,
@@ -347,6 +338,7 @@ def data_cleaning(filename, method, wrong_vcodes):
 
         d['percent_over_play_duration'] = check_play_duration(row)
 
+        d['video_loading_duration'] = row['answer.video_loading_duration_ms']
         if check_if_session_accepted(d):
             d['accept'] = 1
             d['Approve'] = 'x'
@@ -354,21 +346,17 @@ def data_cleaning(filename, method, wrong_vcodes):
             d['accept'] = 0
             d['Approve'] = ''
         should_be_used, failures = check_if_session_should_be_used(d)
-        #--------------------------
-        #if 'ablation' in config:
         """
-
+        #--------------------------
         failures = []
-        #if d['correct_matrix'] == 1 or (d['correct_matrix'] is None and d['worker_id'] in failed_workers):
-        if d['percent_over_play_duration'] >= 1.15 :
-            #failed_workers.append(d['worker_id'])
-            d['accept'] = 1
+        #d['VAT'] = row['answer.visual_acuity_result']
+        if should_be_used and float(d['video_load']) > 30000:
             should_be_used = True
+            d['accept'] = 1
+            #failed_workers.append(d['worker_id'])
         else:
-            #if d['worker_id'] in failed_workers:
-            #    failed_workers.remove(d['worker_id'])
-            d['accept'] = 0
             should_be_used = False
+            d['accept'] = 0
 
         # --------------------------
         """
@@ -742,7 +730,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
         found_gold_question = False
         for question in question_names:
             # is it a trapping clips question
-            if session[config['trapping']['url_found_in']] == session[f'answer.{question}_url']:
+            if 'trapping' in config and session[config['trapping']['url_found_in']] == session[f'answer.{question}_url']:
                 continue
             # is it a gold clips
             if not found_gold_question and\
