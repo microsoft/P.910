@@ -368,6 +368,8 @@ def data_cleaning(filename, method, wrong_vcodes):
             d['accept_and_use'] = 0
 
         worker_list.append(d)
+
+
     report_file = os.path.splitext(filename)[0] + '_data_cleaning_report.csv'
 
     approved_file = os.path.splitext(filename)[0] + '_accept.csv'
@@ -378,6 +380,8 @@ def data_cleaning(filename, method, wrong_vcodes):
 
     # reject hits when the user performed more than the limit
     worker_list = evaluate_maximum_hits(worker_list)
+    # check rater_min_* criteria
+    worker_list, use_sessions, num_not_used_sub_perform = evaluate_rater_performance(worker_list, use_sessions)
 
     #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
@@ -389,12 +393,57 @@ def data_cleaning(filename, method, wrong_vcodes):
     save_hits_to_be_extended(worker_list, extending_hits_file)
 
     not_used_reasons_list = list(collections.Counter(not_using_further_reasons).items())
+    not_used_reasons_list.append(('performance', num_not_used_sub_perform))
+
     print(f"   {len(accept_and_use_sessions)} answers are good to be used further {not_used_reasons_list}")
     print(f"   Data cleaning report is saved in: {report_file}")
     tmp_path = os.path.splitext(filename)[0] + '_not_used_reasons.csv'
     with open(tmp_path, 'w') as fp:
         fp.write('\n'.join('%s %s' % x for x in not_used_reasons_list))
     return worker_list, use_sessions
+
+
+def evaluate_rater_performance(data, use_sessions):
+    if ('rater_min_acceptance_rate_current_test' not in config['accept_and_use']) \
+            and ('rater_min_accepted_hits_current_test' not in config['accept_and_use']):
+        return data, use_sessions,0
+
+    df = pd.DataFrame(data)
+    # rater_min_accepted_hits_current_test
+    grouped = df.groupby(['worker_id', 'accept_and_use']).size().unstack(fill_value=0).reset_index()
+    grouped = grouped.rename(columns={0: 'not_used_count', 1: 'used_count'})
+    grouped['acceptance_rate'] = (grouped['used_count'] * 100)/(grouped['used_count'] + grouped['not_used_count'])
+
+    if 'rater_min_acceptance_rate_current_test' in config['accept_and_use']:
+        rater_min_acceptance_rate_current_test = int(config['accept_and_use']['rater_min_acceptance_rate_current_test'])
+    else:
+        rater_min_acceptance_rate_current_test = 0
+
+    if 'rater_min_accepted_hits_current_test' in config['accept_and_use']:
+        rater_min_accepted_hits_current_test = int(config['accept_and_use']['rater_min_accepted_hits_current_test'])
+    else:
+        rater_min_accepted_hits_current_test = 0
+
+    grouped = grouped[(grouped.acceptance_rate < rater_min_acceptance_rate_current_test )
+                      | (grouped.used_count < rater_min_accepted_hits_current_test)]
+    num_not_used_submissions = grouped.used_count.sum()
+    workers_list_to_remove = list(grouped['worker_id'])
+
+    result = []
+    for d in data:
+        if d['worker_id'] in workers_list_to_remove:
+            d['accept_and_use'] = 0
+            d['rater_performace_pass'] = 0
+        else:
+            d['rater_performace_pass'] = 1
+        result.append(d)
+
+    u_session_update = []
+    for us in use_sessions:
+        if us['workerid'] not in workers_list_to_remove:
+            u_session_update.append(us)
+
+    return result, u_session_update, num_not_used_submissions
 
 
 # pcrowdv
