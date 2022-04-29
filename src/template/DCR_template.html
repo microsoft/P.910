@@ -105,10 +105,8 @@ var config ={
 	cookieName:"{{cfg.cookie_name}}",
 	qualificationCookieName:"{{cfg.qual_cookie_name}}",
 	qualificationValidFor:43200,
-	qualificationValidFor:43200,
-    forceRetrainingInHours:1,
-    showSetupEveryMinutes:30,
-
+	// to be found out
+	maxAllowedLoadingTimeSec:60,
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -130,7 +128,8 @@ var config ={
 		'img': '${t1_matrix_url}',
 		'circles': ${t1_matrix_c},
 		'triangles': ${t1_matrix_t},
-		'dummy':'dummy'
+		'dummy':'dummy',
+		'max_tries': 4
 	},
 
 	plates:{
@@ -211,11 +210,18 @@ var overAllHiddenTime = 0;
 var startHiddenDate = null;
 var sessionId = null;
 var sessionIdVariableName=null;
+const start_page_load = Date.now();
+
 /**
 	monitor and record the status of page including being focus, and active time
 
 **/
 function initializeActivePageMonitoring(){
+	// start time monitoring
+	$("#start_video_loading_time").val((new Date()).toISOString());
+	page_loading_timer = setTimeout(show_message_too_long_loading, config['maxAllowedLoadingTimeSec']*1000);
+
+
 	sessionId = Math.random().toString(36).substr(2, 9);
 	sessionIdVariableName = config.qualificationCookieName +"_sid";
 	createCookie(sessionIdVariableName,sessionId,70);
@@ -334,8 +340,7 @@ function clearInputs(){
 }
 
 //-------------------- Initialize page -------------------
-
-const Hide_HIT_REASON = Object.freeze({"MAX_ACHIVED":1, "QUALIFICATON":2, "QUALIFICATION_FAILED_NOW":3})
+const Hide_HIT_REASON = Object.freeze({"MAX_ACHIVED":1, "QUALIFICATON":2, "QUALIFICATION_FAILED_NOW":3, "AUTO_TEST_FAILED":4})
 
 /*
 	Initializing the page: generate and hide sections depending to the cookies value
@@ -346,7 +351,7 @@ $(function() {
 			console.log = function() {};
 			console.error = function() {};
 		}
-
+		$("#submit_id").hide;
 		initializeQualification();
 		initializeCalibration();
 		hardware_test();
@@ -441,12 +446,16 @@ $(function() {
 	}
 });
 
+var loading_page_error = false;
+
 /*
 	Disable the HIS and show a proper message.
 	- used when the maximum number of HITs in project is reached
 	TODO: update it
 */
 function disableTheHIT(c){
+	loading_page_error = true;
+	$("#hardware-spinner").hide();
 	$("#Survey").hide();
 	$("#qualification").hide();
 	$("#calibration").hide();
@@ -456,12 +465,34 @@ function disableTheHIT(c){
 	$("#thanks").hide();
 	$("#qualification_msg").hide();
 
+	$("#alert-calibration").hide();
+	$("#alert-qualification").hide();
+	$("#alert-setup-complete").hide();
+	$("#impairments").hide();
+	$("#submit_id").hide();
+
+	$('#test_failed').val(c);
+
 	if (c == Hide_HIT_REASON.MAX_ACHIVED)
 		$("#max_allowed_HITs_reached").show();
 	if (c == Hide_HIT_REASON.QUALIFICATON)
 		$("#qualification_rejected").show();
-	if (c == Hide_HIT_REASON.QUALIFICATION_FAILED_NOW)
+	if (c == Hide_HIT_REASON.QUALIFICATION_FAILED_NOW){
+		createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
 		$("#qualification_not_pass").show();
+	}
+	if (c == Hide_HIT_REASON.AUTO_TEST_FAILED){
+		var hrd_cookie_name = config['qualificationCookieName']+"_hrd1st";
+		let failed_before = readCookie(hrd_cookie_name);
+		if (failed_before!==null){
+			createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
+			console.log('failed for second tiome');
+		}else{
+			createCookie(hrd_cookie_name,true,config.qualificationValidFor);
+			console.log('failed for first tiome');
+		}
+		$("#automatic_test_failed").show();
+	}
 
 }
 
@@ -519,6 +550,7 @@ Change placeholders inside text with values from config file.
 function loadTextPlaceHolders(){
 	// update the instruction
 	$('.max_allowed_hits').html(config['allowedMaxHITsInProject']);
+	$('#matirx_tries').html(config['block_matrix']['max_tries']);
 	$('.setup_time').html(config['showSetupEveryMinutes']);
 	if (config['forceRetrainingInHours']==1)
 		$('.training_time').html(config['forceRetrainingInHours']+" hour" );
@@ -605,8 +637,8 @@ function isSetupDone(){
 	Check the qualification passed
 */
 function validateSetupAnswer(){
-	passed_cmp = validateCMPSection();
-	on_setup_performed(passed_cmp);
+	status = validateCMPSection();
+	on_setup_performed(status);
 }
 
 
@@ -631,8 +663,18 @@ function forceNoSpaceInInput(){
 	will be called when a video took extra time to be finished.
 	TODO: Inform the user or terminate the session.
 */
+var maximum_extra_playing_time_reached_counter= 0;
+
 function maximum_extra_playing_time_reached(id){
 	console.error("Playing time of the video {0} took more than what we expected.".f(id));
+	recordError("VIDEO_PLAY_ISSUE","Playing time of the video {0} took more than what we expected.".f(id), false);
+	if (maximum_extra_playing_time_reached_counter==0){
+		alert('Playback of this video took significantly longer than its duration.\n Please make sure that you system is not affected by any parallel activity.');
+	}
+	maximum_extra_playing_time_reached_counter = maximum_extra_playing_time_reached_counter+1;
+	if (maximum_extra_playing_time_reached_counter>3){
+		createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
+	}
 }
 
 
@@ -853,7 +895,7 @@ function hardware_test(){
 	}
 	if (!startScreenRefreshRateMeasures){
 		if (videos_not_loaded_yet_set.size == 0){
-
+			record_video_loading_time();
 			getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
 			startScreenRefreshRateMeasures = true;
 
@@ -882,14 +924,53 @@ function hardware_test(){
 
 		record_screen_size();
 		record_os();
-		if (refresh_rate_passed && resolution_check && device_accepted)
+		if (refresh_rate_passed && resolution_check && device_accepted){
 			activate_hit();
-		else
-			alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
-    }
+		}else{
+			//alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
+			disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+		}
 }
 
+//just tmp for test
+var video_size_MB = 0;
+var page_loading_timer =null;
+function show_message_too_long_loading(){
+	if(page_loading_timer){
+		clearTimeout(page_loading_timer);
+		page_loading_timer= null;
+	}
+	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
+	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+}
+
+/**
+	called when all videos are loaded
+**/
+function record_video_loading_time(){
+	if(page_loading_timer){
+		clearTimeout(page_loading_timer);
+		page_loading_timer= null;
+	}
+	page_loading_duration = Date.now()- start_page_load;
+	$("#video_loading_duration").val(page_loading_duration);
+	let loading_time_sec = page_loading_duration/1000;
+	console.log("video_loading_duration sec: "+loading_time_sec)
+	let speed_M_bits = 8 * video_size_MB / loading_time_sec;
+	$("#internet_speed_estimate").val(speed_M_bits);
+	console.log("internet_speed_estimate Mb:: "+speed_M_bits);
+
+	if (loading_time_sec> config['maxAllowedLoadingTimeSec']){
+		show_message_too_long_loading();
+		return;
+	}
+}
+
+
 function activate_hit(){
+	if (loading_page_error){
+		return;
+	}
 	$("#hardware-spinner").hide();
 	$("#Survey").removeClass("disabled_section");
 	$("#qualification").removeClass("disabled_section");
@@ -897,6 +978,7 @@ function activate_hit(){
 	start_time = new Date();
 	$("#start_working_time").val(start_time.toISOString());
 	console.log($("#start_working_time").val());
+	$("#submit_id").show;
 }
 
 
@@ -1077,16 +1159,31 @@ function on_resolution_change(){
 /**
 	Check the answer of the first matrix block and activate the rest of page
 **/
+var num_tries_block_matrix = 0;
+
 function check_brightness_test(){
 	correct_ans = config['block_matrix'];
 	c = $("#t1_circles").val();
 	t = $("#t1_triangles").val();
-	if (c==correct_ans['circles'] && t == correct_ans['triangles']){
+
+	$("#matrix_t1_circle_history").val($("#matrix_t1_circle_history").val()+','+c);
+	$("#matrix_t1_triangle_history").val($("#matrix_t1_triangle_history").val()+','+t);
+
+	if (c==(correct_ans['circles'] -2)&& t == (correct_ans['triangles']-3)){
 		//alert('Great! Your answer is correct, continue!');
+		$("#check_matrix").prop("disabled",true);
 		activate_rest_setup();
-	}else
-		alert('hmm! not correct, try to change screen brightness, light in the room, or your position, and try again!');
+	}else{
+		num_tries_block_matrix++;
+		if (correct_ans['max_tries']-num_tries_block_matrix == 0){
+			disableTheHIT(Hide_HIT_REASON.QUALIFICATION_FAILED_NOW);
+			return;
+		}
+		alert('hmm! not correct, try to change your screen brightness, light in the room, or your position, and try again!\n'+
+		'You can try {0} more time(s).'.f(correct_ans['max_tries']-num_tries_block_matrix));
+	}
 }
+
 
 function activate_rest_setup(){
 	$("#alert-setup-step1").show();
@@ -1150,6 +1247,11 @@ function validateCMPSection(){
 	cfg = config["viewing_distance"];
 	base_url = cfg['img_path'].f(cfg['base_id']);
 	let pass_cmp = true;
+
+	let too_close_pass = false;
+	let fair_distance_pass = false;
+	let too_far_pass = false;
+
 	for (i = 1; i < 4; i++) {
 		link_a = $('#cmp{0}_img_a'.f(i)).attr('src');
 		link_b = $('#cmp{0}_img_b'.f(i)).attr('src');
@@ -1176,6 +1278,7 @@ function validateCMPSection(){
 
 		switch(state){
 			case 'too_close':
+				too_close_pass = is_correct;
 				if (cmp_answers[i-1]!= 'o'){
 					console.log("cmp {0}, are you sure, you might be too close to the screen".f(i));
 				}else{
@@ -1183,11 +1286,13 @@ function validateCMPSection(){
 				}
 				break;
 			case 'normal':
+				fair_distance_pass = is_correct;
 				if  (!is_correct){
 					console.log("cmp {0}, are you sure? Does not seem to be correct".f(i));
 				}
 				break;
 			case 'too_far':
+				too_far_pass = is_correct;
 				if  (!is_correct){
 					console.log("cmp {0}, are you sure? you might be too far from screen".f(i));
 				}
@@ -1199,8 +1304,17 @@ function validateCMPSection(){
 	//	alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
 	//else
 	//	alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
-	return pass_cmp;
+	if (pass_cmp && too_close_pass)
+		return VIEWING_DISTANCE.TOO_CLOSE;
+	if (pass_cmp)
+		return VIEWING_DISTANCE.SUCCESS;
+	if (too_far_pass && !fair_distance_pass)
+		return VIEWING_DISTANCE.TOO_FAR;
+	return VIEWING_DISTANCE.UNKNOWN;
 }
+
+const VIEWING_DISTANCE = Object.freeze({"TOO_CLOSE":1, "TOO_FAR":3, "UNKNOWN": 4, 'SUCCESS':5})
+
 
 //----------------- training section
 /*
@@ -1408,8 +1522,22 @@ function on_calibration_performed(){
 }
 
 var setup_section_remaining_tries = 3;
-function on_setup_performed(success){
-	if (!success){
+
+function on_setup_performed(status){
+
+	if (status == VIEWING_DISTANCE.TOO_CLOSE){
+		alert('You might be too close to your screen. Please make sure to keep a distance of 1.5 to 3 times of your screen height fromy our device.')
+	}else if (status == VIEWING_DISTANCE.TOO_FAR){
+		if (setup_section_remaining_tries> 1){
+			alert("Unfortunately you did not pass the setup test, you can try it {0} more times. You might need to get closer to your screen and keep a your distance equal to 1.5 to 3 times of the height of your screen.".f(setup_section_remaining_tries));
+			setup_section_remaining_tries--;
+			$('#setup-rest :radio').prop('checked', false);
+		}else{
+			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
+			activate_setup_section(false);
+		}
+		return;
+	}else if (status==VIEWING_DISTANCE.UNKNOWN){
 		if (setup_section_remaining_tries> 1){
 			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that\n - you already calibrated your screen,\n - have a good lighting condition, and \n -is in a proper distance from screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
@@ -1418,7 +1546,7 @@ function on_setup_performed(success){
 		}else{
 			alert("Unfortunately you did not pass the setup test. Please return this HIT.");
 			activate_setup_section(false);
-			//TODO block the user for X hours?
+
 		}
 		return;
 	}
@@ -1912,8 +2040,8 @@ $(function() {
 		insert='';
 		title='';
 		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
-		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
-		'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>'+
+			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -1943,6 +2071,7 @@ $(function() {
 		video_played_finished.set(video_id, 0);
 		videos_not_loaded_yet_set.add(video_id);
 
+		load_videos_to_storage('video1_{0}'.f(id));
 		var videoElement = document.getElementById(video_id);
 		//save for later
 		videoElements.push(videoElement);
@@ -1955,6 +2084,7 @@ $(function() {
 			let video_id = "video2_"+id;
 			video_played_finished.set(video_id, 0);
 			videos_not_loaded_yet_set.add(video_id);
+			load_videos_to_storage('video2_{0}'.f(id));
 			var videoElement = document.getElementById(video_id);
 			//save for later
 			videoElements.push(videoElement);
@@ -1972,6 +2102,35 @@ $(function() {
     });
     velements_added = true;
 });
+
+
+/*
+	Download the video and create local link
+*/
+function load_videos_to_storage(video_id){
+	var id = video_id;
+	console.log("1 start loading "+id);
+	src = $('#{0}'.f(video_id)).attr('data-src');
+	var req = new XMLHttpRequest();
+	req.open('GET', src, true);
+	req.responseType = 'blob';
+
+	req.onload = function(){
+		if (this.status === 200) {
+			let size = this.getResponseHeader('content-length');
+			let tmp = ((size /1024)/1024)
+			video_size_MB = video_size_MB + tmp;
+		  var videoBlob = this.response;
+		  var vurl = URL.createObjectURL(videoBlob);
+		  document.getElementById(id).src = vurl;
+	   }
+	};
+	req.onerror = function() {
+	   console.log('Error on loading '+id);
+	}
+	req.send();
+}
+
 
 function addListenersToVideoElement(videoElement, is_dcr){
 		//videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
@@ -2023,8 +2182,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="device_estimated_size_w" name="device_estimated_size_w" type="hidden" value="unknown" />
 <input id="device_estimated_size_h" name="device_estimated_size_h" type="hidden" value="unknown" />
 
-<input id="device_estimated_size_w_cc" name="device_estimated_size_w_cc" type="hidden" value="unknown" />
-<input id="device_estimated_size_h_cc" name="device_estimated_size_h_cc" type="hidden" value="unknown" />
+<input id="device_estimated_size_w_cc" name="device_estimated_size_w_cc" type="hidden" value="" />
+<input id="device_estimated_size_h_cc" name="device_estimated_size_h_cc" type="hidden" value="" />
 
 <input id="device_os" name="device_os" type="hidden" value="unknown" />
 
@@ -2033,12 +2192,26 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 <input id="start_working_time" name="start_working_time" type="hidden" value="" />
 
+<input id="start_video_loading_time" name="start_video_loading_time" type="hidden" value="" />
+<input id="video_loading_duration" name="video_loading_duration_ms" type="hidden" value="" />
+<input id="internet_speed_estimate" name="internet_speed_estimate_Mb" type="hidden" value="" />
+
+<!-- just for backup -->
+<input id="matrix_t1_circle_history" name="matrix_t1_circle_history" type="hidden" value="" />
+<input id="matrix_t1_triangle_history" name="matrix_t1_triangle_history" type="hidden" value="" />
+
+<!-- debug -->
+<input id="test_failed" name="test_failed" type="hidden" value="" />
+
+
+
 
 <div id="meter" style="width:10cm"></div>
 <div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
 	<div class="col-md-4"></div>
 	<div class="col-md-2" sytle="float: right"><div class="loader" width="30%"></div></div>
 	<div class="col-md-3" sytle="text-align: left;"> <h1>Loading</h1>
+		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
 		<p><span id ="remaining_videos">0</span> remains.</p>
 		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
@@ -2356,7 +2529,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 						<div style="margin-left:20px">
 							<div> <label> Circles: <input type="number" id="t1_circles" name="t1_circles" size="4" required></label></div>
 							<div> <label> Triangles: <input type="number" id="t1_triangles" name="t1_triangles" size="4" required></label></div>
-							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" >Check my answer</button>
+							<button type="button" class="btn btn-primary" onclick="check_brightness_test()" id="check_matrix">Check my answer</button>
+							<p>You can try it up to <b id="matirx_tries">3</b> times.</p>
 						</div>
 
 					</div>
@@ -2423,7 +2597,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id1" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id1" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -2432,7 +2606,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id2" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id2" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -2440,7 +2614,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id3" data-src-clip="https://audiosamplesp808.blob.core.windows.net/p910-assets/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id3" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -2576,6 +2750,15 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 <section class="container" id="qualification_not_pass" hidden>
 	<p>Based on your responses, unfortunately you are not qualified for this HIT.</p>
+
+	<div class="alert alert-danger" role="alert">
+		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of all of your submissions.
+			</div>
+</section>
+
+<section class="container" id="automatic_test_failed" hidden>
+	<p>Unfortunately your hardware/connection did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">

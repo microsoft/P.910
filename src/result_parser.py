@@ -80,7 +80,7 @@ def check_if_session_accepted(data):
     if data['correct_matrix'] is not None and data['correct_matrix'] < \
             int(config['acceptance_criteria']['correct_matrix_bigger_equal']):
         accept = False
-        msg += "Setup section was unsuccessful."
+        msg += "Brightness test failed."
     if data['correct_tps'] < int(config['acceptance_criteria']['correct_tps_bigger_equal']):
         accept = False
         msg += "Gold or trapping clips question are answered wrongly;"
@@ -338,7 +338,8 @@ def data_cleaning(filename, method, wrong_vcodes):
 
         d['percent_over_play_duration'] = check_play_duration(row)
 
-        d['video_loading_duration'] = row['answer.video_loading_duration_ms']
+        if 'answer.video_loading_duration_ms' in row:
+            d['video_loading_duration'] = row['answer.video_loading_duration_ms']
         if check_if_session_accepted(d):
             d['accept'] = 1
             d['Approve'] = 'x'
@@ -990,7 +991,7 @@ def calc_correlation(cs, lab):
     return rho
 
 
-def number_of_uniqe_workers(answers):
+def number_of_uniqe_workers(answers, used):
     """
     return numbe rof unique workers
     :param answers:
@@ -998,7 +999,10 @@ def number_of_uniqe_workers(answers):
     """
     df = pd.DataFrame(answers)
     df.drop_duplicates('worker_id', keep='first', inplace=True)
-    return len(df)
+
+    df_used = pd.DataFrame(used)
+    df_used.drop_duplicates('workerid', keep='first', inplace=True)
+    return len(df), len(df_used)
 
 
 def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
@@ -1070,8 +1074,8 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
         answer_path, wrong_v_code = combine_amt_hit_server(amt_ans_path, answer_path)
     full_data, accepted_sessions = data_cleaning(answer_path, test_method, wrong_v_code)
 
-    n_workers = number_of_uniqe_workers(full_data)
-    print(f"{n_workers} workers participated in this batch.")
+    n_workers, n_workers_used = number_of_uniqe_workers(full_data, accepted_sessions)
+    print(f"{n_workers} workers participated in this batch, answers of {n_workers_used} are used.")
     # disabled becuase of the HITAPP_server
     calc_stats(answer_path)
     # votes_per_file, votes_per_condition = transform(accepted_sessions)
