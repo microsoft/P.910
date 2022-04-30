@@ -3,7 +3,7 @@
 This application provides back-end for external crowdsourcing job. 
 A typical Amazon Mechanical Turk (AMT) task can be deployed in this server; participants answers will be stored
 in the dataset, and can be downloaded. 
-YOu can deploy the server on a Linux Virtual Machine. 
+You can deploy the server on a Linux Virtual Machine. 
 
 ## Get started 
 
