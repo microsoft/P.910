@@ -425,7 +425,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     print(f"   Data cleaning report is saved in: {report_file}")
     tmp_path = os.path.splitext(filename)[0] + '_not_used_reasons.csv'
     with open(tmp_path, 'w') as fp:
-        fp.write('\n'.join('%s %s' % x for x in not_used_reasons_list))
+        fp.write('\n'.join('%s, %s' % x for x in not_used_reasons_list))
     return worker_list, use_sessions
 
 
