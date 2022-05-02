@@ -69,31 +69,51 @@ def outliers_z_score(votes):
 
 def check_if_session_accepted(data):
     """
-    Check if the session can be acceptd given the criteria in config and the calculations
-    Note: check play_video, qualification and setup are skipped as they are checked in JS. They cannot continue if they do not pass.
+    Check if the session can be accepted given the criteria in config
+    Note: qualification and setup are skipped as they are checked in JS. They cannot continue if they do not pass.
     :param data:
     :return:
     """
 
     msg = "Make sure you follow the instruction:"
     accept = True
+    failures = []
+
     if data['correct_matrix'] is not None and data['correct_matrix'] < \
             int(config['acceptance_criteria']['correct_matrix_bigger_equal']):
         accept = False
         msg += "Brightness test failed."
+        failures.append('brightness_test')
+
     if data['correct_tps'] < int(config['acceptance_criteria']['correct_tps_bigger_equal']):
         accept = False
-        msg += "Gold or trapping clips question are answered wrongly;"
+        msg += "Wrong answer to the Trapping clip(s);"
+        failures.append('trapping_question')
+
+    if 'gold_standard_bigger_equal' in config['acceptance_criteria'] and \
+            data['correct_gold_question'] < int(config['acceptance_criteria']['gold_standard_bigger_equal']):
+        accept = False
+        msg += "Wrong answer to the Gold clip(s);"
+        failures.append('gold_question')
+
+    if data['all_videos_played'] != int(config['acceptance_criteria']['all_video_played_equal']):
+        accept = False
+        msg += "All videos are not watched;"
+        failures.append('all_videos_played')
 
     if not accept:
         data['Reject'] = msg
     else:
         data['Reject'] = ""
-    return accept
+    return accept, failures
 
 
-# pcrowdv
 def check_if_session_should_be_used(data):
+    """
+    Check if the session should be used of not. Only look at the sessions that are accepted.
+    :param data:
+    :return:
+    """
     if data['accept'] != 1:
         return False, []
     
@@ -303,6 +323,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     worker_list = []
     use_sessions = []
     not_using_further_reasons = []
+    not_accepted_reasons = []
 
    #"""
     failed_workers = []
@@ -340,12 +361,16 @@ def data_cleaning(filename, method, wrong_vcodes):
 
         if 'answer.video_loading_duration_ms' in row:
             d['video_loading_duration'] = row['answer.video_loading_duration_ms']
-        if check_if_session_accepted(d):
+        should_be_accepted, accept_failures = check_if_session_accepted(d)
+
+        if should_be_accepted:
             d['accept'] = 1
             d['Approve'] = 'x'
         else:
             d['accept'] = 0
             d['Approve'] = ''
+        not_accepted_reasons.extend(accept_failures)
+
         should_be_used, failures = check_if_session_should_be_used(d)
         """
         #--------------------------
@@ -362,6 +387,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         # --------------------------
         """
         not_using_further_reasons.extend(failures)
+
         if should_be_used:
             d['accept_and_use'] = 1
             use_sessions.append(row)
@@ -369,7 +395,6 @@ def data_cleaning(filename, method, wrong_vcodes):
             d['accept_and_use'] = 0
 
         worker_list.append(d)
-
 
     report_file = os.path.splitext(filename)[0] + '_data_cleaning_report.csv'
 
@@ -389,7 +414,7 @@ def data_cleaning(filename, method, wrong_vcodes):
 
     write_dict_as_csv(worker_list, report_file)
     save_approved_ones(worker_list, approved_file)
-    save_rejected_ones(worker_list, rejected_file, wrong_vcodes)
+    save_rejected_ones(worker_list, rejected_file, wrong_vcodes, not_accepted_reasons)
     save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
     save_hits_to_be_extended(worker_list, extending_hits_file)
 
@@ -514,7 +539,7 @@ def save_approved_ones(data, path):
     small_df.to_csv(path, index=False)
 
 
-def save_rejected_ones(data, path, wrong_vcodes):
+def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons):
     """
     Save the rejected ones in the path
     :param data:
@@ -531,11 +556,14 @@ def save_rejected_ones(data, path, wrong_vcodes):
         print(f'    {c_rejected} answers are rejected')
     else:
         print(f'    overall {c_rejected} answers are rejected, from them {df.shape[0]} were in submitted status')
-    if wrong_vcodes is not None:
-        print(f'         from them {len(wrong_vcodes.index)} due to wrong verification code')
-    small_df = df[['assignment']].copy()
-    small_df.rename(columns={'assignment': 'assignmentId'}, inplace=True)
-    small_df = small_df.assign(feedback=config['acceptance_criteria']['rejection_feedback'])
+
+    not_accepted_reasons_list = list(collections.Counter(not_accepted_reasons).items())
+    not_accepted_reasons_list.append(('Wrong Verification Code', len(wrong_vcodes.index)))
+
+    print(f'         Rejection reasons: {not_accepted_reasons_list}')
+
+    small_df = df[['assignment', 'Reject']].copy()
+    small_df.rename(columns={'assignment': 'assignmentId', 'Reject': 'feedback'}, inplace=True)
     if wrong_vcodes is not None:
         wrong_vcodes_assignments = wrong_vcodes[['AssignmentId']].copy()
         wrong_vcodes_assignments["feedback"] = "Wrong verificatioon code"
