@@ -372,6 +372,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         not_accepted_reasons.extend(accept_failures)
 
         should_be_used, failures = check_if_session_should_be_used(d)
+        d['failures'] = failures
         """
         #--------------------------
         failures = []
@@ -403,21 +404,29 @@ def data_cleaning(filename, method, wrong_vcodes):
 
     accept_reject_gui_file = os.path.splitext(filename)[0] + '_accept_reject_gui.csv'
     extending_hits_file = os.path.splitext(filename)[0] + '_extending.csv'
+    block_list_file = os.path.splitext(filename)[0] + '_block_list.csv'
 
     # reject hits when the user performed more than the limit
     worker_list = evaluate_maximum_hits(worker_list)
     # check rater_min_* criteria
-    worker_list, use_sessions, num_not_used_sub_perform = evaluate_rater_performance(worker_list, use_sessions)
+    worker_list, use_sessions, num_rej_perform, block_list = evaluate_rater_performance(worker_list, use_sessions, True)
+    worker_list, use_sessions, num_not_used_sub_perform, _ = evaluate_rater_performance(worker_list, use_sessions)
 
     #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
+    not_using_further_reasons = []
+    for d in worker_list:
+        if d['accept'] == 1 and d['accept_and_use'] == 0:
+            not_using_further_reasons .extend(d['failures'])
 
     write_dict_as_csv(worker_list, report_file)
     save_approved_ones(worker_list, approved_file)
-    save_rejected_ones(worker_list, rejected_file, wrong_vcodes, not_accepted_reasons)
+    save_rejected_ones(worker_list, rejected_file, wrong_vcodes, not_accepted_reasons, num_rej_perform)
     save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
     save_hits_to_be_extended(worker_list, extending_hits_file)
 
+    if len(block_list) > 0:
+        save_block_list(block_list, block_list_file)
     not_used_reasons_list = list(collections.Counter(not_using_further_reasons).items())
     not_used_reasons_list.append(('performance', num_not_used_sub_perform))
 
@@ -429,39 +438,56 @@ def data_cleaning(filename, method, wrong_vcodes):
     return worker_list, use_sessions
 
 
-def evaluate_rater_performance(data, use_sessions):
-    if ('rater_min_acceptance_rate_current_test' not in config['accept_and_use']) \
-            and ('rater_min_accepted_hits_current_test' not in config['accept_and_use']):
-        return data, use_sessions,0
+def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
+    """
+    Evaluate the workers performance based on the following criteria in cofnig file:
+        rater_min_acceptance_rate_current_test
+        rater_min_accepted_hits_current_test
+    :param data:
+    :param use_sessions:
+    :param reject_on_failure: if True, check the criteria on [acceptance_criteria] otehrwise check it in the
+    [accept_and_use] section of config file.
+    :return:
+    """
+    section = 'acceptance_criteria' if reject_on_failure else 'accept_and_use'
+
+    if ('rater_min_acceptance_rate_current_test' not in config[section]) \
+            and ('rater_min_accepted_hits_current_test' not in config[section]):
+        return data, use_sessions, 0
 
     df = pd.DataFrame(data)
     # rater_min_accepted_hits_current_test
+
     grouped = df.groupby(['worker_id', 'accept_and_use']).size().unstack(fill_value=0).reset_index()
     grouped = grouped.rename(columns={0: 'not_used_count', 1: 'used_count'})
     grouped['acceptance_rate'] = (grouped['used_count'] * 100)/(grouped['used_count'] + grouped['not_used_count'])
 
-    if 'rater_min_acceptance_rate_current_test' in config['accept_and_use']:
-        rater_min_acceptance_rate_current_test = int(config['accept_and_use']['rater_min_acceptance_rate_current_test'])
+    if 'rater_min_acceptance_rate_current_test' in config[section]:
+        rater_min_acceptance_rate_current_test = int(config[section]['rater_min_acceptance_rate_current_test'])
     else:
         rater_min_acceptance_rate_current_test = 0
 
-    if 'rater_min_accepted_hits_current_test' in config['accept_and_use']:
-        rater_min_accepted_hits_current_test = int(config['accept_and_use']['rater_min_accepted_hits_current_test'])
+    if 'rater_min_accepted_hits_current_test' in config[section]:
+        rater_min_accepted_hits_current_test = int(config[section]['rater_min_accepted_hits_current_test'])
     else:
         rater_min_accepted_hits_current_test = 0
 
-    grouped = grouped[(grouped.acceptance_rate < rater_min_acceptance_rate_current_test )
+    grouped_rej = grouped[(grouped.acceptance_rate < rater_min_acceptance_rate_current_test)
                       | (grouped.used_count < rater_min_accepted_hits_current_test)]
-    num_not_used_submissions = grouped.used_count.sum()
-    workers_list_to_remove = list(grouped['worker_id'])
+    num_not_used_submissions = grouped_rej.used_count.sum()
+    workers_list_to_remove = list(grouped_rej['worker_id'])
 
     result = []
     for d in data:
         if d['worker_id'] in workers_list_to_remove:
             d['accept_and_use'] = 0
-            d['rater_performace_pass'] = 0
+            d['rater_performance_pass'] = 0
+            if reject_on_failure:
+                d['accept'] = 0
+                tmp = grouped_rej[grouped_rej['worker_id'].str.contains(d['worker_id'])]
+                d['Reject'] = f"Make sure you follow the instruction: failed in performance criteria- less than { tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
         else:
-            d['rater_performace_pass'] = 1
+            d['rater_performance_pass'] = 1
         result.append(d)
 
     u_session_update = []
@@ -469,7 +495,12 @@ def evaluate_rater_performance(data, use_sessions):
         if us['workerid'] not in workers_list_to_remove:
             u_session_update.append(us)
 
-    return result, u_session_update, num_not_used_submissions
+    block_list = []
+    if 'block_rater_if_acceptance_and_used_rate_below' in config[section]:
+        tmp = grouped[(grouped.acceptance_rate < int(config[section]['block_rater_if_acceptance_and_used_rate_below']))]
+        block_list = list(tmp['worker_id'])
+
+    return result, u_session_update, num_not_used_submissions, block_list
 
 
 # pcrowdv
@@ -539,7 +570,20 @@ def save_approved_ones(data, path):
     small_df.to_csv(path, index=False)
 
 
-def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons):
+def save_block_list(block_list, path):
+    """
+    write the list of workers to be blocked in a csv file.
+    :param block_list:
+    :param path:
+    :return:
+    """
+    df = pd.DataFrame(block_list, columns=['Worker ID'])
+    df['UPDATE BlockStatus'] = "Block"
+    df['BlockReason'] = f'Less than {config["acceptance_criteria"]["block_rater_if_acceptance_and_used_rate_below"]}% acceptance rate'
+    df.to_csv(path, index=False)
+
+
+def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons, num_rej_perform):
     """
     Save the rejected ones in the path
     :param data:
@@ -559,6 +603,8 @@ def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons):
 
     not_accepted_reasons_list = list(collections.Counter(not_accepted_reasons).items())
     not_accepted_reasons_list.append(('Wrong Verification Code', len(wrong_vcodes.index)))
+    if num_rej_perform != 0:
+        not_accepted_reasons_list.append(('Performance', num_rej_perform))
 
     print(f'         Rejection reasons: {not_accepted_reasons_list}')
 
