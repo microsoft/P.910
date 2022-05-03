@@ -1184,7 +1184,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
                 print(f'   Votes per files are saved in: {votes_per_cond_path}')
                 condition_set.append(pd.DataFrame(vote_per_condition))
             if create_per_worker:
-                write_dict_as_csv(data_per_worker, os.path.splitext(answer_path)[0] + f'_votes_per_worker_{question_name_suffix}.csv')
+                write_dict_as_csv(data_per_worker, os.path.splitext(answer_path)[0] + f'_votes_per_worker{question_name_suffix}.csv')
 
 
         bonus_file = os.path.splitext(answer_path)[0] + '_quantity_bonus_report.csv'

@@ -5,7 +5,7 @@
 When your Batch is finished, download the answers from HIT App Server (from now on `downloaded_batch_result.csv`) and
  also from AMT (from now on `downloaded_amt_results.csv`). 
 
-1. Modify `condition_pattern` in your result parser config file i.e.`YOUR_PROJECT_NAME_ccr_result_parser.cfg` which was 
+1. (optional) Modify `condition_pattern` in your result parser config file i.e.`YOUR_PROJECT_NAME_ccr_result_parser.cfg` which was 
 created in the first step ([preparation](preparation.md)).
 
     **Note**: In case there is possible to have a condition level aggregation in your dataset, uncomment the 
@@ -17,11 +17,63 @@ created in the first step ([preparation](preparation.md)).
     a file name,and `03` is the condition name. The pattern should be set to `.*_c(?P<condition_num>\d{1,2})_.*.mp4` , 
     and the `condition_keys` to `condition_num`.
    
-    **Note**: You can activate the automatic outlier detection method per condition. To do so
-    open `YOUR_PROJECT_NAME_ccr_result_parser.cfg`, in section `[accept_and_use]` add `outlier_removal: true`. The [z-score
+1. (optional) Update config file create for the result parser in the first step ([preparation](preparation.md)) if you 
+want to have experiment specific criteria for data cleansing process.
+    
+    1. Criteria for **accepting** a submission (if the following criteria are not met then the submission will be added to reject list):
+    
+    ```INI
+        [acceptance_criteria]
+        all_video_played_equal: 1        
+        correct_matrix_bigger_equal: 1
+        correct_tps_bigger_equal: 1        
+        allowedMaxHITsInProject: NUMBER
+        # if you set it to 1, then the submissions with wrong answer to gold-clip will be rejected.
+        gold_standard_bigger_equal:0
+        # if workers fail in these performance criteria their submissions will be failed.
+        rater_min_acceptance_rate_current_test : 30
+        rater_min_accepted_hits_current_test : 0
+        block_rater_if_acceptance_and_used_rate_below : 20              
+    ```
+    
+    * `all_video_played_equal: 1` : All the videos has should have been watched until the end.        
+    * `correct_matrix_bigger_equal: 1`: At least one of the brightness tests (matrix with images) should be answered correctly
+    * `correct_tps_bigger_equal: 1`: The trapping question should be answered correctly        
+    * `allowedMaxHITsInProject: NUMBER`: A worker cannot participate in more than `NUMBER` sessions      
+    * `gold_standard_bigger_equal:0`: if you set it to 1, then the submissions with wrong answer to gold-clip will be rejected. 
+    * `rater_min_acceptance_rate_current_test : 30`:  Minimum acceptance rate for a worker in this test. If they have 
+    an acceptance rate below this percentage all of their submission will be rejected. 
+    * `rater_min_accepted_hits_current_test : 0` The minimum number of accepted submissions that a worker should have. 
+    * `block_rater_if_acceptance_and_used_rate_below : 20`: If the accidence rate of a worker in this study is below this
+    threshold, the worker will be added to the "block" list with a proper message. You may upload the "block" list later 
+    in your AMT account to block those workers.
+   
+    1. All submissions that are accepted and passed the following criteria are consider reliable and wil be used/aggregated.
+    Consequently if they failed then the submission will not be used but the worker will be paid.
+      
+    ```INI
+        [accept_and_use]
+        variance_bigger_equal: 0.15
+        #outlier_removal: true
+        gold_standard_bigger_equal:1
+        viewing_duration_over:1.15
+        correct_matrix_bigger_equal: 2
+        # rater performance criteria
+        # percentage of "accept and used" submissions in current job
+        rater_min_acceptance_rate_current_test : 80
+        rater_min_accepted_hits_current_test : 1                    
+    ```
+    * `variance_bigger_equal: 0.15` Minimum variance in ratings of a session (beside votes to gold and trapping questions). 
+    It is to detect straightliners.
+    * `outlier_removal: true` Remove the comment to activate the automatic outlier detection method.  The [z-score
     outlier detection method](https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm) is used i.e. all votes 
-    with an absolute z-score of 3.29 or higher will be considered as outlier and removed. It is specifically helpful in 
-    the CCR test.
+    with an absolute z-score of 3.29 or higher will be considered as outlier and removed. 
+    * `gold_standard_bigger_equal:1` Submissions with wrong answers to the gold questions will not be used.
+    * `viewing_duration_over:1.15` If the overall play-back duration exceed 115% of videos' duration, the submission will not be used
+    * `correct_matrix_bigger_equal: 2` Both brightness tests (matrix with images) should be answered correctly
+    * `rater_min_acceptance_rate_current_test : 80` Minimum acceptance rate for a worker in this test. If they have 
+    an acceptance rate below this percentage all of their submission will to be used.
+    * `rater_min_accepted_hits_current_test : 1` The minimum number of accepted submissions that a worker should have.   
     
 1. Run `result_parser.py` 
         
@@ -36,7 +88,7 @@ created in the first step ([preparation](preparation.md)).
         --quality_bonus
     ```
     * `--cfg` use the configuration file generated for your project in the [preparation](preparation.md) step here (i.e.`YOUR_PROJECT_NAME_ccr_result_parser.cfg`).
-    * `--method` currently only `dcr` is supported.
+    * `--method` could be `dcr`, `acr` or `acr-hr` .
     * `--quantity_bonus` could be `all`, or `submitted`. It specify which assignments should be considered when calculating
     the amount of quantity bonus (everything i.e. `all` or just the assignments with status submitted i.e. `submitted`).
     * `--answers` the answer csv file downloaded from HIT App Server.
@@ -52,7 +104,8 @@ created in the first step ([preparation](preparation.md)).
     * `[downloaded_batch_result]_votes_per_worker.csv`: Long format of rating per clip, includes: HITId, workerid, file, vote and condition.
     * `[downloaded_batch_result]_quantity_bonus_report.csv`: List of workers who are eligible for quantity bonus with the amount of bonus (to be used with the mturk_utils.py).
     * `[downloaded_batch_result]_quality_bonus_report.csv`: List of workers who are eligible for quality bonus with the amount of bonus (to be used with the mturk_utils.py).
-    * `[downloaded_batch_result]_extending.csv`: List of HITIds with number of assignment per each which are needed to reach a specific number of votes per clip.             
+    * `[downloaded_batch_result]_extending.csv`: List of HITIds with number of assignment per each which are needed to reach a specific number of votes per clip.
+    * `[downloaded_batch_result]_block_list.csv`: List of workers with low performance that potentially can be blocked from future jobs.             
     * In addition a summary in the condition level will be provided for all three scales in `[downloaded_batch_result]_votes_per_cond_all`.
         
         
