@@ -99,7 +99,7 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 </style>
 
 <script type="text/javascript">
-
+/*
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -148,6 +148,57 @@ var config ={
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
+}
+*/
+
+var config ={
+	debug:"true",
+	cookieName:"dcr_EE3ZH9BGNL",
+	qualificationCookieName:"qual_5UWKJNQZBH",
+	qualificationValidFor:43200,
+	// to be found out
+	maxAllowedLoadingTimeSec:60,
+	allowedMaxHITsInProject:7,
+	forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+    // could be 9 or 5
+    scale_points: 9,
+    // qualification
+	min_screen_refresh_rate: 30,
+	min_resolution:{w: 1280, h:720},
+	// tablets will be included in PC, values:PC,MOBILE
+	device_accepted_device:["PC"],
+	viewing_distance:{
+		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
+		'base_id': '0',
+		'too_close':'3',
+		'normal':'5',
+		'too_far':'7'
+	},
+	block_matrix:{
+		'img': 'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/block_matrix/YzozX3Q6NQ==.jpg',
+		'circles': 3.0,
+		'triangles': 5.0,
+		'dummy':'dummy',
+		'max_tries': 4
+	},
+
+	plates:{
+		"plate3":29,
+		"plate4":5
+	},
+	questionUrls: [{'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_40.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_36.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_44.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_36.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_44.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC25_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC25_46.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_30.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_30.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_40.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_36.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/tps/720_videoSRC05_48_4.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_24.mp4', 'dummy': 'dummy'}],
+    trainingUrls: [{'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_30.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_42.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_44.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_46.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_48.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4', 'dummy': 'dummy'}],
+
+    knownQuestionInTrainingUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4",
+    knownQuestionInTrainingAns: "1",
+
+    knownQuestionUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/720_videoSRC05_48_4.mp4",
+    knownQuestionAns: "4.0",
+    goldAnswer:"9.0",
+    randomizeTrainingQuestions:"true",
+    randomizeRatingQuestions:"true",
+    emailAddress: "ic3ai@outlook.com"
 }
 
 //---- for video player

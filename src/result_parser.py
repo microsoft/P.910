@@ -453,7 +453,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
 
     if ('rater_min_acceptance_rate_current_test' not in config[section]) \
             and ('rater_min_accepted_hits_current_test' not in config[section]):
-        return data, use_sessions, 0
+        return data, use_sessions, 0, []
 
     df = pd.DataFrame(data)
     # rater_min_accepted_hits_current_test
@@ -485,7 +485,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
             if reject_on_failure:
                 d['accept'] = 0
                 tmp = grouped_rej[grouped_rej['worker_id'].str.contains(d['worker_id'])]
-                d['Reject'] = f"Make sure you follow the instruction: failed in performance criteria- less than { tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
+                d['Reject'] = f"Make sure you follow the instruction: failed in performance criteria- only { tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
         else:
             d['rater_performance_pass'] = 1
         result.append(d)
