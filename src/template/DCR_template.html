@@ -99,14 +99,14 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 </style>
 
 <script type="text/javascript">
-/*
+
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
 	qualificationCookieName:"{{cfg.qual_cookie_name}}",
 	qualificationValidFor:43200,
 	// to be found out
-	maxAllowedLoadingTimeSec:60,
+	maxAllowedLoadingTimeSec:85,
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -149,15 +149,15 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-*/
 
+/*
 var config ={
 	debug:"true",
-	cookieName:"dcr_EE3ZH9BGNL",
-	qualificationCookieName:"qual_5UWKJNQZBH",
+	cookieName:"dcr_CBUXU462NB",
+	qualificationCookieName:"qual_GD83N7RB3N",
 	qualificationValidFor:43200,
 	// to be found out
-	maxAllowedLoadingTimeSec:60,
+	maxAllowedLoadingTimeSec:85,
 	allowedMaxHITsInProject:7,
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -176,9 +176,9 @@ var config ={
 		'too_far':'7'
 	},
 	block_matrix:{
-		'img': 'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/block_matrix/YzozX3Q6NQ==.jpg',
+		'img': 'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/block_matrix/YzozX3Q6OA==.jpg',
 		'circles': 3.0,
-		'triangles': 5.0,
+		'triangles': 8.0,
 		'dummy':'dummy',
 		'max_tries': 4
 	},
@@ -187,20 +187,20 @@ var config ={
 		"plate3":29,
 		"plate4":5
 	},
-	questionUrls: [{'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_40.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_36.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_44.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_36.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC22_44.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC25_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC25_46.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_30.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_30.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_40.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC23_36.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/tps/720_videoSRC05_48_4.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_24.mp4', 'dummy': 'dummy'}],
-    trainingUrls: [{'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_30.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC23_42.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC14_44.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC22_46.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/720_videoSRC25_48.mp4', 'dummy': 'dummy'}, {'ref': 'https://d2ohiy53hu70uz.cloudfront.net/1080_videoSRC05_24.mp4', 'processed': 'https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4', 'dummy': 'dummy'}],
+	questionUrls: [],
+    trainingUrls: [],
 
     knownQuestionInTrainingUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4",
     knownQuestionInTrainingAns: "1",
 
-    knownQuestionUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/720_videoSRC05_48_4.mp4",
-    knownQuestionAns: "4.0",
+    knownQuestionUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC23_36_2.mp4",
+    knownQuestionAns: "2.0",
     goldAnswer:"9.0",
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "ic3ai@outlook.com"
 }
-
+*/
 //---- for video player
 max_accepted_extra_playing_time_sec = 2.5;
 const videos_not_loaded_yet_set = new Set()
@@ -981,6 +981,7 @@ function hardware_test(){
 			//alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
 			disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 		}
+	}
 }
 
 //just tmp for test
@@ -2090,9 +2091,9 @@ $(function() {
 		titleTextTemplate='<tr><td>{1}</td></tr>';
 		insert='';
 		title='';
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>';
 		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>'+
-			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden>';
+			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden></video>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -2113,7 +2114,7 @@ $(function() {
 		if(is_two_video){
 			tmp = a.f(id, $(this).attr('data-src-ref'), $(this).attr('data-src-clip'))
 		}else{
-			tmp = a.f(id,$(this).attr('data-src'));
+			tmp = a.f(id,$(this).attr('data-src-clip'));
 		}
 
 		t='<table class="velmnt_table" border="0">'+insert+' <tr><td class="vtd"> <div class="vcontainer">'+tmp+'<button id="velmnt_{0}" type="button" class="btn bn disabled"><span id ="velmnt_s_{0}" class="glyphicon glyphicon-repeat fast-right-spinner"></span></button></div></td></tr><tr><td><span id="velmnt_l_c_{0}" class="blabel" >00:00</span><span id="velmnt_l_d_{0}" class="blabel" > / 00:00</span></td></tr></table>';
@@ -2122,7 +2123,7 @@ $(function() {
 		video_played_finished.set(video_id, 0);
 		videos_not_loaded_yet_set.add(video_id);
 
-		load_videos_to_storage('video1_{0}'.f(id));
+		load_videos_to_storage(video_id);
 		var videoElement = document.getElementById(video_id);
 		//save for later
 		videoElements.push(videoElement);
@@ -2135,7 +2136,7 @@ $(function() {
 			let video_id = "video2_"+id;
 			video_played_finished.set(video_id, 0);
 			videos_not_loaded_yet_set.add(video_id);
-			load_videos_to_storage('video2_{0}'.f(id));
+			load_videos_to_storage(video_id);
 			var videoElement = document.getElementById(video_id);
 			//save for later
 			videoElements.push(videoElement);
@@ -2160,8 +2161,9 @@ $(function() {
 */
 function load_videos_to_storage(video_id){
 	var id = video_id;
-	console.log("1 start loading "+id);
 	src = $('#{0}'.f(video_id)).attr('data-src');
+	console.log("1 start loading "+id+ ", "+src);
+	var tmp_src = src;
 	var req = new XMLHttpRequest();
 	req.open('GET', src, true);
 	req.responseType = 'blob';
@@ -2174,6 +2176,8 @@ function load_videos_to_storage(video_id){
 		  var videoBlob = this.response;
 		  var vurl = URL.createObjectURL(videoBlob);
 		  document.getElementById(id).src = vurl;
+	   }else{
+	   		console.log(this.status + ' ERROR: '+id+ ', src:'+tmp_src);
 	   }
 	};
 	req.onerror = function() {
@@ -2311,8 +2315,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
-
-
+				
 			</div>
 		</div>
 
