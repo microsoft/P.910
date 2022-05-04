@@ -565,12 +565,37 @@ function addBrowserInfo(debug){
 
 }
 
+/*
+	Randomize the order of plates in color voision test.
+*/
+function randomizeColorVisionPlates(){
+	let r = Math.random();
+	plate1_img = '<img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/3.jpg" alt="plate3" width="80%">';
+	plate2_img = '<img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/4.jpg" alt="plate4" width="80%">';
+
+	plate1_in = '<input type="text" name="7_plate3" required="" class="nospace" autocomplete="off">';
+	plate2_in = '<input type="text" name="7_plate4" required="" class="nospace" autocomplete="off">';
+
+	if (r> 0.5){
+		document.getElementById("plate1_img").innerHTML = plate1_img;
+		document.getElementById("plate2_img").innerHTML = plate2_img;
+
+		document.getElementById("plate1_in").innerHTML = plate1_in;
+		document.getElementById("plate2_in").innerHTML = plate2_in;
+	}else{
+		document.getElementById("plate2_img").innerHTML = plate1_img;
+		document.getElementById("plate1_img").innerHTML = plate2_img;
+
+		document.getElementById("plate2_in").innerHTML = plate1_in;
+		document.getElementById("plate1_in").innerHTML = plate2_in;
+	}
+}
 
 /*
 	Initialize the qualification section
 */
 function initializeQualification(){
-	//randomizeHearingtestItems();
+	randomizeColorVisionPlates();
     //makeCheckboxBeRequired();
     forceNoSpaceInInput();
     $("#qualification :input").on('change', isQualificationDone);
@@ -2315,7 +2340,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
-				
+
 			</div>
 		</div>
 
@@ -2400,11 +2425,11 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<div class="table-responsive 2_lds">
 						  <table class="table" border="0" cellpadding="0" cellspacing="0" >
 							<tbody>	<tr>
-								<td style="width:50%;text-align:center"> <img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/3.jpg" alt="plate3" width="80%"> </td>
-								<td style="width:50%;text-align:center"> <img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/4.jpg" alt="plate4" width="80%"> </td>
+								<td id ="plate1_img" style="width:50%;text-align:center">  </td>
+								<td id ="plate2_img" style="width:50%;text-align:center"> </td>
 							</tr><tr>
-								<td style="text-align:center"><input type="text" name="7_plate3" required="" class="nospace" autocomplete="off"></td>
-								<td style="text-align:center"><input type="text" name="7_plate4" required="" class="nospace" autocomplete="off"></td>
+								<td id ="plate1_in" style="text-align:center"></td>
+								<td id ="plate2_in" style="text-align:center"></td>
 							</tr>
 						</tbody>
 					  </table>
