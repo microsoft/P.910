@@ -144,7 +144,6 @@ var config ={
 
     knownQuestionUrl:"${TP_CLIP}",
     knownQuestionAns: "${TP_ANS}",
-    goldAnswer:"{{cfg.gold_ans}}",
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
@@ -195,7 +194,6 @@ var config ={
 
     knownQuestionUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC23_36_2.mp4",
     knownQuestionAns: "2.0",
-    goldAnswer:"9.0",
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "ic3ai@outlook.com"
@@ -1715,6 +1713,7 @@ function generate_training_section(){
 
 /*
 	Generate rating section
+	//random = '{{cfg.gold_ans}}';
 */
 function generate_rating_section(){
 	dcr_nav_tab = '<li class="nav-item {1}"><a class="nav-link " data-toggle="tab"  href="#Q{0}-panel" id="Q{0}-tab " role="tab" aria-controls="Q{0}" {2}>Q. {0}</a></li>';

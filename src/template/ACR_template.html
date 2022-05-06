@@ -100,7 +100,7 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 
 <script type="text/javascript">
 
-//random = '{{cfg.gold_ans}}';
+
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -145,68 +145,11 @@ var config ={
 
     knownQuestionUrl:"${TP_CLIP}",
     knownQuestionAns: "${TP_ANS}",
-    //goldAnswer:"{{cfg.gold_ans}}",
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-/*
 
-var config ={
-	debug:"true",
-	cookieName:"{{cfg.cookie_namexxx}}",
-	qualificationCookieName:"{{cfg.qual_cookie_namexxx}}",
-	qualificationValidFor:43200,
-	qualificationValidFor:43200,
-    forceRetrainingInHours:1,
-    showSetupEveryMinutes:30,
-	    // to be found out
-	maxAllowedLoadingTimeSec:45,
-	allowedMaxHITsInProject:10,
-	forceRetrainingInHours:1,
-    showSetupEveryMinutes:30,
-    // could be 9 or 5
-    scale_points: 5,
-    // qualification
-	min_screen_refresh_rate: 10,
-	min_resolution:{w: 1280, h:720},
-	// tablets will be included in PC, values:PC,MOBILE
-	device_accepted_device:["PC"],
-	viewing_distance:{
-		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
-		'base_id': '0',
-		'too_close':'3',
-		'normal':'5',
-		'too_far':'7'
-	},
-	block_matrix:{
-		'img': 'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/assets/img/matrices/YzozX3Q6MTA=.jpg',
-		'circles': 3,
-		'triangles': 10,
-		'dummy':'dummy'
-	},
-
-	plates:{
-		"plate3":29,
-		"plate4":5
-	},
-	questionUrls: ['https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc11_chrc01.mp4',
-'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc14_chrc01.mp4'],
-    trainingUrls: ['https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc11_chrc01.mp4',
-'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_csrc14_chrc01.mp4' ,
-'https://pcrowdv-materials.s3.us-west-1.amazonaws.com/dash-test/fvqeghd5_src01_hrc01.mp4'],
-
-    knownQuestionInTrainingUrl:"https://d2ohiy53hu70uz.cloudfront.net/tps/1080_videoSRC05_36_1.mp4",
-    knownQuestionInTrainingAns: "1",
-
-    knownQuestionUrl:"${TP_CLIP}",
-    knownQuestionAns: "${TP_ANS}",
-    goldAnswer:"{{cfg.gold_ans}}",
-    randomizeTrainingQuestions:"true",
-    randomizeRatingQuestions:"true",
-    emailAddress: "{{cfg.contact_email}}"
-}
-*/
 
 //---- for video player
 max_accepted_extra_playing_time_sec = 2.5;
@@ -632,6 +575,7 @@ function initializeSetup(){
 
 /*
 Change placeholders inside text with values from config file.
+//random = '{{cfg.gold_ans}}';
 */
 function loadTextPlaceHolders(){
 	// update the instruction
