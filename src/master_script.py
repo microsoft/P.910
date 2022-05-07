@@ -23,7 +23,7 @@ from jinja2 import Template
 from azure_clip_storage import AzureClipStorage, TrappingSamplesInStore, GoldSamplesInStore
 
 
-def create_analyzer_cfg(cfg, template_path, out_path):
+def create_analyzer_cfg(cfg, template_path, out_path, n_HITs):
     """
     create cfg file to be used by analyzer script (DCR method)
     :param cfg:
@@ -38,14 +38,15 @@ def create_analyzer_cfg(cfg, template_path, out_path):
                       int(cfg['create_input']['number_of_trapping_per_session']) + \
                       int(cfg['create_input']['number_of_gold_clips_per_session'])
 
-    config['max_allowed_hits'] = cfg['hit_app_html']['allowed_max_hit_in_project']
+    config['max_allowed_hits'] = cfg['hit_app_html']['allowed_max_hit_in_project'] \
+        if 'allowed_max_hit_in_project' in cfg['hit_app_html'] else n_HITs
 
     config['quantity_hits_more_than'] = cfg['hit_app_html']['quantity_hits_more_than']
     config['quantity_bonus'] = cfg['hit_app_html']['quantity_bonus']
     config['quality_top_percentage'] = cfg['hit_app_html']['quality_top_percentage']
     config['quality_bonus'] = cfg['hit_app_html']['quality_bonus']
 
-    default_condition = r'.*_c(?P<condition_num>\d{1,2})_.*.wav'
+    default_condition = r'.*_c(?P<condition_num>\d{1,2})_.*.mp4'
     default_keys = 'condition_num'
     config['condition_pattern'] = cfg['create_input'].get("condition_pattern", default_condition)
     config['condition_keys'] = cfg['create_input'].get("condition_keys", default_keys)
@@ -73,7 +74,7 @@ def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
 
 
 # checked
-async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg):
+async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs):
     """
     Create the hit_app (html file) corresponding to this project for ccr and dcr
     :param master_cfg:
@@ -91,7 +92,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config = {}
     config['cookie_name'] = hit_app_html_cfg['cookie_name'] if 'cookie_name' in hit_app_html_cfg else 'dcr_'+get_rand_id()
     config['qual_cookie_name'] = hit_app_html_cfg['qual_cookie_name'] if 'qual_cookie_name' in hit_app_html_cfg else 'qual_'+get_rand_id()
-    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project']
+    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project'] if 'allowed_max_hit_in_project' in hit_app_html_cfg else  n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in cfg else "ic3ai@outlook.com"
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
@@ -172,7 +173,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     print(f"  [{out_path}] is created")
 
 #checked
-async def create_hit_app_acr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg):
+async def create_hit_app_acr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs):
     """
     Create the ACR.html file corresponding to this project
     :param master_cfg:
@@ -195,7 +196,8 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     config['qual_cookie_name'] = hit_app_html_cfg['qual_cookie_name'] if 'qual_cookie_name' in hit_app_html_cfg else \
         f'qul_{get_rand_id()}'
 
-    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project']
+    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project'] \
+        if 'allowed_max_hit_in_project' in hit_app_html_cfg else  n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
 
@@ -276,7 +278,7 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     print(f"  [{out_path}] is created")
 
 
-async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg):
+async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs):
     """
     Create the ACR-HR.html file corresponding to this project
     :param master_cfg:
@@ -299,7 +301,8 @@ async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_pat
     config['qual_cookie_name'] = hit_app_html_cfg['qual_cookie_name'] if 'qual_cookie_name' in hit_app_html_cfg else \
         f'qul_{get_rand_id()}'
 
-    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project']
+    config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project'] \
+        if 'allowed_max_hit_in_project' in hit_app_html_cfg else n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
 
@@ -538,20 +541,20 @@ async def main(cfg, test_method, args):
     # ********************
     if test_method == 'dcr':
         await create_hit_app_dcr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
-                                     general_cfg)
+                                     general_cfg, n_HITs)
     elif test_method == 'acr':
         await create_hit_app_acr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
-                                 general_cfg)
+                                 general_cfg, n_HITs)
     elif test_method == 'acr-hr':
         await create_hit_app_acrhr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
-                                 general_cfg)
+                                 general_cfg, n_HITs)
     else:
         print('Method is not supported yet.')
 
     # create a config file for analyzer ********
     output_cfg_file_name = f"{args.project}_{test_method}_result_parser.cfg"
     output_cfg_file = os.path.join(output_dir, output_cfg_file_name)
-    create_analyzer_cfg(cfg, cfg_path, output_cfg_file)
+    create_analyzer_cfg(cfg, cfg_path, output_cfg_file, n_HITs)
 
 
 if __name__ == '__main__':
