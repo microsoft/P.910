@@ -96,11 +96,12 @@ def check_if_session_accepted(data):
         msg += "Wrong answer to the Gold clip(s);"
         failures.append('gold_question')
 
+    """
     if data['all_videos_played'] != int(config['acceptance_criteria']['all_video_played_equal']):
         accept = False
         msg += "All videos are not watched;"
         failures.append('all_videos_played')
-
+    """
     if not accept:
         data['Reject'] = msg
     else:
@@ -409,8 +410,10 @@ def data_cleaning(filename, method, wrong_vcodes):
     # reject hits when the user performed more than the limit
     worker_list = evaluate_maximum_hits(worker_list)
     # check rater_min_* criteria
+
     worker_list, use_sessions, num_rej_perform, block_list = evaluate_rater_performance(worker_list, use_sessions, True)
     worker_list, use_sessions, num_not_used_sub_perform, _ = evaluate_rater_performance(worker_list, use_sessions)
+    #num_rej_perform = 0
 
     #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
@@ -459,6 +462,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
     # rater_min_accepted_hits_current_test
 
     grouped = df.groupby(['worker_id', 'accept_and_use']).size().unstack(fill_value=0).reset_index()
+    grouped.to_csv('tmp.csv')
     grouped = grouped.rename(columns={0: 'not_used_count', 1: 'used_count'})
     grouped['acceptance_rate'] = (grouped['used_count'] * 100)/(grouped['used_count'] + grouped['not_used_count'])
 
@@ -831,7 +835,7 @@ pvs_src_map = {}
 def transform(test_method, sessions, agrregate_on_condition, is_worker_specific):
     """
     Given the valid sessions from answer.csv, group votes per files, and per conditions.
-    Assumption: file name conatins the condition name/number, which can be extracted using "condition_patten" .
+    Assumption: file name contains the condition name/number, which can be extracted using "condition_patten" .
     :param sessions:
     :return:
     """
@@ -845,10 +849,11 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
     mos_name = method_to_mos[f"{test_method}{question_name_suffix}"]
 
     input_question_names = [f"q{i}" for i in range(0, int(config['general']['number_of_questions_in_rating']))]
-    for session in sessions:
-        for question in input_question_names:
-            if f'input.{question}_r' in session:
-                pvs_src_map[session[f'input.{question}']] = session[f'input.{question}_r']
+    if test_method == 'acr-hr':
+        for session in sessions:
+            for question in input_question_names:
+                if f'input.{question}_r' in session:
+                    pvs_src_map[session[f'input.{question}']] = session[f'input.{question}_r']
 
     for session in sessions:
         found_gold_question = False
