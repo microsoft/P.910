@@ -8,11 +8,12 @@
 
 import csv
 import statistics
+from builtins import int
+
 import math
 import pandas as pd
 import argparse
 import os
-import re
 import numpy as np
 import sys
 import re
@@ -141,7 +142,7 @@ def check_if_session_should_be_used(data):
 
     return should_be_used, failures
 
-# pcrowdv
+
 def check_video_played(row, method):
     """
     check if all videos for questions played until the end
@@ -160,7 +161,7 @@ def check_video_played(row, method):
     return question_played == len(question_names)
 
 
-# pcrowdv
+
 def check_tps(row, method):
     """
     Check if the trapping clips questions are answered correctly
@@ -208,7 +209,6 @@ def check_variance(row):
     return -1
 
 
-# pcrowdv
 def check_gold_question(row, method):
     """
     Check if the gold_question is answered correctly
@@ -273,6 +273,11 @@ def check_matrix(row):
 
 
 def check_play_duration(row):
+    """
+    Check the ration of play-back duration to clip duration
+    :param row:
+    :return:
+    """
     total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
     total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
     if total_duration == 0:
@@ -280,33 +285,6 @@ def check_play_duration(row):
     return total_play_duration/total_duration
 
 
-def check_a_cmp(file_a, file_b, ans, audio_a_played, audio_b_played):
-    """
-    check if pair comparision answered correctly
-    :param file_a:
-    :param file_b:
-    :param ans:
-    :param audio_a_played:
-    :param audio_b_played:
-    :return:
-    """
-    if (audio_a_played == 0 or
-            audio_b_played == 0):
-        return False
-    a = int((file_a.rsplit('/', 1)[-1])[:2])
-    b = int((file_b.rsplit('/', 1)[-1])[:2])
-    # one is 50 and one is 42, the one with bigger number (higher SNR) has to have a better quality
-    answer_is_correct = False
-    if a > b and ans.strip() == 'a':
-        answer_is_correct = True
-    elif b > a and ans.strip() == 'b':
-        answer_is_correct = True
-    elif a == b and ans.strip() == 'o':
-        answer_is_correct = True
-    return answer_is_correct
-
-
-# pcrowd
 def data_cleaning(filename, method, wrong_vcodes):
    """
    Data screening process
@@ -507,8 +485,12 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
     return result, u_session_update, num_not_used_submissions, block_list
 
 
-# pcrowdv
 def evaluate_maximum_hits(data):
+    """
+    Check if worker performed more task than what is allowed
+    :param data:
+    :return:
+    """
     df = pd.DataFrame(data)
 
     small_df = df[['worker_id']].copy()
@@ -661,7 +643,7 @@ def filter_answer_by_status_and_workers(answer_df, all_time_worker_id_in, new_wo
         frames.append(d2)
         return pd.concat(frames)
 
-#p835
+
 def calc_quantity_bonuses(answer_list, conf, path):
     """
     Calculate the quantity bonuses given the configurations
@@ -709,7 +691,46 @@ def calc_quantity_bonuses(answer_list, conf, path):
         print(f'   Quantity bonuses report is saved in: {path}')
     return merged
 
-#p835
+
+def calc_inter_rater_reliability(answer_list, overall_mos, test_method, use_condition_level):
+    """
+    Calculate the inter_rater reliability for all workers and also average for the study
+    :param answer_list:
+    :param overall_mos:
+    :return:
+    """
+    mos_name = method_to_mos[f"{test_method}{question_name_suffix}"]
+
+    reliability_list = []
+    df = pd.DataFrame(answer_list)
+    tmp = pd.DataFrame(overall_mos)
+    if use_condition_level:
+        aggregate_on = 'condition_name'
+    else:
+        aggregate_on = 'file_url'
+    c_df = tmp[[aggregate_on, mos_name]].copy()
+    c_df.rename(columns={mos_name: 'mos'}, inplace=True)
+
+    candidates = df['workerid'].unique().tolist()
+
+    for worker in candidates:
+        # select answers
+        worker_answers = df[df['workerid'] == worker]
+        votes_p_file, votes_per_condition, _ = transform(test_method, worker_answers.to_dict('records'),
+                                                         use_condition_level, True)
+        aggregated_data = pd.DataFrame(votes_per_condition if use_condition_level else votes_p_file)
+
+        if len(aggregated_data) > 0:
+            merged = pd.merge(aggregated_data, c_df, how='inner', left_on=aggregate_on, right_on=aggregate_on)
+            r = calc_correlation(merged["mos"].tolist(), merged[mos_name].tolist())
+        else:
+            r = 0
+        entry = {'workerId': worker, 'r': r}
+        reliability_list.append(entry)
+    irr = pd.DataFrame(reliability_list)
+    return irr, irr['r'].mean()
+
+
 def calc_quality_bonuses(quantity_bonus_result, answer_list, overall_mos, conf, path, n_workers, test_method, use_condition_level):
     """
     Calculate the bonuses given the configurations
@@ -722,40 +743,12 @@ def calc_quality_bonuses(quantity_bonus_result, answer_list, overall_mos, conf, 
     :param use_condition_level: if true the condition level aggregation will be used otherwise file level
     :return:
     """
+
     print('Calculate the quality bonuses...')
-    mos_name = method_to_mos[f"{test_method}{question_name_suffix}"]
-
-    eligible_list = []
-    df = pd.DataFrame(answer_list)
-    tmp = pd.DataFrame(overall_mos)
-    if use_condition_level:
-        aggregate_on = 'condition_name'
-    else:
-        aggregate_on = 'file_url'
-    c_df = tmp[[aggregate_on, mos_name]].copy()
-    c_df.rename(columns={mos_name: 'mos'}, inplace=True)
-
-    candidates = quantity_bonus_result['workerId'].tolist()
     max_workers = int(n_workers * int(conf['bonus']['quality_top_percentage']) / 100)
+    eligible_df, _ = calc_inter_rater_reliability(answer_list, overall_mos, test_method, use_condition_level)
 
-    for worker in candidates:
-            # select answers
-            worker_answers = df[df['workerid'] == worker]
-            votes_p_file, votes_per_condition, _ = transform(test_method, worker_answers.to_dict('records'),
-                                                             use_condition_level, True)
-            if use_condition_level:
-                aggregated_data = pd.DataFrame(votes_per_condition)
-            else:
-                aggregated_data = pd.DataFrame(votes_p_file)
-            if len(aggregated_data) > 0:
-                merged = pd.merge(aggregated_data, c_df, how='inner', left_on=aggregate_on, right_on=aggregate_on)
-                r = calc_correlation(merged["mos"].tolist(), merged[mos_name].tolist())
-            else:
-                r = 0
-            entry = {'workerId': worker, 'r': r}
-            eligible_list.append(entry)
-    if len(eligible_list) > 0:
-        eligible_df = pd.DataFrame(eligible_list)
+    if len(eligible_df.index) > 0:
         eligible_df = eligible_df[eligible_df['r'] >= float(conf['bonus']['quality_min_pcc'])]
         eligible_df = eligible_df.sort_values(by=['r'], ascending=False)
 
@@ -988,7 +981,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             print(f'  Overall {outlier_removed_count} outliers are removed in per condition aggregation.')
     return group_per_file, group_per_condition, data_per_worker
 
-# p835
+
 def create_headers_for_per_file_report(test_method, condition_keys):
     """
     add default values in the dict
@@ -1011,6 +1004,11 @@ def create_headers_for_per_file_report(test_method, condition_keys):
 
 
 def calc_payment_stat(df):
+    """
+    Calculate the statistics for payments
+    :param df:
+    :return:
+    """
     if 'Answer.time_page_hidden_sec' in df.columns:
         df['Answer.time_page_hidden_sec'].where(df['Answer.time_page_hidden_sec'] < 3600, 0, inplace=True)
         df['time_diff'] = df["work_duration_sec"] - df['Answer.time_page_hidden_sec']
@@ -1085,6 +1083,12 @@ def number_of_uniqe_workers(answers, used):
 
 
 def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
+    """
+    Combine the answers from the AMT and the HIT_APP Server
+    :param amt_ans_path:
+    :param hitapp_ans_path:
+    :return:
+    """
     amt_ans = pd.read_csv(amt_ans_path, low_memory=False)
     hitapp_ans = pd.read_csv(hitapp_ans_path, low_memory=False)
 
@@ -1116,6 +1120,12 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
 
 def add_dmos_acrhr(agg_per_file_path, cfg):
+    """
+    Calculate the DMOS values for ACR-HR test
+    :param agg_per_file_path:
+    :param cfg:
+    :return:
+    """
     global pvs_src_map
     df = pd.DataFrame({'keys':pvs_src_map.keys() ,'val':pvs_src_map.values()})
     df.to_csv(agg_per_file_path.replace('.csv', '_dict.csv'), index=False)
@@ -1205,6 +1215,20 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
                 votes_to_use = votes_per_file
             calc_quality_bonuses(quantity_bonus_df, accepted_sessions, votes_to_use, config, quality_bonus_path,
                                  n_workers, test_method, use_condition_level)
+
+        inter_rate_reliability, avg_irr = calc_inter_rater_reliability( accepted_sessions, votes_to_use, test_method,
+                                                                         use_condition_level)
+        irr_path = os.path.splitext(answer_path)[0] + '_irr_report.csv'
+        inter_rate_reliability.to_csv(irr_path, index=False)
+
+        if "min_inter_rater_reliability" in config['accept_and_use'] and \
+                avg_irr < float(config['accept_and_use']['min_inter_rater_reliability']):
+            text = f"Warning: Average Inter-rater reliability of this study {avg_irr:.3f} is below threshold. " \
+                f"It is highly possible that many unreliable ratings are included."
+        else:
+            text = f"Average Inter-rater reliability of study: {avg_irr:.3f}"
+
+        print(text)
 
 
 if __name__ == '__main__':

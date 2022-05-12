@@ -70,13 +70,18 @@ def create_analyzer_cfg(cfg, template_path, out_path, n_HITs):
 
 
 def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
+    """
+    Generate random id to be used in multiple places like cookies_name
+    :param chars:
+    :param N:
+    :return:
+    """
     return ''.join(random.choice(chars) for _ in range(N))
 
 
-# checked
 async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs):
     """
-    Create the hit_app (html file) corresponding to this project for ccr and dcr
+    Create the hit_app (html file) corresponding to this project for dcr
     :param master_cfg:
     :param template_path:
     :param out_path:
@@ -172,7 +177,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
         file.write(html)
     print(f"  [{out_path}] is created")
 
-#checked
+
 async def create_hit_app_acr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs):
     """
     Create the ACR.html file corresponding to this project

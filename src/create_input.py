@@ -21,12 +21,12 @@ import itertools
 
 file_to_condition_map = {}
 
-# check
-def validate_inputs(cfg, df, method):
+
+def validate_inputs(df, method):
     """
     Validate the structure, and fields in row_input.csv and configuration file
-    :param cfg: configuration file
-    :param row_input_path: path to row_input
+    :param df: current input given
+    :param method: test method
     """
     columns = list(df.columns)
 
@@ -67,6 +67,15 @@ def conv_filename_to_condition(f_name, condition_pattern):
 
 
 def add_clips_balanced_block(clips, condition_pattern, keys, n_clips_per_session, output_df):
+    """
+    Balanced block design. TODO: check the code for video
+    :param clips:
+    :param condition_pattern:
+    :param keys:
+    :param n_clips_per_session:
+    :param output_df:
+    :return:
+    """
     block_keys = [x.strip() for x in keys.split(',')]
     if len(block_keys) > 2:
         raise SystemExit("Error: balanced_block design- only up to 2 keys in 'block_keys' are supported")
@@ -166,6 +175,13 @@ def add_clips_balanced_block_ccr(clips, refs, condition_pattern, keys, n_clips_p
 
 
 def add_clips_random(clips, n_clips_per_session, output_df):
+    """
+    Select random set of videos for each session.
+    :param clips:
+    :param n_clips_per_session:
+    :param output_df:
+    :return:
+    """
     n_clips = clips.count()
     n_sessions = math.ceil(n_clips / n_clips_per_session)
     needed_clips = n_sessions * n_clips_per_session
@@ -182,6 +198,14 @@ def add_clips_random(clips, n_clips_per_session, output_df):
 
 # checked
 def add_clips_random_dcr(clips, refs, n_clips_per_session, output_df):
+    """
+    Select random set of videos for each session for DCR test.
+    :param clips:
+    :param refs:
+    :param n_clips_per_session:
+    :param output_df:
+    :return:
+    """
     n_clips = clips.count()
     n_sessions = math.ceil(n_clips / n_clips_per_session)
     needed_clips = n_sessions * n_clips_per_session
@@ -203,6 +227,14 @@ def add_clips_random_dcr(clips, refs, n_clips_per_session, output_df):
 
 # checked
 def add_clips_random_acrhr(clips, refs, n_clips_per_session, output_df):
+    """
+    Select random set of videos for each session for ACR_HR test.
+    :param clips:
+    :param refs:
+    :param n_clips_per_session:
+    :param output_df:
+    :return:
+    """
     n_clips = clips.count()
     n_sessions = math.ceil(n_clips / n_clips_per_session)
     needed_clips = n_sessions * n_clips_per_session
@@ -562,7 +594,6 @@ def create_input_for_mturk(cfg, df, method, output_path):
         return None
 
 
-#checked
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create input.csv for DCR test. ')
     # Configuration: read it from trapping clips.cfg
@@ -595,7 +626,7 @@ if __name__ == '__main__':
 
     print('Start validating inputs')
     df = pd.read_csv(row_input)
-    validate_inputs(cfg['general'], df, exp_method)
+    validate_inputs(df, exp_method)
     print('... validation is finished.')
 
     output_file = os.path.splitext(row_input)[0]+'_'+exp_method+'_publish_batch.csv'
