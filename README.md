@@ -1,7 +1,8 @@
 # P.910 Crowd
 The P.910-Crowd Toolkit is a software package that enables users to run subjective video quality assessment test
 in Amazon Mechanical Turk (AMT) crowdsourcing platform. It is intended to be counter part of the ITU-T Recommendation P.910 
-for crowdsourcing.
+for crowdsourcing. 
+ 
 
 Note: Currently full-screen play-back is not supported by HITs builds inside AMT. Therefore, we provide, the [HITAPP Server](hitapp_server/README.md)
 which can serve the experiment. Consequently you can use AMT or any other crowdsourcing platform and post your study URL.

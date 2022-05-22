@@ -12,11 +12,12 @@ the [MCL-JCV Dataset](http://mcl.usc.edu/mcl-jcv-dataset/).
 For list of supported encoding check [here](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Video_codecs#codec_details) and you may use [FFmpeg](https://www.ffmpeg.org/) for encoding. 
   
 
-1. Upload your **PVS** clips in a cloud server and make them publicly available.
- Use their URLs to create the `rating_clips.csv` file with a column `pvs`. Each row contains a URL of a PVS. (see [rating_clips_acr.csv](../sample_inputs/rating_clips_acr.csv) as an example).
-
+1. Upload your **PVS** clips in a cloud server and make them publicly available. 
+Use The URLs to create the `rating_clips.csv` file with a column `pvs`. Each row contains a URL of a PVS. (see [rating_clips_acr.csv](../sample_inputs/rating_clips_acr.csv) as an example).
+    
+    **NOTE**: Make sure that [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) are enabled in your server: `Access-Control-Allow-Origin: *`.  
     **NOTE**: It is strongly recommended to setup a Content Delivery Network (CDN) to speed up video loading time for your participants.
-    Same apoplies to all other video materials in the following.
+    Same applies to all other video materials in the following.
     
     **Note about file names/urls**:
     * Later in the analyzes, clip's file name will be used as a unique key and appears in the results.    

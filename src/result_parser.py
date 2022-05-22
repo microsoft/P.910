@@ -52,7 +52,7 @@ def outliers_modified_z_score(votes):
 #todo add boxplot as well
 def outliers_z_score(votes):
     """
-    return  outliers, using z-score
+    Remove  outliers, using z-score
     :param votes:
     :return:
     """
@@ -71,7 +71,7 @@ def outliers_z_score(votes):
 def check_if_session_accepted(data):
     """
     Check if the session can be accepted given the criteria in config
-    Note: qualification and setup are skipped as they are checked in JS. They cannot continue if they do not pass.
+    Note: qualification and setup are skipped as they are checked in JS. Workers cannot continue if they do not pass.
     :param data:
     :return:
     """
@@ -112,7 +112,7 @@ def check_if_session_accepted(data):
 
 def check_if_session_should_be_used(data):
     """
-    Check if the session should be used of not. Only look at the sessions that are accepted.
+    Check if the session should be used or not. Only look at the sessions that are accepted.
     :param data:
     :return:
     """
@@ -161,12 +161,11 @@ def check_video_played(row, method):
     return question_played == len(question_names)
 
 
-
 def check_tps(row, method):
     """
-    Check if the trapping clips questions are answered correctly
+    Check if the trapping clip(s) are answered correctly
     :param row:
-    :param method: acr, dcr, or ccr
+    :param method: acr, dcr, or acr-hr
     :return:
     """
     correct_tps = 0
@@ -187,7 +186,7 @@ def check_tps(row, method):
 
 def check_variance(row):
     """
-    Check how is variance of ratings in the session (if the worker just clicked samething)
+    Check how is variance of ratings in the session (to detect straightliners)
     :param row:
     :return:
     """
@@ -236,10 +235,8 @@ def check_gold_question(row, method):
 def check_matrix(row):
     """
     check if the matrix questions are answered correctly
-    :param input:
-    :param output:
-    :param audio_played:
-    :return:
+    :param row:
+    :return: number of correct answers
     """
 
     c1_correct = float(row['input.t1_matrix_c'])
@@ -274,9 +271,9 @@ def check_matrix(row):
 
 def check_play_duration(row):
     """
-    Check the ration of play-back duration to clip duration
+    Check the ratio of play-back duration to clip duration
     :param row:
-    :return:
+    :return: ration of play-back to clip
     """
     total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
     total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
@@ -518,7 +515,7 @@ def evaluate_maximum_hits(data):
 
 def save_approve_rejected_ones_for_gui(data, path, wrong_vcodes):
     """
-    save approved/rejected in file t be used in GUI
+    save approved/rejected in a csv-file to be used in GUI
     :param data:
     :param path:
     :return:
@@ -621,7 +618,7 @@ def save_hits_to_be_extended(data, path):
 
 def filter_answer_by_status_and_workers(answer_df, all_time_worker_id_in, new_woker_id_in, status_in):
     """
-    return answered who are
+    return answered who are in the specific status
     :param answer_df:
     :param all_time_worker_id_in:
     :param new_woker_id_in:
@@ -733,7 +730,7 @@ def calc_inter_rater_reliability(answer_list, overall_mos, test_method, use_cond
 
 def calc_quality_bonuses(quantity_bonus_result, answer_list, overall_mos, conf, path, n_workers, test_method, use_condition_level):
     """
-    Calculate the bonuses given the configurations
+    Calculate the quality bonuses given the configurations
     :param quantity_bonus_result:
     :param answer_list:
     :param overall_mos:
@@ -766,7 +763,7 @@ def calc_quality_bonuses(quantity_bonus_result, answer_list, overall_mos, conf, 
 
 def write_dict_as_csv(dic_to_write, file_name, *args, **kwargs):
     """
-    write the dict object in a file
+    utility function to write a dict object in a csv file
     :param dic_to_write:
     :param file_name:
     :return:
@@ -807,6 +804,12 @@ def conv_filename_to_condition(f_name):
 
 
 def dict_value_to_key(d, value):
+    """
+    Utility function to key for a given value inside the dic
+    :param d:
+    :param value:
+    :return:
+    """
     for k, v in d.items():
         if v == value:
             return k
@@ -1034,7 +1037,7 @@ def calc_stats(input_file):
     df_full = df.copy()
     overall_time, overall_pay = calc_payment_stat(df)
 
-    # full
+    # full study, all sections were shown
     df_full = df_full[df_full['Answer.2_birth_year']> 0]
     full_time, full_pay = calc_payment_stat(df_full)
 
@@ -1068,7 +1071,7 @@ def calc_correlation(cs, lab):
     return rho
 
 
-def number_of_uniqe_workers(answers, used):
+def number_of_unique_workers(answers, used):
     """
     return numbe rof unique workers
     :param answers:
@@ -1163,7 +1166,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
         answer_path, wrong_v_code = combine_amt_hit_server(amt_ans_path, answer_path)
     full_data, accepted_sessions = data_cleaning(answer_path, test_method, wrong_v_code)
 
-    n_workers, n_workers_used = number_of_uniqe_workers(full_data, accepted_sessions)
+    n_workers, n_workers_used = number_of_unique_workers(full_data, accepted_sessions)
     print(f"{n_workers} workers participated in this batch, answers of {n_workers_used} are used.")
     # disabled becuase of the HITAPP_server
     calc_stats(answer_path)

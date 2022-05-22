@@ -106,7 +106,7 @@ var config ={
 	cookieName:"{{cfg.cookie_name}}",
 	qualificationCookieName:"{{cfg.qual_cookie_name}}",
 	qualificationValidFor:43200,
-    // to be found out
+    // to be found out -- TODO: chnage it to Mbps
 	maxAllowedLoadingTimeSec:40,
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
@@ -363,7 +363,6 @@ $(function() {
 
 		// setup section
 		add_distance_test();
-		//cmp_check_on_load();
 		initializeSetup();
 
 		loadTextPlaceHolders();
@@ -452,9 +451,8 @@ $(function() {
 
 var loading_page_error = false;
 /*
-	Disable the HIS and show a proper message.
-	- used when the maximum number of HITs in project is reached
-	TODO: update it
+	Disable the HIT and show a proper message.
+	Depending to the reason show a proper message as well.
 */
 function disableTheHIT(c){
 	loading_page_error = true;
@@ -500,8 +498,8 @@ function disableTheHIT(c){
 
 
 /*
-Store the following information in hidden input field which will be added to answerc.csv by AMT
-userAgent, cookieEnabled, appVersion, platform, language, status of 3 cookies.
+	Store the following information in hidden input field which will be added to answerc.csv by AMT
+	userAgent, cookieEnabled, appVersion, platform, language, status of 3 cookies.
 */
 function addBrowserInfo(debug){
 	info="U_A:"+navigator.userAgent+";"+
@@ -517,7 +515,7 @@ function addBrowserInfo(debug){
 }
 
 /*
-	Randomize the order of plates in color voision test.
+	Randomize the order of plates in color vision test.
 */
 function randomizeColorVisionPlates(){
 	let r = Math.random();
@@ -565,7 +563,7 @@ function initializeCalibration(){
 
 
 /*
-	Initialize the qualification section
+	Initialize the setup section
 */
 function initializeSetup(){
     $("#setup-rest :input").on('change', isSetupDone);
@@ -707,13 +705,19 @@ function maximum_extra_playing_time_reached(id){
 	}
 }
 
-
 //-------------- END for video
+
 //------------------------------- visual acuity test -----------------
+/*
+	Increase the size of credit card image
+*/
 function card_plus(){
 	$("#card").width($("#card").width()+2);
 }
 
+/*
+	Decrease the size of the credit card image
+*/
 function card_minus(){
 	$("#card").width($("#card").width()-2);
 }
@@ -727,6 +731,9 @@ var holdDelay = 10;
 // This flag indicates the user is currently holding the mouse down
 var holdActive = false;
 
+/*
+	Apply the zoom in/out of the creditcard pciture
+*/
 function apply_zoom(type){
 	if (type=="minus") card_minus();
 	if (type=="plus") card_plus();
@@ -734,7 +741,10 @@ function apply_zoom(type){
 
 var continues_hold_event = null;
 var interact_with_screen_size= false;
-// MouseDown
+
+/*
+	Click listener over +/- button for zoom in/out
+*/
 function onMouseDown(type){
 	interact_with_screen_size = true;
     holdStarter = setTimeout(function() {
@@ -776,6 +786,9 @@ $(function() {
 	initiate_visual_acuity_test();
 });
 
+/*
+	Initiate the first screen of visual acuity test
+*/
 function initiate_visual_acuity_test(){
 	id_to_rotation_degree = new Map();
 	current_landoltc_id = -1
@@ -795,6 +808,10 @@ function initiate_visual_acuity_test(){
 	set_random_landoltc();
 }
 
+
+/*
+	Reset the settings and answers to default for the visual acuity test
+*/
 function reset_visual_acuity(){
 	$("#vat_step").attr("src","https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/step2.png");
 	$('#setup_visual_acity').show();
@@ -914,7 +931,8 @@ function add(accumulator, a) {
 
 /**
 	Run set of hardware test to make sure that the minimum requirements are satisfied
-	- the refresh_rate test are done asynchronously and will tiger this function
+	- the refresh_rate test are done asynchronously
+	- this function will postponed executing until all the videos are downloaded
 **/
 function hardware_test(){
 	if (!velements_added){
@@ -963,6 +981,10 @@ function hardware_test(){
 //just tmp for test
 var video_size_MB = 0;
 var page_loading_timer =null;
+
+/**
+	Called when downloading of all videos took too long, show a message and block the hit.
+**/
 function show_message_too_long_loading(){
 	if(page_loading_timer){
 		clearTimeout(page_loading_timer);
@@ -992,10 +1014,11 @@ function record_video_loading_time(){
 		show_message_too_long_loading();
 		return;
 	}
-
-
 }
 
+/*
+	Enable the HIT after the hardware/network test
+*/
 function activate_hit(){
 	if (loading_page_error){
 		return;
@@ -1077,18 +1100,6 @@ function check_resolution(){
 	return false;
 }
 
-/**
-	tmp function to show the resolution on screen
-**/
-function getresolution(){
-	let w = Math.floor(window.screen.width);
-	let h = Math.floor(window.screen.height);
-
-	let w1 = Math.floor(window.screen.width * window.devicePixelRatio);
-	let h1 = Math.floor(window.screen.height * window.devicePixelRatio);
-
-	$("#resolution").html("<b>w x h:</b> {0}x{1}, <b>w1 x h1:</b> {2}x{3}".f(w,h,w1,h1));
-}
 
 /**
 	Check if it is a mobile or pc device.
@@ -1211,12 +1222,19 @@ function check_brightness_test(){
 	}
 }
 
+/**
+	Called after the first matrix test is correctly passed, to activate the rest of the items in the sectup section
+**/
 function activate_rest_setup(){
 	$("#alert-setup-step1").show();
 	$("#setup-rest").removeClass("disabled_section");
 }
 
 //----------------------------- viewing distance
+
+/**
+	Given the inputs, add an item (pair-comparision question)for the viewing distance check.
+**/
 function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
 	template = '<fieldset  class="image_cmp setupFieldset"><label>{0}.&nbsp;Which image has a better quality compared to the other one? <small>Pictures may be blurry.</small></label>'+
 	'<div class="row" style="margin-top:10px;"><div class="col-sm-5"><h4 style="text-align: center;">{3}</h4><img src="{1}" id="cmp{0}_img_a" width="100%"></div><div class="col-sm-2"></div>'+
@@ -1230,6 +1248,9 @@ function add_viewing_distance_question(q_n, img_a, img_b, title_a, title_b){
 }
 
 var url_pair_map = new Map();
+/**
+	Generate the viewing distance test on page load.
+**/
 function add_distance_test(){
 	cfg = config["viewing_distance"];
 
@@ -1253,14 +1274,9 @@ function add_distance_test(){
 }
 
 
-// add this to onload of page
-// TODO: should removed
-function cmp_check_on_load(){
-	$('#setup').find(':input').filter(':visible').each(function(){
-	  $(this).on('change', validateCMPSection);
-	});
-}
-
+/**
+	Check the answers of the viewing distance test
+**/
 function validateCMPSection(){
 	cmp_answers=[]
 	for (i = 1; i < 4; i++) {
@@ -1326,10 +1342,6 @@ function validateCMPSection(){
 		}
 		pass_cmp = (pass_cmp && is_correct);
 	}
-	//if (!pass_cmp)
-	//	alert("Are you sure? You may be too close, or too far away from your screen. Your distance to the screen should be roughly 1.5 times of height of you screen.");
-	//else
-	//	alert("Well done! You successfully pass the setup test, keep your distance to the screen as it is, until the end of this HIT.");
 
 	if (pass_cmp && too_close_pass)
 		return VIEWING_DISTANCE.TOO_CLOSE;
@@ -1375,7 +1387,6 @@ var trainingStimulusPlayed;
 /*
   If all training clips played until the end, add a cookie expiring after
   config.forceRetrainingInHours
-  TODO: check trapping question
 */
 function playedVideoTraining(id){
 	let id_num= id.substring(1);
@@ -1393,6 +1404,10 @@ function playedVideoTraining(id){
 }
 
 const play_video_ins = new Set()
+/**
+	Get called when one of the Instruction videos got played.
+	//TODO: Option for later: force to watch all the instruction videos before training/rating section
+**/
 function playedVideoIns(id){
 	play_video_ins.add(id);
 	if (play_video_ins.size == 3){
@@ -1491,8 +1506,12 @@ function showPreviousQuestionInRatingSection(){
 
 </script>
 <script type="text/javascript">
-//----- all methods for hiding/showing sections
+//----- All methods for hiding/showing sections
+//  They let to activate one step after the other.
 
+/**
+	Enable/disable calibration section
+**/
 function activate_calibration_section(activate){
 	if (activate)
 		$("#calibration").removeClass("disabled_section");
@@ -1500,6 +1519,10 @@ function activate_calibration_section(activate){
 		$("#calibration").addClass("disabled_section");
 }
 
+
+/**
+	Enable/disable Setup section
+**/
 function activate_setup_section(activate){
 	if (activate)
 		$("#setup").removeClass("disabled_section");
@@ -1507,6 +1530,10 @@ function activate_setup_section(activate){
 		$("#setup").addClass("disabled_section");
 }
 
+
+/**
+	Enable/disable Training section
+**/
 function activate_training_section(activate){
 	if (activate){
 		$("#training").removeClass("disabled_section");
@@ -1517,6 +1544,10 @@ function activate_training_section(activate){
 	}
 }
 
+
+/**
+	Enable/disable Rating section
+**/
 function activate_rating_section(activate){
 	if (activate)
 		$("#rating_section").removeClass("disabled_section");
@@ -1525,6 +1556,10 @@ function activate_rating_section(activate){
 }
 
 var num_tried_qualification = 0;
+
+/**
+	Called when the result of qualification section is known
+**/
 function on_qualification_test(success){
 	if (!success){
 		if (num_tried_qualification <= 1){
@@ -1542,15 +1577,22 @@ function on_qualification_test(success){
 
 }
 
+/**
+	Called when the calibration is done, to open next section
+**/
 function on_calibration_performed(){
 	$("#alert-calibration").show();
 	createCookie(config['cookieName']+"_calibration","un_important",config['showSetupEveryMinutes']);
 	activate_setup_section(true);
 }
 
-var setup_section_remaining_tries = 3;
-function on_setup_performed(status){
 
+var setup_section_remaining_tries = 3;
+/**
+	Called when the result of setup section is known.
+	Only "setup_section_remaining_tries" tries are accepted.
+**/
+function on_setup_performed(status){
 	if (status == VIEWING_DISTANCE.TOO_CLOSE){
 		alert('You might be too close to your screen. Please make sure to keep a distance of 1.5 to 3 times of your screen height fromy our device.')
 	}else if (status == VIEWING_DISTANCE.TOO_FAR){
@@ -1713,7 +1755,12 @@ var videoElements=[];
 var scheduled_video_play = null;
 var split_screen_timer = null;
 var tmp_caller_func = null;
+// Pause between ClipA and ClipB
 var dcr_clip_name_duration= 3100;
+
+/**
+	Called by clicking on playback button
+**/
 function clickManager(event) {
 	ae=event.data.ae;
 	var id=event.data.id;
@@ -1728,6 +1775,9 @@ function clickManager(event) {
 	}
 };
 
+/**
+	Reset the video(s) to their beginning
+**/
 function reset_videos(id){
     //resetting the video1
     tmp1_v = document.getElementById("video1_{0}".f(id));
@@ -1743,6 +1793,9 @@ function reset_videos(id){
 }
 
 
+/**
+	Called when the video exit the full screen mode
+**/
 function fullscreen_closed(e, video, caller){
     if (!document.fullscreenElement && /* Standard syntax */
         !document.webkitFullscreenElement && /* Chrome, Safari and Opera syntax */
@@ -1794,6 +1847,10 @@ function reset_video_player(idT, video){
 	$("#velmnt_s_"+id).addClass("glyphicon-repeat");
 }
 
+
+/**
+	Start playing a video
+**/
 function playVideo(video){
 	var idT=video.id;
 	var id=idT.substring(7,idT.length);
@@ -1864,7 +1921,9 @@ function convertMS(timeString){
   return seconds;
 }
 
-
+/**
+	Called to play the Clip B
+**/
 function playVideo_continue(id, video, is_dcr){
     //console.log("playVideo_continue video {0}, time{1}".f(id, (new Date()).toISOString()));
 	scheduled_video_play = null;
@@ -1901,10 +1960,13 @@ function playVideo_continue(id, video, is_dcr){
     video.play();
     if (video.id.indexOf('video1_')==0){
 	    video_play_start_time.set(id, Date.now());
-
 	 }
 }
 
+
+/**
+	Called when the video should be paused
+**/
 function pauseVideo(video){
 	video.pause();
 	var idT=video.id;
@@ -1914,6 +1976,9 @@ function pauseVideo(video){
 	$("#velmnt_s_"+id).addClass("glyphicon-play");
 }
 
+/**
+	Go through all video elements and make sure all are paused.
+**/
 function pauseAll(){
 	for (i = 0; i < videoElements.length; i++) {
 		if (!videoElements[i].paused){
@@ -1922,6 +1987,9 @@ function pauseAll(){
 	}
 }
 
+/**
+	Called when a video can be played.
+**/
 function canPlay(event){
 	var ae=this;
 	var idText =this.id;
@@ -1939,6 +2007,10 @@ function canPlay(event){
 	$("#velmnt_s_"+id).addClass("glyphicon-play");
 }
 
+
+/**
+	Action listener called when playing the video to update the timer
+**/
 function timeUpdate(is_dcr){
 	var ae=this;
 	var idText =this.id;
@@ -1957,6 +2029,9 @@ function timeUpdate(is_dcr){
 	$("#velmnt_l_c_"+id).text(t);
 }
 
+/**
+	Called when a video play ended
+**/
 function isended(){
 	var ae=this;
 	var idText =this.id;
@@ -2000,6 +2075,9 @@ function isended(){
     }
 }
 
+/**
+	Get the expected duration of video(s) to show in the timer
+**/
 function get_expected_duration(id, is_from_play){
     id1 = "video1_{0}".f(id);
     duration = 0;
@@ -2061,7 +2139,9 @@ function issuePlayingVideo(videoElement, issue){
 
 
 var velements_added = false;
-// loading all video elements in the page
+/**
+	Loading all video elements in the page.
+**/
 $(function() {
     $( ".velmnt" ).each(function(){
 		titleTextTemplate='<tr><td>{1}</td></tr>';
@@ -2161,6 +2241,10 @@ function load_videos_to_storage(video_id){
 	req.send();
 }
 
+
+/**
+	Add the necessary listeners to a newly created video element
+**/
 function addListenersToVideoElement(videoElement, is_dcr){
 		//videoElement.addEventListener("canplay",canPlay.bind(videoElement),false);
 		videoElement.addEventListener("canplaythrough",canPlay.bind(videoElement),false);
@@ -2179,7 +2263,7 @@ function addListenersToVideoElement(videoElement, is_dcr){
 
 var problematic_urls="";
 /*
-	Called when the scale item is clicked
+	Called when the video is exit before finishing until the end.
 */
 function alertForbiddenChange(){
 	alert('You should watch until the end.');

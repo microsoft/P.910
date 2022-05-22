@@ -15,6 +15,9 @@ the [MCL-JCV Dataset](http://mcl.usc.edu/mcl-jcv-dataset/).
  Use their URLs to create the `rating_clips.csv` file with two columns:`pvs` and `src` . Each row contain a URL of a PVS 
  and URL of its corresponding reference clip. (see [rating_clips_dcr.csv](../sample_inputs/rating_clips_dcr.csv) as an example).
 
+    **NOTE**: Make sure that [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) are enabled in your server: `Access-Control-Allow-Origin: *`.  
+    **NOTE**: It is strongly recommended to setup a Content Delivery Network (CDN) to speed up video loading time for your participants.
+    Same applies to all other video materials in the following.
     **Note about file names/urls**:
     * Later in the analyzes, clip's file name will be used as a unique key and appears in the results.    
     * In case you have 'conditions' which are represented with more than one clip, you may consider to use the condition's 
