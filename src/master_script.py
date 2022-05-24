@@ -526,7 +526,7 @@ async def main(cfg, test_method, args):
 
     # create inputs
     print('Start validating inputs')
-    ca.validate_inputs(cfg['create_input'], df, test_method)
+    ca.validate_inputs(df, test_method)
     print('... validation is finished.')
 
     output_csv_file = os.path.join(output_dir, args.project+'_publish_batch.csv')
