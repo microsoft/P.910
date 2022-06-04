@@ -25,7 +25,7 @@ If you use this tool in your research please cite it with the following referenc
   title={A crowdsourced implementation of ITU-T P.910},
   author={Naderi, Babak and Cutler, Ross},
   journal={arXiv preprint arXiv:2204.06784},
-  year={2020}
+  year={2022}
 }
 ```
 
