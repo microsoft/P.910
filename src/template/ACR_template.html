@@ -2105,7 +2105,7 @@ function end_video(id, is_first_video){
 	try {
 		var quality = video_element.getVideoPlaybackQuality();
 		var dropPercent = (quality.droppedVideoFrames/quality.totalVideoFrames)*100;
-		$("#video_dropped_video_percent_"+id).val(Math.trunc(dropPercent).toString(10));
+		$("#video_dropped_frame_percent_"+id).val(Math.trunc(dropPercent).toString(10));
 		console.log("video played finish ("+id+") video_dropped_video_percent: "+  Math.trunc(dropPercent).toString(10));
 
 	} catch (error) {
@@ -2174,7 +2174,7 @@ $(function() {
 		'<input type="hidden" id="video_n_play_{0}" name="video_n_play_{0}" value="0">'+
 		'<input type="hidden" id="video_n_finish_{0}" name="video_n_finish_{0}" value="0">'+
 		'<input type="hidden" id="video_play_duration_{0}" name="video_play_duration_{0}" value="0">'+
-		'<input type="hidden" id="video_dropped_video_percent_{0}" name="video_dropped_video_percent_{0}" value="0">'+
+		'<input type="hidden" id="video_dropped_frame_percent_{0}" name="video_dropped_frame_percent_{0}" value="-1">'+
 		'<input type="hidden" id="video_duration_{0}" name="video_duration_{0}" value="0">';
 		if ($(this).attr('title')){
 			insert=titleTextTemplate;
