@@ -460,6 +460,7 @@ $(function() {
 			training_passed = true;
 			$('.trainingFieldset').prop("disabled", true);
 			$("#training").hide();
+			$("#training").addClass("video-hide");
 			$("#training :input").removeAttr("required");
 			$('#instruction').collapse()
 			cookie_debug_status=cookie_debug_status+"Train Exist*";
@@ -2274,12 +2275,19 @@ $(function() {
     velements_added = true;
 });
 
+const download_start = new Map();
+const download_duration = new Map();
 
 /*
 	Download the video and create local link
 */
 function load_videos_to_storage(video_id){
 	var id = video_id;
+	// only load the videos if they are shown.
+	if ($("#"+id).parents('.video-hide').length) {
+		videos_not_loaded_yet_set.delete(id);
+		return;
+	}
 	src = $('#{0}'.f(video_id)).attr('data-src');
 	console.log("1 start loading "+id+ ", "+src);
 	var tmp_src = src;
@@ -2289,20 +2297,27 @@ function load_videos_to_storage(video_id){
 
 	req.onload = function(){
 		if (this.status === 200) {
+			loading_duration  = Date.now()- download_start.get(id);
+			download_duration.set(id, loading_duration);
+			console.log("Loading duration for "+id+":"+loading_duration);
 			let size = this.getResponseHeader('content-length');
 			let tmp = ((size /1024)/1024)
 			video_size_MB = video_size_MB + tmp;
-		  var videoBlob = this.response;
-		  var vurl = URL.createObjectURL(videoBlob);
-		  document.getElementById(id).src = vurl;
+			var videoBlob = this.response;
+			var vurl = URL.createObjectURL(videoBlob);
+			document.getElementById(id).src = vurl;
 	   }else{
-	   		console.log(this.status + ' ERROR: '+id+ ', src:'+tmp_src);
+			console.log(this.status + ' ERROR: '+id+ ', src:'+tmp_src);
+			load_videos_to_storage(id);
 	   }
 	};
 	req.onerror = function() {
 	   console.log('Error on loading '+id);
 	}
+
+	download_start.set(id, Date.now());
 	req.send();
+
 }
 
 /**
