@@ -106,8 +106,7 @@ var config ={
 	cookieName:"{{cfg.cookie_name}}",
 	qualificationCookieName:"{{cfg.qual_cookie_name}}",
 	qualificationValidFor:43200,
-    // to be found out -- TODO: chnage it to Mbps
-	maxAllowedLoadingTimeSec:40,
+	internet_speed_Mbps:{{cfg.internet_speed_Mbps}},
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
     showSetupEveryMinutes:30,
@@ -211,7 +210,7 @@ var overAllHiddenTime = 0;
 var startHiddenDate = null;
 var sessionId = null;
 var sessionIdVariableName=null;
-const start_page_load = Date.now();
+var start_page_load = null;
 
 /**
 	monitor and record the status of page including being focus, and active time
@@ -220,8 +219,8 @@ const start_page_load = Date.now();
 function initializeActivePageMonitoring(){
 	// start time monitoring
 	$("#start_video_loading_time").val((new Date()).toISOString());
-	page_loading_timer = setTimeout(show_message_too_long_loading, config['maxAllowedLoadingTimeSec']*1000);
-
+	// not more than 2min loading time is acceptable despite the internet speed test and file size
+	page_loading_timer = setTimeout(show_message_too_long_loading, 120*1000);
 
 	sessionId = Math.random().toString(36).substr(2, 9);
 	sessionIdVariableName = config.qualificationCookieName +"_sid";
@@ -415,6 +414,7 @@ $(function() {
 			training_passed = true;
 			$('.trainingFieldset').prop("disabled", true);
 			$("#training").hide();
+			$("#training").addClass("video-hide");
 			$("#training :input").removeAttr("required");
 			$('#instruction').collapse()
 			cookie_debug_status=cookie_debug_status+"Train Exist*";
@@ -1010,7 +1010,7 @@ function record_video_loading_time(){
 	$("#internet_speed_estimate").val(speed_M_bits);
 	console.log("internet_speed_estimate Mb:: "+speed_M_bits);
 
-	if (loading_time_sec> config['maxAllowedLoadingTimeSec']){
+	if (speed_M_bits< config['internet_speed_Mbps']){
 		show_message_too_long_loading();
 		return;
 	}
@@ -2225,13 +2225,18 @@ $(function() {
     velements_added = true;
 });
 
-
+const download_start = new Map();
+const download_duration = new Map();
 /*
 	Download the video and create local link
 */
 function load_videos_to_storage(video_id){
 	var id = video_id;
-	console.log("1 start loading "+id);
+	// only load the videos if they are shown.
+	if ($("#"+id).parents('.video-hide').length) {
+		videos_not_loaded_yet_set.delete(id);
+		return;
+	}
 	src = $('#{0}'.f(video_id)).attr('data-src');
 	var req = new XMLHttpRequest();
 	req.open('GET', src, true);
@@ -2239,16 +2244,26 @@ function load_videos_to_storage(video_id){
 
 	req.onload = function(){
 		if (this.status === 200) {
+			loading_duration  = Date.now()- download_start.get(id);
+			download_duration.set(id, loading_duration);
+			console.log("Loading duration for "+id+":"+loading_duration);
 			let size = this.getResponseHeader('content-length');
 			let tmp = ((size /1024)/1024)
 			video_size_MB = video_size_MB + tmp;
-		  var videoBlob = this.response;
-		  var vurl = URL.createObjectURL(videoBlob);
-		  document.getElementById(id).src = vurl;
+			var videoBlob = this.response;
+			var vurl = URL.createObjectURL(videoBlob);
+			document.getElementById(id).src = vurl;
+	   }else{
+	   		console.log(this.status + ' ERROR: '+id+ ', src:'+tmp_src);
+			load_videos_to_storage(id);
 	   }
 	};
 	req.onerror = function() {
 	   console.log('Error on loading '+id);
+	}
+	download_start.set(id, Date.now());
+	if (start_page_load==null){
+		start_page_load = Date.now();
 	}
 	req.send();
 }
