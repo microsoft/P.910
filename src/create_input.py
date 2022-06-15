@@ -41,7 +41,7 @@ def validate_inputs(df, method):
                               'gold_clips_pvs', 'gold_clips_ans']
     if method in ['acr']:
         req = required_columns_acr
-    elif method in ['dcr']:
+    elif method in ['dcr', 'ccr']:
         req = required_columns_dcr
     elif method in ['acr-hr']:
         req = required_columns_acrhr
@@ -586,7 +586,7 @@ def create_input_for_mturk(cfg, df, method, output_path):
     """
     if method in ['acr']:
         return create_input_for_acr(cfg, df, output_path)
-    elif method in ['dcr']:
+    elif method in ['dcr', 'ccr']:
         return create_input_for_dcr(cfg, df, output_path)
     elif method in ['acr-hr']:
         return create_input_for_acrhr(cfg, df, output_path)

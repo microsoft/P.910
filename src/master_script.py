@@ -79,7 +79,7 @@ def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
     return ''.join(random.choice(chars) for _ in range(N))
 
 
-async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs):
+async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs, is_ccr):
     """
     Create the hit_app (html file) corresponding to this project for dcr
     :param master_cfg:
@@ -113,9 +113,16 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config['min_screen_refresh_rate'] = viewing_condition_cfg['min_screen_refresh_rate'] if 'min_screen_refresh_rate' in viewing_condition_cfg else 30
     config['min_device_resolution'] = viewing_condition_cfg['min_device_resolution'] if 'min_device_resolution' in viewing_condition_cfg else '{w: 1280, h:720}'
     config['accepted_device'] = viewing_condition_cfg['accepted_device'] if 'accepted_device' in viewing_condition_cfg else '["PC"]'
-    config['scale_points'] = hit_app_html_cfg['scale'] if 'scale' in hit_app_html_cfg else 5
+    if is_ccr:
+        config['scale_points'] = int(hit_app_html_cfg['scale']) if 'scale' in hit_app_html_cfg else 7
+        if config['scale_points'] not in [4, 7]:
+            print(' Warning: For CCR test method, scale should be 4 (JVET) or 7 (original) points. Will continue with '
+                  '7 point.')
+            config['scale_points'] = 7
+    else:
+        config['scale_points'] = hit_app_html_cfg['scale'] if 'scale' in hit_app_html_cfg else 5
 
-
+    config['is_ccr'] = 'true' if is_ccr else 'false'
     config = {**config, **general_cfg}
     # rating urls
     rating_urls = []
@@ -486,6 +493,7 @@ def get_path(test_method):
         ('acr'): (acr_template_path, acr_cfg_template_path),
         ('dcr'): (dcr_template_path, dcr_ccr_cfg_template_path),
         ('acr-hr'): (acrhr_template_path, acrhr_cfg_template_path),
+        ('ccr'): (dcr_template_path, dcr_ccr_cfg_template_path),
     }
 
     template_path, cfg_path = method_to_template[(test_method)]
@@ -548,9 +556,9 @@ async def main(cfg, test_method, args):
     output_file_name = f"{args.project}_{test_method}.html"
     output_html_file = os.path.join(output_dir, output_file_name)
     # ********************
-    if test_method == 'dcr':
+    if test_method in ['dcr', 'ccr']:
         await create_hit_app_dcr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
-                                     general_cfg, n_HITs)
+                                     general_cfg, n_HITs, test_method=='ccr')
     elif test_method == 'acr':
         await create_hit_app_acr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
                                  general_cfg, n_HITs)
@@ -572,7 +580,7 @@ if __name__ == '__main__':
     parser.add_argument("--project", help="Name of the project", required=True)
     parser.add_argument("--cfg", help="Configuration file, see master.cfg", required=True)
     parser.add_argument("--method", required=True,
-                        help="one of the test methods: 'acr', 'acr-hr', 'dcr'")
+                        help="one of the test methods: 'acr', 'acr-hr', 'dcr', 'ccr'")
     parser.add_argument("--clips", help="A csv containing urls of all clips to be rated in column 'pvs', in "
                                         "case of DCR it should also contain a column for 'src'")
     parser.add_argument("--gold_clips", help="A csv containing urls of all gold clips in column 'gold_clips_pvs' and "
@@ -586,7 +594,7 @@ if __name__ == '__main__':
     # check input arguments
     args = parser.parse_args()
 
-    methods = ['acr', 'dcr', 'acr-hr', 'pc']
+    methods = ['acr', 'dcr', 'acr-hr', 'pc', 'ccr']
     test_method = args.method.lower()
     assert test_method in methods, f"No such a method supported, please select between {methods}"
     assert os.path.exists(args.cfg), f"No config file in {args.cfg}"

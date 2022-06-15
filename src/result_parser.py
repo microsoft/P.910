@@ -152,7 +152,7 @@ def check_video_played(row, method):
     """
     question_played = 0
     try:
-        if method in ['acr', 'acr-hr']:
+        if method in ['acr', 'acr-hr', 'dcr', 'ccr']:
             for q_name in question_names:
                 if int(row[f'answer.video_n_finish_{q_name}']) > 0:
                     question_played += 1
@@ -184,7 +184,7 @@ def check_tps(row, method):
     return correct_tps
 
 
-def check_variance(row):
+def check_variance(row, method):
     """
     Check how is variance of ratings in the session (to detect straightliners)
     :param row:
@@ -197,7 +197,11 @@ def check_variance(row):
         if 'trapping' in config and row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
         try:
-            r.append(int(row[f'answer.{q_name}{question_name_suffix}']))
+            if method == 'ccr':
+                order = 1 if row[f'answer.{q_name}{question_name_suffix}_order'] == 'pr' else -1
+                r.append(int(row[f'answer.{q_name}{question_name_suffix}']) * order)
+            else:
+                r.append(int(row[f'answer.{q_name}{question_name_suffix}']))
         except:
             pass
     try:
@@ -331,7 +335,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['correct_gold_question'] = check_gold_question(row, method)
 
         # step6. check variance in a session rating
-        d['variance_in_ratings'] = check_variance(row)
+        d['variance_in_ratings'] = check_variance(row, method)
 
         d['percent_over_play_duration'] = check_play_duration(row)
 
@@ -395,7 +399,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     not_using_further_reasons = []
     for d in worker_list:
         if d['accept'] == 1 and d['accept_and_use'] == 0:
-            not_using_further_reasons .extend(d['failures'])
+            not_using_further_reasons.extend(d['failures'])
 
     write_dict_as_csv(worker_list, report_file)
     save_approved_ones(worker_list, approved_file)
@@ -819,7 +823,8 @@ def dict_value_to_key(d, value):
 method_to_mos = {
     "acr": 'MOS',
     "dcr": 'DMOS',
-    "acr-hr": 'MOS'
+    "acr-hr": 'MOS',
+    'ccr': 'CMOS'
 }
 
 question_names = []
@@ -992,11 +997,7 @@ def create_headers_for_per_file_report(test_method, condition_keys):
     :return:
     """
     mos_name = method_to_mos[f"{test_method}{question_name_suffix}"]
-    if test_method in ["p835", "echo_impairment_test"]:
-        header = ['file_url', 'n', mos_name, f'std{question_name_suffix}', f'95%CI{question_name_suffix}',
-                  'short_file_name'] + condition_keys
-    else:
-        header = ['file_url', 'n', mos_name, 'std', '95%CI', 'short_file_name'] + condition_keys
+    header = ['file_url', 'n', mos_name, 'std', '95%CI', 'short_file_name'] + condition_keys
     max_votes = max_found_per_file
     if max_votes == -1:
         max_votes = int(config['general']['expected_votes_per_file'])
@@ -1052,7 +1053,7 @@ def calc_stats(input_file):
         only_r_time = 'No-case'
         only_r_pay = 'No-case'
     data = {'Case': ['All submissions', 'All sections', 'Only rating'],
-            'Percent of submissions':[1, len(df_full.index)/len(df.index), len(only_rating.index)/len(df.index)],
+            'Percent of submissions': [1, len(df_full.index)/len(df.index), len(only_rating.index)/len(df.index)],
             'Work duration (median) MM:SS': [overall_time, full_time, only_r_time ],
             'payment per hour ($)': [overall_pay, full_pay, only_r_pay]}
     stat = pd.DataFrame.from_dict(data)
@@ -1159,7 +1160,6 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
     """
     global question_name_suffix
 
-
     suffixes = ['']
     wrong_v_code = None
     if amt_ans_path:
@@ -1240,7 +1240,7 @@ if __name__ == '__main__':
     parser.add_argument("--cfg", required=True,
                         help="Contains the configurations see acr_result_parser.cfg as an example")
     parser.add_argument("--method", required=True,
-                        help="one of the test methods: 'acr','acr-hr', 'dcr'")
+                        help="one of the test methods: 'acr','acr-hr', 'dcr', 'ccr'")
     parser.add_argument("--answers", required=True,
                         help="Answers csv file from HIT App Server, path relative to current directory")
     parser.add_argument("--amt_answers",
@@ -1256,9 +1256,9 @@ if __name__ == '__main__':
     parser.add_argument('--quality_bonus', help="Quality bonus will be calculated. Just use it with your final download"
                                                 " of answers and when the project is completed", action="store_true")
     args = parser.parse_args()
-    methods = ['dcr', 'acr', 'acr-hr']
+    methods = ['dcr', 'acr', 'acr-hr', 'ccr']
     test_method = args.method.lower()
-    assert test_method in methods, f"No such a method supported, please select between 'dcr' "
+    assert test_method in methods, f"No such a method supported, please select between {methods} "
 
     cfg_path = args.cfg
     assert os.path.exists(cfg_path), f"No configuration file at [{cfg_path}]"
