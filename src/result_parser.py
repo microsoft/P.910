@@ -176,7 +176,10 @@ def check_tps(row, method):
         for q_name in question_names:
             if tp_url in row[f'answer.{q_name}_url']:
                 # found a trapping clips question
-                if int(row[f'answer.{q_name}{suffix}']) in tp_correct_ans:
+                given_ans = int(row[f'answer.{q_name}{suffix}'])
+                if method == 'ccr' and row[f'answer.{q_name}_order'] == 'pr':
+                    given_ans= given_ans * -1
+                if given_ans in tp_correct_ans:
                     correct_tps = 1
                     return correct_tps
     except:
@@ -457,18 +460,22 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
 
     grouped_rej = grouped[(grouped.acceptance_rate < rater_min_acceptance_rate_current_test)
                       | (grouped.used_count < rater_min_accepted_hits_current_test)]
-    num_not_used_submissions = grouped_rej.used_count.sum()
     workers_list_to_remove = list(grouped_rej['worker_id'])
 
     result = []
+    num_not_used_submissions = 0
     for d in data:
         if d['worker_id'] in workers_list_to_remove:
             d['accept_and_use'] = 0
             d['rater_performance_pass'] = 0
+            num_not_used_submissions += 1
             if reject_on_failure:
                 d['accept'] = 0
                 tmp = grouped_rej[grouped_rej['worker_id'].str.contains(d['worker_id'])]
-                d['Reject'] = f"Make sure you follow the instruction: failed in performance criteria- only { tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
+                if len(d['Reject'])>0:
+                    d['Reject'] = d['Reject'] + f" Failed in performance criteria- only {tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
+                else:
+                    d['Reject'] = f"Make sure you follow the instruction: Failed in performance criteria- only { tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
         else:
             d['rater_performance_pass'] = 1
         result.append(d)
