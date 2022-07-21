@@ -172,7 +172,7 @@ def create_trap_stimulus(source, message, output, cfg):
         msg_duration = msg_video.duration
         # if it negative, just use the default 3 seconds
         prefix_duration = source_duration - msg_duration -post_fix_duration_sec
-        if prefix_duration <= 3:
+        if prefix_duration < 3:
             prefix_duration = 3
         prefix_video = source_video.subclip(0, prefix_duration)
     else:
