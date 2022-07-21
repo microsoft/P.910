@@ -1699,7 +1699,7 @@ function generate_training_section(){
 			$('#trainingTabs').append(dcr_nav_tab.f(i+1,'',''));
 			$('#nav-tabContent').append(dcr_tab.f(i+1, urls[i],''));
 		}
-		$('#av-tabContent').append(input_template.f(i+1, urls[i]));
+		$('#nav-tabContent').append(input_template.f(i+1, urls[i]));
 	}
 
 	trainingStimulusPlayed = new Array(urls.length).fill(0);

@@ -1816,7 +1816,7 @@ function generate_training_section_ccr(){
 			$('#trainingTabs').append(ccr_nav_tab.f(i+1,'',''));
 			$('#nav-tabContent').append(ccr_tab.f(i+1, urlA, urlB,'', signA, signB));
 		}
-		$('#av-tabContent').append(input_template.f(i+1, urls[i].processed, order));
+		$('#nav-tabContent').append(input_template.f(i+1, urls[i].processed, order));
 	}
 
 	trainingStimulusPlayed = new Array(urls.length).fill(0);
@@ -1854,7 +1854,7 @@ function generate_training_section(){
 			$('#trainingTabs').append(dcr_nav_tab.f(i+1,'',''));
 			$('#nav-tabContent').append(dcr_tab.f(i+1, urls[i].ref, urls[i].processed,''));
 		}
-		$('#av-tabContent').append(input_template.f(i+1, urls[i].processed));
+		$('#nav-tabContent').append(input_template.f(i+1, urls[i].processed));
 	}
 
 	trainingStimulusPlayed = new Array(urls.length).fill(0);

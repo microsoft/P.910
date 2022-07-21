@@ -389,6 +389,8 @@ def data_cleaning(filename, method, wrong_vcodes):
     extending_hits_file = os.path.splitext(filename)[0] + '_extending.csv'
     block_list_file = os.path.splitext(filename)[0] + '_block_list.csv'
 
+    print(f'{len(worker_list)} submissions are processed.')
+
     # reject hits when the user performed more than the limit
     worker_list = evaluate_maximum_hits(worker_list)
     # check rater_min_* criteria
