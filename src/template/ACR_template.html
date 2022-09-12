@@ -100,7 +100,7 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 
 <script type="text/javascript">
 
-
+/*
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -147,6 +147,55 @@ var config ={
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
+}
+*/
+
+var config ={
+	debug:"true",
+	cookieName:"acr_HHX5PZWQZB",
+	qualificationCookieName:"qul_ZD6LFKSWAR",
+	qualificationValidFor:43200,
+	internet_speed_Mbps:80,
+	allowedMaxHITsInProject:14,
+	forceRetrainingInHours:1,
+    showSetupEveryMinutes:30,
+    // could be 9 or 5
+    scale_points: 5,
+    // qualification
+	min_screen_refresh_rate: 30,
+	min_resolution:{w: 1280, h:720},
+	// tablets will be included in PC, values:PC,MOBILE
+	device_accepted_device:["PC"],
+	viewing_distance:{
+		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
+		'base_id': '0',
+		'too_close':'3',
+		'normal':'5',
+		'too_far':'7'
+	},
+	block_matrix:{
+		'img': '${t1_matrix_url}',
+		'circles': 1,
+		'triangles': 2,
+		'dummy':'dummy',
+		'max_tries': 4
+	},
+
+	plates:{
+		"plate3":29,
+		"plate4":5
+	},
+	questionUrls: ['https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src04_hrc10.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src05_hrc05.mp4'],
+    trainingUrls: ['https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src04_hrc10.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src05_hrc05.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src08_hrc08.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src02_hrc09.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src03_hrc18.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/tps/fvqeghd3_csrc11_chrc08_1.mp4'],
+
+    knownQuestionInTrainingUrl:"https://p910.azureedge.net/video/vqeg_hd3_g30/tps/fvqeghd3_csrc11_chrc08_1.mp4",
+    knownQuestionInTrainingAns: "1",
+
+    knownQuestionUrl:"${TP_CLIP}",
+    knownQuestionAns: "${TP_ANS}",
+    randomizeTrainingQuestions:"true",
+    randomizeRatingQuestions:"true",
+    emailAddress: "ic3ai@outlook.com"
 }
 
 
@@ -380,26 +429,26 @@ $(function() {
 
 		console.log(qual_passed);
 
-		if (qual_passed!==null && qual_passed=="true"){
+		//if (qual_passed!==null && qual_passed=="true"){
 			$('.qualificationFieldset').prop("disabled", true);
 			$("#qualification").hide();
 			$("#qualification :input").removeAttr("required");
 			cookie_debug_status=cookie_debug_status+"Qualification Exist*";
 			activate_calibration_section(true);
 			$("#qualification_msg").hide();
-		}
+		//}
 
 		// given cookie availability disable the calibration
-		if (readCookie(config['cookieName']+"_calibration")){
+		//if (readCookie(config['cookieName']+"_calibration")){
 			calibration_passed = true;
 			$("#calibration").hide();
 			$("#calibration :input").removeAttr("required");
 			cookie_debug_status=cookie_debug_status+"Calibration Exist*";
 			activate_setup_section(true);
-		}
+		//}
 
 		// given cookie availability disable the setup
-		if (readCookie(config['cookieName']+"_setup")){
+		//if (readCookie(config['cookieName']+"_setup")){
 			setup_passed = true;
 			$('.setupFieldset').prop("disabled", true);
 			$("#setup").hide();
@@ -407,7 +456,7 @@ $(function() {
 			cookie_debug_status=cookie_debug_status+"Setup Exist*";
 			activate_training_section(true);
 			activate_rating_section(true);
-		}
+		//}
 
 		// given cookie availability disable the training
 		if (readCookie(config['cookieName']+"_training")){
@@ -1675,10 +1724,10 @@ function generate_training_section(){
 	dcr_nav_tab = '<li class="nav-item {1}"><a class="nav-link " data-toggle="tab"  href="#T{0}-panel" id="T{0}-tab " role="tab" aria-controls="T{0}" {2}>Q. {0}</a></li>';
 	dcr_tab ='<div class="tab-pane fade {2}" id="T{0}-panel" role="tabpanel" aria-labelledby="T{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
-	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following video clip? </p> <div class="row"> <p align="center">'+
+	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following cinematography considering how well could you follow what was discussed in the meeting? </p> <div class="row"> <p align="center">'+
 	'<span class="velmnt" id="t{0}" data-src-clip="{1}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
-	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality is</th><th class="c" >Score</th></tr></thead><tbody>'+
+	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality of the cinematography is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getACRScale(config['scale_points'], true)+
 	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
 
@@ -1712,10 +1761,10 @@ function generate_rating_section(){
 	dcr_nav_tab = '<li class="nav-item {1}"><a class="nav-link " data-toggle="tab"  href="#Q{0}-panel" id="Q{0}-tab " role="tab" aria-controls="Q{0}" {2}>Q. {0}</a></li>';
 	dcr_tab ='<div class="tab-pane fade {2}" id="Q{0}-panel" role="tabpanel" aria-labelledby="Q{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
-	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following video clip?? </p> <div class="row"> <p align="center">'+
+	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following cinematography considering how well could you follow what was discussed in the meeting? </p> <div class="row"> <p align="center">'+
 	'<span class="velmnt" id="Q{0}" data-src-clip="{1}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
-	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality is</th><th class="c" >Score</th></tr></thead><tbody>'+
+	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality of the cinematography is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getACRScale(config['scale_points'], false)+
 	'</tbody></table></fieldset><p></p></div> <div class="col-sm-4"></div></div> </div>';
 
@@ -2368,15 +2417,13 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="panel-body">
 
 			 <b>Introduction</b>
-				<img src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/info.png" alt="scale" class="center" style='width: 60%' >
+				<img src="https://p910.azureedge.net/video/p910-assets/imgs/info2.png" alt="scale" class="center" style='width: 60%' >
 
-				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has one + three (just every now and then) sections:</p>
+				  <p>Welcome! You are about to participate in our Virtual Meeting quality assessment experiment! This HIT has one + two (just every now and then) sections:</p>
 				<ul>
-					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
-					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
-					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
+					<li><b>Sample Videos and introduction (just once):</b> Check out what this test is about and how you need to rate the videos</li>					
 					<li><b>Training (every <b class="training_time"> 0 </b>):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
-					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
+					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips, cosider yourself as a participant, and give <b>your opinion about the quality of the vistual meeting</b> you watched.</li>
 				</ul>
 				<p>Note that you should watch the videos in full screen size.</p>
 				<p>You should follow the below mentioned rules, otherwise your answers will be invalid.</p>
@@ -2384,7 +2431,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<ul>
 					<li>You must use a <b class="instruction_device">XX</b>, otherwise your response will be rejected</li>
 					<li>You must perform the task in a good lighting condition without <b>glare on your screen</b> </li>
-					<li>Do not change the brightness of your screen and your distance to the screen after the Setup section.</li>
+					<li>You must concentrate and watch the entire video carefully, impaiments can appear only partly.</li>
 				</ul>
 
 				<p><b>Payment:</b></p>
@@ -2718,45 +2765,61 @@ function avoidAnsweringBeforeWatchingThrough(){
 		<div class="panel panel-primary">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<a data-target="#instructionImp" data-toggle="collapse" >Instructions about ratings (only once)</a>
+					<a data-target="#instructionImp" data-toggle="collapse" >Sample videos and introduction (only once)</a>
 
 				</h3>
 			</div>
 			<div  class="panel-collapse collapse in" id="instructionImp">
 			<div class="panel-body">
-			<p>Almost ready to start. </p>
-			<p>Here are <b>some</b> of impairments that you may observe within the test with an example. Please read the followings carefully and watch the videos before continuing:
+			<h3>Carefully read and understand, otherwise you cannot perfom the test properly.</h3>
+			<p>Imagine you are taking part in a meeting, with couple of people. Some of participants are in a room and some are online. <b>You joined them as virtual/online participant</b>.</p>
+			<p>We have combined the video feeds from the room and created <b>cinematography</b> that focus on active speaker(s) in the room. </p>
+			<p>Generally we provide two type of cinematography (focused on one person or multiple people). In both case the feed from the entire room is in the bottom:</p>
+			<div class="row" style="margin: 30px;">
+				<div class="col-md-6"><img src="https://p910.azureedge.net/video/p910-assets/imgs/multi.png" alt="scale" class="center" style='width: 70%' ></div>
+				<div class="col-md-6"><img src="https://p910.azureedge.net/video/p910-assets/imgs/focus.png" alt="scale" class="center" style='width: 70%' ></div>
+			</div>
+
+			<p>We are interested to know how well the created <b>cinematography</b> is working in term of <b>how well you can follow what was discussed in the meeting</b>?				
 			</p>
+
+			<p><b>Note:</b> The quality of videos might not be so good and are irrelevant to this test. You need to concentrate on the meeting and how well you could follow it.</p>
+			<div style="margin:20px">
+			<p> You should use the following scale to rate the quality of cinematography you watched: </p>
+			<img src="https://p910.azureedge.net/video/p910-assets/imgs/scale2.png" alt="scale" class="center" style='width: 70%' >
+			</div>
+			<b>Sample problems/improvments:</b>
+			<p>Here are some examples of problems that you may see, just to get the idea. Of course you may observe other issues in the videos as well.</p>
 
 			<ul>
 
-			<li> The video (or part of it) can be <b>fragmented</b>. It means that part of the video sample is played <b>blocky</b> and <b>dismembered</b>.</li>
+			<li> <b>Flashing</b>. switching between speakers becuase of short noise, or even when someone is not speaking.</li>
 
 			<div class="row">
-				<p>Here is an example:</p>
+				<p>Here is an example, jumping between multiple people none of them are the speaker:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id1" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id1" data-src-clip="https://p910.azureedge.net/video/p910-assets/plaza-samples/flashing.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
 
-			<li> The video (or part of it) could be <b>not smooth</b> rather <b>jerky</b>, <b>stuttering</b>, and <b>wobbly</b>. In anotehr term, partly <b>discountinud</b>. </li>
+			<li> <b>Highlighting</b> a wrong person (not speaker). </li>
 			<div class="row">
-				<p>Here is an example:</p>
+				<p>Here is an example, online speaker but another person is selected/highlighted:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id2" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id2" data-src-clip="https://p910.azureedge.net/video/p910-assets/plaza-samples/highlight.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
-				<li> The video (or part of it) cloud be <b>blurred</b>, <b>unclear</b> or <b>washed out</b>.</li>
+				<li> <b>Poor framing</b>: perosn is too big, or small, or even not in the frame</li>
 			<div class="row">
-				<p>Here is an example:</p>
+				<p>Here is an example, checkout the poor framing of the speaker, most of the feed shows the white background rather focusing on the speaker.:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id3" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id3" data-src-clip="https://p910.azureedge.net/video/p910-assets/plaza-samples/framing.mp4" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
-			<li> It could also be a case that a combination of the above impairments happen.</li>
+			<li> It could also be a case that a combination of the above impairments or other imaprments happen.</li>
 
 			</ul>
 
@@ -2764,10 +2827,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<ul>
 				<li> Impairments can happen in specific area (corners or center of image) and for a short period of time within a video clip.
 					So it is very important that when watching a video, fully concentrate on the entire scene. If something distracting you,
-					please watch the video again.</li>
-				<li>Your ratings will be used for scientific work, <u>please treat them very serious to contribute with valid results </u>.</li>
-				<li>You may think that an impairment your recognized was due to your Internet connection, but whatever you see in the
-					videos are created beforehand, and <b>not related to your network</b>, so <u>consider them all when you rate the <b>overall quality</b></u>.</li>
+					please watch the video again.</li>				
+				<li>You may think that an impairment you are recognized was due to your Internet connection, but whatever you see in the
+					videos are created beforehand, and <b>not related to your network</b>, so <u>consider them all when you rate the <b>quality</b></u>.</li>
 			</ul>
 			</div>
 			</div>
@@ -2786,9 +2848,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div  class="panel-collapse collapse in" id="trainingS">
 				<div class="panel-body">
 				<p> Please answer the following <b class="question_number_training"> 0 </b> questions.
-					<p>For each question, please carefully watch the video clip by clicking on the play button in full-screen mode.
-					At the end, you should judge its quality by using one of the <x class="scale_levels">9</x> levels of the given scale.
-					Observe carefully the entire video clip before making your judgment.</p>
+					<p>For each question, please carefully watch the cinematography video clip by clicking on the play button in full-screen mode.
+					At the end, you should judge <b>how well you could follow what was discussed in the meeting given the cinematography</b> on <x class="scale_levels">9</x> levels of the given scale.
+					Observe carefully the entire video clip before making your judgment and check out <a href="#instructionImp" data-target="#instructionImp" data-toggle="collapse" >Sample videos and introduction (only once)</a>
+					section for quick intrudction to the scale.</p>
 
 				   <p> <b>Note</b> that the scale will be activated when the corresponding video clip played until the end. </p>
 				   <p> There is no right or wrong answer as long as you watch the clips carefully and give your honest opinion. If you see a message follow the instruction as given in the message.</p>
@@ -2832,15 +2895,13 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<h3 class="panel-title">Ratings</h3>
 			</div>
 			<div class="panel-body">
-				<p> Please answer the following <b class="question_number"> 0 </b> questions.</p>
-				<p>For each question, please carefully watch the video clip by clicking on the play button in full-screen mode.
-					At the end, you should judge its quality by using one of the <x class="scale_levels">9</x> levels of the given scale.
-					Observe carefully the entire video clip before making your judgment.</p>
+				   <p> Please answer the following <b class="question_number"> 0 </b> questions.
+					<p>For each question, please carefully watch the cinematography video clip by clicking on the play button in full-screen mode.
+					At the end, you should judge <b>how well you could follow what was discussed in the meeting given the cinematography</b> on <x class="scale_levels">9</x> levels of the given scale.
+					Observe carefully the entire video clip before making your judgment and check out <a href="#instructionImp" data-target="#instructionImp" data-toggle="collapse" >Sample videos and introduction (only once)</a> section for quick intrudction to the scale.</p>
 
 				   <p> <b>Note</b> that the scale will be activated when the corresponding video clip played until the end. </p>
 				   <p> There is no right or wrong answer as long as you watch the clips carefully and give your honest opinion. If you see a message follow the instruction as given in the message.</p>
-
-
  				<!-- will be generated -->
 				<ul class="nav nav-tabs" role="tablist" id="nav-tab-ul"> </ul>
 				<!-- will be generated -->
