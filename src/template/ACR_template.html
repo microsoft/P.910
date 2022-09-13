@@ -100,7 +100,6 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 
 <script type="text/javascript">
 
-/*
 var config ={
 	debug:"true",
 	cookieName:"{{cfg.cookie_name}}",
@@ -148,56 +147,6 @@ var config ={
     randomizeRatingQuestions:"true",
     emailAddress: "{{cfg.contact_email}}"
 }
-*/
-
-var config ={
-	debug:"true",
-	cookieName:"acr_HHX5PZWQZB",
-	qualificationCookieName:"qul_ZD6LFKSWAR",
-	qualificationValidFor:43200,
-	internet_speed_Mbps:80,
-	allowedMaxHITsInProject:14,
-	forceRetrainingInHours:1,
-    showSetupEveryMinutes:30,
-    // could be 9 or 5
-    scale_points: 5,
-    // qualification
-	min_screen_refresh_rate: 30,
-	min_resolution:{w: 1280, h:720},
-	// tablets will be included in PC, values:PC,MOBILE
-	device_accepted_device:["PC"],
-	viewing_distance:{
-		'img_path':'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/distance/img3_{0}.jpg',
-		'base_id': '0',
-		'too_close':'3',
-		'normal':'5',
-		'too_far':'7'
-	},
-	block_matrix:{
-		'img': '${t1_matrix_url}',
-		'circles': 1,
-		'triangles': 2,
-		'dummy':'dummy',
-		'max_tries': 4
-	},
-
-	plates:{
-		"plate3":29,
-		"plate4":5
-	},
-	questionUrls: ['https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src04_hrc10.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src05_hrc05.mp4'],
-    trainingUrls: ['https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src04_hrc10.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src05_hrc05.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src08_hrc08.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src02_hrc09.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/fvqeghd3_src03_hrc18.mp4', 'https://p910.azureedge.net/video/vqeg_hd3_g30/tps/fvqeghd3_csrc11_chrc08_1.mp4'],
-
-    knownQuestionInTrainingUrl:"https://p910.azureedge.net/video/vqeg_hd3_g30/tps/fvqeghd3_csrc11_chrc08_1.mp4",
-    knownQuestionInTrainingAns: "1",
-
-    knownQuestionUrl:"${TP_CLIP}",
-    knownQuestionAns: "${TP_ANS}",
-    randomizeTrainingQuestions:"true",
-    randomizeRatingQuestions:"true",
-    emailAddress: "ic3ai@outlook.com"
-}
-
 
 //---- for video player
 max_accepted_extra_playing_time_sec = 2.5;
@@ -499,6 +448,8 @@ $(function() {
 });
 
 var loading_page_error = false;
+var first_time_hardware_failed = false;
+
 /*
 	Disable the HIT and show a proper message.
 	Depending to the reason show a proper message as well.
@@ -532,12 +483,15 @@ function disableTheHIT(c){
 		$("#qualification_not_pass").show();
 	}
 	if (c == Hide_HIT_REASON.AUTO_TEST_FAILED){
+		console.log("++++++++++++++++++++++");
 		var hrd_cookie_name = config['qualificationCookieName']+"_hrd1st";
 		let failed_before = readCookie(hrd_cookie_name);
-		if (failed_before!==null){
+		
+		if (failed_before!==null && !first_time_hardware_failed){
 			createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
 			console.log('failed for second tiome');
 		}else{
+			first_time_hardware_failed = true;
 			createCookie(hrd_cookie_name,true,config.qualificationValidFor);
 			console.log('failed for first tiome');
 		}
@@ -1022,6 +976,7 @@ function hardware_test(){
 		if (refresh_rate_passed && resolution_check && device_accepted){
 			activate_hit();
 		}else{
+			console.log('hardware_test');
 			//alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
 			disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 		}
@@ -1035,11 +990,12 @@ var page_loading_timer =null;
 	Called when downloading of all videos took too long, show a message and block the hit.
 **/
 function show_message_too_long_loading(){
+	console.log("show_message_too_long_loading");
 	if(page_loading_timer){
 		clearTimeout(page_loading_timer);
 		page_loading_timer= null;
 	}
-	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
+	alert('It looks like that your Internet connection is too slow for this task. You may refresh this page once to try again. If oyu see the error again please return this hit and try it later with a better network connection. Thanks');
 	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
@@ -2828,8 +2784,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<li> Impairments can happen in specific area (corners or center of image) and for a short period of time within a video clip.
 					So it is very important that when watching a video, fully concentrate on the entire scene. If something distracting you,
 					please watch the video again.</li>				
-				<li>You may think that an impairment you are recognized was due to your Internet connection, but whatever you see in the
-					videos are created beforehand, and <b>not related to your network</b>, so <u>consider them all when you rate the <b>quality</b></u>.</li>
+			
 			</ul>
 			</div>
 			</div>
