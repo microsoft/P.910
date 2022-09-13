@@ -99,7 +99,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config['qual_cookie_name'] = hit_app_html_cfg['qual_cookie_name'] if 'qual_cookie_name' in hit_app_html_cfg else 'qual_'+get_rand_id()
     config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project'] if 'allowed_max_hit_in_project' in hit_app_html_cfg else  n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in cfg else "ic3ai@outlook.com"
-    config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in cfg else 80
+    config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
 
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
@@ -214,7 +214,7 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
         if 'allowed_max_hit_in_project' in hit_app_html_cfg else  n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
-    config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in cfg else 80
+    config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
     config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']
@@ -320,7 +320,7 @@ async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_pat
         if 'allowed_max_hit_in_project' in hit_app_html_cfg else n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
-    config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in cfg else 80
+    config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
     config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']

@@ -450,6 +450,7 @@ $(function() {
 });
 
 var loading_page_error = false;
+var first_time_hardware_failed = false;
 /*
 	Disable the HIT and show a proper message.
 	Depending to the reason show a proper message as well.
@@ -485,10 +486,11 @@ function disableTheHIT(c){
 	if (c == Hide_HIT_REASON.AUTO_TEST_FAILED){
 		var hrd_cookie_name = config['qualificationCookieName']+"_hrd1st";
 		let failed_before = readCookie(hrd_cookie_name);
-		if (failed_before!==null){
+		if (failed_before!==null && !first_time_hardware_failed){
 			createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
 			console.log('failed for second tiome');
 		}else{
+			first_time_hardware_failed = true;
 			createCookie(hrd_cookie_name,true,config.qualificationValidFor);
 			console.log('failed for first tiome');
 		}
