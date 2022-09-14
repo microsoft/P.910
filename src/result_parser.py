@@ -105,6 +105,7 @@ def check_if_session_accepted(data):
     """
     if not accept:
         data['Reject'] = msg
+        #data['Accept'] = ""
     else:
         data['Reject'] = ""
     return accept, failures
@@ -313,7 +314,7 @@ def data_cleaning(filename, method, wrong_vcodes):
    #in_df.sort_values(by=['answer.visual_acuity_result'], ascending=False, inplace=True)
    #"""
     for row in reader:
-        setup_was_hidden = row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
+        setup_was_hidden = 'answer.cmp1' not in row or row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
 
         d['worker_id'] = row['workerid']
@@ -473,6 +474,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
             num_not_used_submissions += 1
             if reject_on_failure:
                 d['accept'] = 0
+                d['Approve'] = ""
                 tmp = grouped_rej[grouped_rej['worker_id'].str.contains(d['worker_id'])]
                 if len(d['Reject'])>0:
                     d['Reject'] = d['Reject'] + f" Failed in performance criteria- only {tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
@@ -1046,25 +1048,11 @@ def calc_stats(input_file):
     df = pd.read_csv(input_file, low_memory=False)
     df_full = df.copy()
     overall_time, overall_pay = calc_payment_stat(df)
-
-    # full study, all sections were shown
-    df_full = df_full[df_full['Answer.2_birth_year']> 0]
-    full_time, full_pay = calc_payment_stat(df_full)
-
-    # no qual
-    df_no_qual = df[df['Answer.2_birth_year'].isna()]
-    df_no_qual_no_setup = df_no_qual[df_no_qual['Answer.t1_circles'].isna()]
-    only_rating = df_no_qual_no_setup[df_no_qual_no_setup['Answer.t1'].isna()].copy()
-
-    if len(only_rating)>0:
-        only_r_time, only_r_pay = calc_payment_stat(only_rating)
-    else:
-        only_r_time = 'No-case'
-        only_r_pay = 'No-case'
-    data = {'Case': ['All submissions', 'All sections', 'Only rating'],
-            'Percent of submissions': [1, len(df_full.index)/len(df.index), len(only_rating.index)/len(df.index)],
-            'Work duration (median) MM:SS': [overall_time, full_time, only_r_time ],
-            'payment per hour ($)': [overall_pay, full_pay, only_r_pay]}
+    
+    data = {'Case': ['All submissions' ],
+            'Percent of submissions': [1],
+            'Work duration (median) MM:SS': [overall_time],
+            'payment per hour ($)': [overall_pay]}
     stat = pd.DataFrame.from_dict(data)
     print('Payment statistics:')
     print(stat.to_string(index=False))
