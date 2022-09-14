@@ -473,6 +473,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
             num_not_used_submissions += 1
             if reject_on_failure:
                 d['accept'] = 0
+                d['Approve'] = ""
                 tmp = grouped_rej[grouped_rej['worker_id'].str.contains(d['worker_id'])]
                 if len(d['Reject'])>0:
                     d['Reject'] = d['Reject'] + f" Failed in performance criteria- only {tmp['acceptance_rate'].iloc[0]:.2f}% of submissions passed data cleansing."
