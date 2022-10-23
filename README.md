@@ -22,7 +22,7 @@ If you use this tool in your research please cite it with the following referenc
 
 ```BibTex
 @article{naderi2022,
-  title={A crowdsourced implementation of ITU-T P.910},
+  title={A crowdsourcing approach to video quality assessment},
   author={Naderi, Babak and Cutler, Ross},
   journal={arXiv preprint arXiv:2204.06784},
   year={2022}
