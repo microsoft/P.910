@@ -108,7 +108,7 @@ var config ={
 	internet_speed_Mbps:{{cfg.internet_speed_Mbps}},
 	allowedMaxHITsInProject:{{cfg.allowed_max_hit_in_project}},
 	forceRetrainingInHours:1,
-    showSetupEveryMinutes:30,
+    showSetupEveryMinutes: 45,
     // could be 9 or 5
     scale_points: {{cfg.scale_points}},
     // qualification
@@ -539,11 +539,11 @@ function disableTheHIT(c){
 		var hrd_cookie_name = config['qualificationCookieName']+"_hrd1st";
 		let failed_before = readCookie(hrd_cookie_name);
 		if (failed_before!==null && !first_time_hardware_failed){
-			createCookie(config.qualificationCookieName,false,config.qualificationValidFor);
+			createCookie(config.qualificationCookieName,false, config['forceRetrainingInHours']*60);
 			console.log('failed for second tiome');
 		}else{
 			first_time_hardware_failed = true;
-			createCookie(hrd_cookie_name,true,config.qualificationValidFor);
+			createCookie(hrd_cookie_name,true, config['forceRetrainingInHours']*60);
 			console.log('failed for first tiome');
 		}
 		$("#automatic_test_failed").show();
@@ -1289,6 +1289,9 @@ function check_brightness_test(){
 	if (c==(correct_ans['circles'] -2)&& t == (correct_ans['triangles']-3)){
 		//alert('Great! Your answer is correct, continue!');
 		$("#check_matrix").prop("disabled",true);
+		$('#t1_circles').attr('readonly', true);
+		$('#t1_triangles').attr('readonly', true);
+
 		activate_rest_setup();
 	}else{
 		num_tries_block_matrix++;
@@ -1464,6 +1467,11 @@ function showPreviousQuestionInTrainingSection(){
 }
 
 
+function set_training_timer(){
+	createCookie(config['cookieName']+"_training","un_important",config['forceRetrainingInHours']*60);
+	createCookie(config['cookieName']+"_impInstruct","un_important",config['forceRetrainingInHours']*60);
+}
+
 var trainingStimulusPlayed;
 
 /*
@@ -1477,7 +1485,7 @@ function playedVideoTraining(id){
 	$('input[name="{0}"]'.f(id)).off('change');
 	eval("trainingStimulusPlayed["+id_num+"-1]=1;");
 	if (trainingStimulusPlayed.reduce(getSum, 0) ==  trainingStimulusPlayed.length){
-		createCookie(config['cookieName']+"_training","un_important",config['forceRetrainingInHours']*60);
+		set_training_timer();
 	}
 	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionInTrainingUrl']){
 		element = $('input[name="t{0}"]'.f(id_num));
@@ -1494,7 +1502,7 @@ const play_video_ins = new Set()
 function playedVideoIns(id){
 	play_video_ins.add(id);
 	if (play_video_ins.size == 3){
-		createCookie(config['cookieName']+"_impInstruct","un_important",config['forceRetrainingInHours']*60);
+		set_training_timer();
 	}
 }
 
@@ -1543,6 +1551,8 @@ function playedVideoQ(id){
 	played= $("#video_n_finish_{0}".f(id)).val();
 	if (played== 0 )return;
 	console.log("playedVideoQ  continue");
+	// re-training is needed only after X hours from last participation.
+	set_training_timer();
 
 	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionUrl']){
 		element = $('input[name="q{0}"]'.f(id_num));
@@ -2589,7 +2599,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
 					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
 					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
-					<li><b>Training (every <b class="training_time"> 0 </b>):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
+					<li><b>Training (every <b class="training_time"> 0 </b>):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears every <b class="training_time"> 0 </b> hour(s).</li>
 					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
 				</ul>
 				<p>Note that you should watch the videos in full screen size.</p>
@@ -2597,7 +2607,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<p><b>Rules:</b></p>
 				<ul>
 					<li>You must use a <b class="instruction_device">XX</b>, otherwise your response will be rejected</li>
-					<li>You must perform the task in a good lighting condition without <b>glare on your screen</b> </li>
+					<li>You must perform the task in a good lighting condition without <b>glare on your screen</b>. Typically semi-dark environment is recommended. </li>
 					<li>Do not change the brightness of your screen and your distance to the screen after the Setup section.</li>
 				</ul>
 
@@ -3093,12 +3103,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 </section>
 
 <section class="container" id="qualification_rejected" hidden>
-	<p>There is no assignments that match to your qualification. You may try other HITs from us.
+	<p>There is no assignments that match to your qualification or device/connection. You may try other HITs from us.
 	We thank you for your participation.</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
-			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of all of your submissions.
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of your submissions.
 			</div>
 </section>
 
@@ -3107,15 +3117,15 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
-			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of all of your submissions.
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of your submissions.
 			</div>
 </section>
 
 <section class="container" id="automatic_test_failed" hidden>
-	<p>Unfortunately your hardware/connection did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
+	<p>Unfortunately your hardware/connection did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT and <u>try again in about <b class="training_time">1 hour</b></u>. If you try it sooner, you may see a message that there is no "There is no assignments that match to your qualification or device/connection."</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
-			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of all of your submissions.
+			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of your submissions.
 			</div>
 </section>

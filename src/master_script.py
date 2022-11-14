@@ -106,9 +106,9 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']
     config['quantity_bonus'] = hit_app_html_cfg['quantity_bonus']
     config['quality_top_percentage'] = hit_app_html_cfg['quality_top_percentage']
-    config['quality_bonus'] = float(hit_app_html_cfg['quality_bonus']) + float(hit_app_html_cfg['quantity_bonus'])
-    config['sum_quantity'] = float(hit_app_html_cfg['quantity_bonus']) + float(hit_app_html_cfg['hit_base_payment'])
-    config['sum_quality'] = config['quality_bonus'] + float(hit_app_html_cfg['hit_base_payment'])
+    config['quality_bonus'] = round(float(hit_app_html_cfg['quality_bonus']) + float(hit_app_html_cfg['quantity_bonus']), 2)
+    config['sum_quantity'] = round(float(hit_app_html_cfg['quantity_bonus']) + float(hit_app_html_cfg['hit_base_payment']), 2)
+    config['sum_quality'] = round(config['quality_bonus'] + float(hit_app_html_cfg['hit_base_payment']), 2)
 
     config['min_screen_refresh_rate'] = viewing_condition_cfg['min_screen_refresh_rate'] if 'min_screen_refresh_rate' in viewing_condition_cfg else 30
     config['min_device_resolution'] = viewing_condition_cfg['min_device_resolution'] if 'min_device_resolution' in viewing_condition_cfg else '{w: 1280, h:720}'
@@ -220,9 +220,9 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']
     config['quantity_bonus'] = hit_app_html_cfg['quantity_bonus']
     config['quality_top_percentage'] = hit_app_html_cfg['quality_top_percentage']
-    config['quality_bonus'] = float(hit_app_html_cfg['quality_bonus']) + float(hit_app_html_cfg['quantity_bonus'])
-    config['sum_quantity'] = float(hit_app_html_cfg['quantity_bonus']) + float(hit_app_html_cfg['hit_base_payment'])
-    config['sum_quality'] = config['quality_bonus'] + float(hit_app_html_cfg['hit_base_payment'])
+    config['quality_bonus'] = round(float(hit_app_html_cfg['quality_bonus']) + float(hit_app_html_cfg['quantity_bonus']), 2)
+    config['sum_quantity'] = round(float(hit_app_html_cfg['quantity_bonus']) + float(hit_app_html_cfg['hit_base_payment']), 2)
+    config['sum_quality'] = round(config['quality_bonus'] + float(hit_app_html_cfg['hit_base_payment']),2 )
 
     config['min_screen_refresh_rate'] = viewing_condition_cfg[
         'min_screen_refresh_rate'] if 'min_screen_refresh_rate' in viewing_condition_cfg else 30

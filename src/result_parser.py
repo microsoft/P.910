@@ -224,6 +224,7 @@ def check_gold_question(row, method):
     correct_gq = 0
     try:
         gq_url = row[config['gold_question']['url_found_in']]
+        # consider abs to support gold questions in ccr test        
         gq_correct_ans = int(float(row[config['gold_question']['ans_found_in']]))
         gq_var = int(float(config['gold_question']['variance']))
 
@@ -335,7 +336,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         # step 4. check tps
         d['correct_tps'] = check_tps(row, method)
         # step5. check gold_standard,
-        d['correct_gold_question'] = check_gold_question(row, method)
+        d['correct_gold_question']  = check_gold_question(row, method)
 
         # step6. check variance in a session rating
         d['variance_in_ratings'] = check_variance(row, method)
@@ -344,6 +345,7 @@ def data_cleaning(filename, method, wrong_vcodes):
 
         if 'answer.video_loading_duration_ms' in row:
             d['video_loading_duration'] = row['answer.video_loading_duration_ms']
+            
         should_be_accepted, accept_failures = check_if_session_accepted(d)
 
         if should_be_accepted:
@@ -872,12 +874,11 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             # is it a trapping clips question
             if 'trapping' in config and session[config['trapping']['url_found_in']] == session[f'answer.{question}_url']:
                 continue
-            # is it a gold clips
+            # is it a gold clips            
             if not found_gold_question and\
                     session[config['gold_question']['url_found_in']] == session[f'answer.{question}_url']:
                 found_gold_question = True
-                continue
-
+                continue            
             short_file_name = session[f'answer.{question}_url'].rsplit('/', 1)[-1]
             file_name = session[f'answer.{question}_url']
             if file_name not in data_per_file:
@@ -1049,7 +1050,7 @@ def calc_stats(input_file):
     overall_time, overall_pay = calc_payment_stat(df)
 
     # full study, all sections were shown
-    df_full = df_full[df_full['Answer.2_birth_year']> 0]
+    df_full = df_full[~df_full['Answer.2_birth_year'].isna()]
     full_time, full_pay = calc_payment_stat(df_full)
 
     # no qual
@@ -1095,6 +1096,14 @@ def number_of_unique_workers(answers, used):
     df_used.drop_duplicates('workerid', keep='first', inplace=True)
     return len(df), len(df_used)
 
+def recover_submission_withoiut_matching_vcode(hit_ans, amt_ans, not_in_hitapp):
+    # iterate over daraftame
+    for index, row in not_in_hitapp.iterrows(): 
+        # find the matching row in amt
+        amt_row = amt_ans[amt_ans['AssignmentId'] == row['Answer.hitapp_assignmentId']]
+        if len(amt_row) == 1:
+            # add the row to the hitapp
+            print('Find a potential match for a wrong vcode submission (internal assignment id: ' + row['Answer.hitapp_assignmentId'] + ')')
 
 def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     """
@@ -1118,6 +1127,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     amt_ans['Answer.v_code'] = amt_ans['Answer.v_code'].str.strip()
     # check if there are submission without conuter part key in hitapp servers
     not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
+    recover_submission_withoiut_matching_vcode(hitapp_ans, amt_ans, not_in_hitapp)
     merged = pd.merge(hitapp_ans, amt_ans, left_on='v_code', right_on='Answer.v_code')
 
     columns_to_remove = ['Answer.v_code']

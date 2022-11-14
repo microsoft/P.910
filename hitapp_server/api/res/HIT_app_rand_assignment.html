@@ -40,8 +40,7 @@ fieldset { padding: 10px; background:#fbfbfb; border-radius:5px; margin-bottom:5
 <script type="text/javascript">
 $(function() {
 	try{
-    url= '${url}'
-    //url= 'https://mturkd-data-store.s3.eu-central-1.amazonaws.com/pcrowdv1/pcrowdv1_1824dc9c06fc9626d297add55836da68.html?assignmentId={0}&campaign_id=pcrowdvt1'
+    url= '${url}'   
     assignment_id = get_rand_assignment_ID();
     $("input[name=hitapp_assignmentId]").val(assignment_id);
 	new_url = url.f(assignment_id);
@@ -93,7 +92,7 @@ String.prototype.format = String.prototype.f = function() {
 
                 <table>
                     <tr><td><b>URL to the test: </b></td><td id="url_location"></td></tr>
-                    <tr><td><b>Verification code: </b></td><td> <input type="text" class="form-control nospace" name="v_code" required=""> </td></tr>
+                    <tr><td><b>Verification code: </b></td><td> <input type="text" class="form-control nospace" name="v_code" required="" autocomplete="off"> </td></tr>
                 </table>
 
 			</div>
