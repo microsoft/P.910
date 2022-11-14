@@ -15,14 +15,14 @@ Geneva: International Telecommunication Union, 2021.
 
 Technical description of the implementation and validation is given in this paper:
 
-* [A crowdsourced implementation of ITU-T P.910](https://arxiv.org/pdf/2204.06784.pdf) Babak Naderi, Ross Cutler, arXiv preprint arXiv:2204.06784 (2022).
+* [A crowdsourcing approach to video quality assessment](https://arxiv.org/pdf/2204.06784.pdf) Babak Naderi, Ross Cutler, arXiv preprint arXiv:2204.06784 (2022).
 
 ## Citation
 If you use this tool in your research please cite it with the following references:
 
 ```BibTex
 @article{naderi2022,
-  title={A crowdsourced implementation of ITU-T P.910},
+  title={A crowdsourcing approach to video quality assessment},
   author={Naderi, Babak and Cutler, Ross},
   journal={arXiv preprint arXiv:2204.06784},
   year={2022}
