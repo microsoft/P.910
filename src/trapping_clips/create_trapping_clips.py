@@ -48,7 +48,7 @@ def create_msg_video(cfg, des, org):
 
         video = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*'mp4v'), 1, (width, height))
         # video will
-        for sec in range(5):
+        for sec in range(int(cfg['message_duration_in_seconds'])):
             video.write(cv2.imread(image_file_name))
         video.release()
         tmp_files.append(video_name)
