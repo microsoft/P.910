@@ -1,0 +1,40 @@
+common:
+  base_path: "../P835/"
+
+convert:
+  
+  p835_html:
+    location: P835.html.template
+    is_template: true
+    substitutions:
+      JQUERY_JS: /js/jquery.min.js
+      BOOTSTRAP_CSS: /css/bootstrap.min.css
+      BOOTSTRAP_JS: /js/bootstrap.min.js
+      P808_ASSETS: ../p808-assets
+  
+  p835_csv:
+    location: P835.csv.template
+    is_template: true
+    substitutions:
+      P808_ASSETS: ../p808-assets
+
+download:
+  jquery:
+    location: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
+    write_to: 
+      - hitapp_server/static/js/jquery.min.js
+      - hitapp_server/front-end/js/jquery.min.js
+    
+  bootstrap_css:
+    location: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css
+    write_to: 
+      - hitapp_server/static/css/bootstrap.min.css
+      - hitapp_server/front-end/css/bootstrap.min.css
+  
+  bootstrap_js:
+    location: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js
+    write_to: 
+      - hitapp_server/static/js/bootstrap.min.js
+      - hitapp_server/front-end/js/bootstrap.min.js
+  
+

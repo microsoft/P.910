@@ -5,6 +5,10 @@ A typical Amazon Mechanical Turk (AMT) task can be deployed in this server; part
 in the dataset, and can be downloaded. 
 You can deploy the server on a Linux Virtual Machine. 
 
+## Configuration
+
+First follow the instructions in `configure/README.md` to configure the Repo.
+
 ## Get started 
 
 The following steps should be performed to prepare the system locally. Similarly it can be deployed on a VM.

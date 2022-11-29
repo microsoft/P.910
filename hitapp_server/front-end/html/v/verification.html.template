@@ -1,0 +1,84 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+-->
+<html>
+<head>
+	<link rel="stylesheet" href="<<BOOTSTRAP_CSS>>">
+	<script src="<<JQUERY_JS>>"></script>
+	<script src="<<BOOTSTRAP_JS>>"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+<body>
+<script type="text/javascript">
+
+function getURLParam( name, defaultValue ) { 
+   var regexS = "[\?&]"+name+"=([^&#]*)"; 
+   var regex = new RegExp( regexS ); 
+   var tmpURL = window.location.href; 
+   var results = regex.exec( tmpURL );  
+   if( results == null ) { 
+     return defaultValue; 
+   } else { 
+     return results[1];    
+   } 
+}
+
+function copy_code() {
+  /* Get the text field */
+  var copyText = document.getElementById("vcode");
+
+  /* Select the text field */
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+
+  /* Copy the text inside the text field */
+  document.execCommand("copy");
+} 
+$(function() {
+	vc = getURLParam("vcode", "");
+	cmp = getURLParam("cmp", "");
+	is_st_prg = getURLParam("is_st_prg", "");
+	
+	if (is_st_prg =='True')
+		$(".cs").hide();
+	$("#vcode").val(vc);
+  
+}); 
+
+</script>
+
+<section class="container" id="Survey">
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<h3 class="panel-title">
+				<a data-target="#instruction" data-toggle="collapse" >Finished!</a>
+			</h3>
+		</div>
+		<div  class="panel-collapse collapse in" id="instruction">
+			  <div class="panel-body" >
+			  
+
+			 <p class ="cs">Thanks for participating in this session! Below you can find your verification code. Please copy the code, go back to the crowdsourcing platform and follow the procedure there.</p>
+
+			 <div class="row" id ="vcode_box">
+				<div class="col-sm-4"><b>Verification code:</b></div>
+				<div class="col-sm-6"><input type="text" class="form-control" id ="vcode" value ="yyyyyyyyy" readonly></div>
+				<div class="col-sm-2"><button type="button" class="btn btn-primary" onclick="copy_code()" >Copy</button></div>
+			 </div>
+
+			
+			
+			</div>
+		</div>
+
+	</div>
+</section>
+
+
+</body>
+</html>
