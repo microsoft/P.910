@@ -21,9 +21,9 @@ The following steps should be performed to prepare the system locally. Similarly
         cd P.910/hitapp_server
     ```
 
-1. If you want to use the repo offline, follow the instructions in `configure/README.md` to configure the repo for offline use. 
+2. Follow the instructions in `configure/README.md` to configure the repo. 
 
-1. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
+3. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
 Then change the passwords inside your `.env` file:  
 
     ```INI
@@ -40,7 +40,7 @@ Then change the passwords inside your `.env` file:
     admin:YOUR_NEW_ENCODED_PASSWORD
     ```
 
-1. Run the docker-compose
+2. Run the docker-compose
 
     ```bash    
     docker-compose up --build -d
@@ -50,7 +50,7 @@ Then change the passwords inside your `.env` file:
     sudo docker-compose up --build -d
     ``` 
 
-1. If you are want to use it offline, save the images you built in the previous step with the following command:
+3. If you are want to use it offline, save the images you built in the previous step with the following command:
     ```bash    
     docker save -o hitapp_server-api.tar hitapp_server-api:latest
     docker save -o hitapp_server-frontend.tar hitapp_server-frontend:latest
