@@ -5,9 +5,6 @@ A typical Amazon Mechanical Turk (AMT) task can be deployed in this server; part
 in the dataset, and can be downloaded. 
 You can deploy the server on a Linux Virtual Machine. 
 
-## Configuration
-
-First follow the instructions in `configure/README.md` to configure the Repo.
 
 ## Get started 
 
@@ -23,6 +20,8 @@ The following steps should be performed to prepare the system locally. Similarly
         git clone https://github.com/microsoft/P.910
         cd P.910/hitapp_server
     ```
+
+1. If you want to use the repo offline, follow the instructions in `configure/README.md` to configure the repo for offline use. 
 
 1. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
 Then change the passwords inside your `.env` file:  
@@ -50,8 +49,26 @@ Then change the passwords inside your `.env` file:
     ```bash    
     sudo docker-compose up --build -d
     ``` 
-    
-1. Checkout the system on [localhost](http://localhost).
+
+1. If you are want to use it offline, save the images you built in the previous step with the following command:
+    ```bash    
+    docker save -o hitapp_server-api.tar hitapp_server-api:latest
+    docker save -o hitapp_server-frontend.tar hitapp_server-frontend:latest
+    docker save -o postgres.tar postgres:14-alpine
+    ```
+    Then copy the entire repo and the docker images to the offline machine.
+
+    On the offline machine run the following commands (use the docker-compose-offline.yml file):
+    ```bash
+    docker load -i hitapp_server-api.tar
+    docker load -i hitapp_server-frontend.tar
+    docker load -i postgres.tar
+    docker-compose up -d
+    ```
+
+   
+
+2. Checkout the system on [localhost](http://localhost).
     Use "admin" as username and "hitapp" as password to access the platform if you did not change the username and password 
     in the previous step. 
 

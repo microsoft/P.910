@@ -3,14 +3,14 @@ common:
 
 convert:
   api-frame_template:
-    location: hitapp_server/api/res/frame_template.html.template
-    write_to: hitapp_server/api/res/frame_template.html # here to show that this variable exists
+    location: api/res/frame_template.html.template
+    write_to: api/res/frame_template.html # here to show that this variable exists
     is_template: true
     substitutions:
       JQUERY_JS: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
 
   api-rand_assignment:
-    location: hitapp_server/api/res/HIT_app_rand_assignment.html.template
+    location: api/res/HIT_app_rand_assignment.html.template
     is_template: true # if you have is_template and a file ending in .template, it will be written to a file without the .template
     substitutions: 
       JQUERY_JS: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
@@ -18,7 +18,7 @@ convert:
       BOOTSTRAP_JS: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js
 
   frontend-create_project:
-    location: hitapp_server/front-end/html/create_project.html.template
+    location: front-end/html/create_project.html.template
     is_template: true
     substitutions:
       JQUERY_JS: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
@@ -26,7 +26,7 @@ convert:
       BOOTSTRAP_JS: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js
   
   frontend-index:
-    location: hitapp_server/front-end/html/index.html.template
+    location: front-end/html/index.html.template
     is_template: true
     substitutions:
       JQUERY_JS: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
@@ -34,7 +34,7 @@ convert:
       BOOTSTRAP_JS: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js
   
   frontend-project_status:
-    location: hitapp_server/front-end/html/project_status.html.template
+    location: front-end/html/project_status.html.template
     is_template: true
     substitutions:
       JQUERY_JS: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
@@ -42,7 +42,7 @@ convert:
       BOOTSTRAP_JS: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js
   
   frontend-verification:
-    location: hitapp_server/front-end/html/v/verification.html.template
+    location: front-end/html/v/verification.html.template
     is_template: true
     substitutions:
       JQUERY_JS: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
