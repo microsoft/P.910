@@ -24,6 +24,7 @@ The following steps should be performed to prepare the system locally. Similarly
 1. Run the following commands to configure the repo:
    ```bash
        cd configure
+       pip install pyyaml
        python configure.py --config configs/online.yaml
     ```
 

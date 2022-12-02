@@ -3,12 +3,19 @@
 ## Overview
 This lets you configure the repo for offline use or revert it back to online. 
 
-## Offline use
+## Pip Install
+
+Install the following libraries using pip:
+```bash
+pip install pyyaml
+```
+
+## Offline configuration
 
 1. Run the following command: `python configure.py --config configs/offline.yaml`
 2. Copy the any additional files you need to the static folder.
 
-## Online use
+## Online configuration
 1. Run the following command: `python configure.py --config configs/online.yaml`
 
 ## Offline Docker Setup
