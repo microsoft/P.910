@@ -21,9 +21,13 @@ The following steps should be performed to prepare the system locally. Similarly
         cd P.910/hitapp_server
     ```
 
-2. Follow the instructions in `configure/README.md` to configure the repo. 
+1. Run the following commands to configure the repo:
+   ```bash
+       cd configure
+       python configure.py --config configs/online.yaml
+    ```
 
-3. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
+2. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
 Then change the passwords inside your `.env` file:  
 
     ```INI
@@ -48,27 +52,9 @@ Then change the passwords inside your `.env` file:
     Note, you may need to use `sudo`:
     ```bash    
     sudo docker-compose up --build -d
-    ``` 
+    ```   
 
-3. If you are want to use it offline, save the images you built in the previous step with the following command:
-    ```bash    
-    docker save -o hitapp_server-api.tar hitapp_server-api:latest
-    docker save -o hitapp_server-frontend.tar hitapp_server-frontend:latest
-    docker save -o postgres.tar postgres:14-alpine
-    ```
-    Then copy the entire repo and the docker images to the offline machine.
-
-    On the offline machine run the following commands (use the docker-compose-offline.yml file):
-    ```bash
-    docker load -i hitapp_server-api.tar
-    docker load -i hitapp_server-frontend.tar
-    docker load -i postgres.tar
-    docker-compose up -d
-    ```
-
-   
-
-2. Checkout the system on [localhost](http://localhost).
+3. Checkout the system on [localhost](http://localhost).
     Use "admin" as username and "hitapp" as password to access the platform if you did not change the username and password 
     in the previous step. 
 
@@ -99,3 +85,5 @@ Then change the passwords inside your `.env` file:
 
 1. Follow the rest of procedure given in the "Get started" section 
 
+## Offline Use
+If you want to use it with a local machine that does not have internet access, you can use the offline configuration. Follow the instructions in `configure/README.md` to configure the repo for offline use. 
