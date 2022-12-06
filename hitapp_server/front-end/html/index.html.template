@@ -1,0 +1,182 @@
+<!--
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+@author: Babak Naderi
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="stylesheet" href="<<BOOTSTRAP_CSS>>">
+	<script src="<<JQUERY_JS>>"></script>
+	<script src="<<BOOTSTRAP_JS>>"></script>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8">
+</head>
+
+<style type="text/css">
+body{font-family:Tahoma,"Times New Roman", Times, serif;}
+.left_space{margin:3px 20px}
+
+.loader {
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.container {margin: 20px 50px}
+#page{margin: 20px 0px }
+
+.project td{padding-right:60px}
+.project{background-color:#cccccc; padding:20px; border-radius: 10px; margin:10px;}
+
+</style>
+<script type="text/javascript">
+BASE_URL = ".";
+var skip = 0;
+var limit = 20;
+var current_offset = 0;
+
+String.prototype.format = String.prototype.f = function() {
+    var s = this,
+        i = arguments.length;
+    while (i--) {
+        s = s.replace(new RegExp('\\{' + i + '\\}', 'gm'), arguments[i]);
+    }
+    return s;
+};
+
+function getURLParam( name, defaultValue ) {
+   var regexS = "[\?&]"+name+"=([^&#]*)";
+   var regex = new RegExp( regexS );
+   var tmpURL = window.location.href;
+   var results = regex.exec( tmpURL );
+   if( results == null ) {
+     return defaultValue;
+   } else {
+     return results[1];
+   }
+}
+
+var failed_case = '';
+function load_projects(){
+	$.get(BASE_URL+"/api/projects?skip="+skip+"&limit="+limit, function(data, status){
+		console.log(data);
+		if (data){
+			$('#load_more').show();
+			if (skip == 0){
+				$("#project-list").html('');
+			}
+			show_project(data);
+			if (data.length == limit) {
+				 $('#lm_button').prop('disabled', false);
+			}else{
+				$('#lm_button').prop('disabled', true);
+			}
+			skip = skip + data.length;
+		}else{
+			if (failed_case!=skip+'_'+limit) {
+				failed_case = skip+'_'+limit
+				setTimeout(load_projects, 2000);
+				$('#lm_button').prop('disabled', true);
+			}
+
+		}
+	});
+
+}
+
+Date.prototype.isToday = function () {
+    const today = new Date()
+    return this.getDate() === today.getDate() &&
+    this.getMonth() === today.getMonth() &&
+    this.getFullYear() === today.getFullYear();
+};
+
+
+function show_project(projects){
+	template = '<div class="project"><table>	<tr><td>{0}</td> <td>Created at: {1}</td> <td>Assignments: '+
+	'{2}</td> <td><a  href="./project_status.html?id={3}">details</a></td></tr></table></div>';
+
+	for (var i = 0; i < projects.length; i++) {
+		console.log(projects[i]);
+		prj =  projects[i];
+		assignment = prj['n_assignment'] *  prj['n_hits'];
+		d = new Date(prj['created_at']);
+
+		if (d.isToday()){
+			d= d.toLocaleTimeString();
+		}else{
+			d = d.toLocaleString();
+		}
+
+  		html = template.f(prj['name'], d , assignment, prj['id']);
+  		$('#project-list').append(html);
+	}
+
+}
+
+$(function() {
+	load_projects();
+});
+
+
+</script>
+
+<body>
+
+<section class="container">
+		<button type="button" class="btn btn-dark"  onclick="location.href='index.html'">List of projects</button>
+		<button type="button" class="btn btn-dark"  onclick="location.href='create_project.html'" >New project</button>
+	</section>
+    <section class="container">
+
+		<div class="row col-xs-12 col-md-12">
+			<div class="panel panel-info">
+	  			<div class="panel-heading">
+					<h3 class="panel-title">
+			<a data-toggle="collapse" href="#collapse1">Projects</a>
+		</h3>
+	  			</div>
+	  			<div id="collapse1" class="panel-collapse collapse in">
+		  				<div class="panel-body">
+
+						  <div class="row">
+							  <div class="col-sm-1"></div>
+							  <div class="col-sm-10">
+									<div id="project-list">
+										<div style="text-align: center; margin: 50px 0px">
+											Loading...
+										</div>
+
+									</div>
+
+								  <div id="load_more" class="row" style="text-align: center;" hidden>
+
+									  <button id="lm_button" type="button" class="btn btn-dark page" onclick="load_projects();">Load more</button>
+								  </div>
+
+							  </div>
+							  <div class="col-sm-3"></div>
+						  </div>
+
+						</div>
+				</div>
+			</div>
+		</div>
+		</div>
+    </section>
+
+
+
+</body>
+</html>

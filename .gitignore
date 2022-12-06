@@ -136,3 +136,6 @@ hitapp_server/static/**/*.html
 hitapp_server/static/**/*.csv
 .env
 .vs
+
+*.tar.*
+*.zip
