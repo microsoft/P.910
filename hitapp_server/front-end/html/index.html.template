@@ -102,10 +102,26 @@ Date.prototype.isToday = function () {
     this.getFullYear() === today.getFullYear();
 };
 
+function delete_project(id){
+	const response = confirm("Are you sure you want to delete the project " + id + "?");
+	if (response == false) {
+		return;
+	} else {
+		$.ajax({
+			url: BASE_URL+"/api/projects/"+id,
+			type: 'DELETE',
+			success: function(result) {
+				alert('Project '+id+' deleted');
+			}
+		});
+		location.reload();
+	}
+}
+
 
 function show_project(projects){
 	template = '<div class="project"><table>	<tr><td>{0}</td> <td>Created at: {1}</td> <td>Assignments: '+
-	'{2}</td> <td><a  href="./project_status.html?id={3}">details</a></td></tr></table></div>';
+	'{2}</td> <td><a  href="./project_status.html?id={3}">details</a></td> <td><a href:"./index.html" onclick="delete_project({3})" style="color:red">delete</a></td></tr></table></div>';
 
 	for (var i = 0; i < projects.length; i++) {
 		console.log(projects[i]);
