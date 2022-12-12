@@ -238,8 +238,7 @@ def get_project(request: Request, id: int):
         cursor.execute("""SELECT * FROM "Projects" where id =%s """, (str(id), ))
         project = cursor.fetchone()
         return{'project': project}
-
-
+    
 @app.get("/projects/{id}/answers/download")
 def get_project_results(request: Request, id:int, background_tasks: BackgroundTasks):
     set_base_url(request.headers['referer'])
@@ -340,11 +339,26 @@ def generate_vcode():
 
 @app.delete("/projects/{id}")
 def del_project(id: int, background_tasks: BackgroundTasks):
+    """
+    Deletes a project
+    """
     with conn.cursor() as cursor:
         # delete answers
         #cursor.execute(""" DELETE FROM public."Answers" WHERE  ProjectId= %s""", (id,))
         #conn.commit()
-
+        # delete files
+        print(id)
+        cursor.execute("""SELECT * FROM "Projects" where id =%s """, (str(id), ))
+        project = cursor.fetchone()
+        html = project["data_for_amt"]["html"]
+        html_projects = html.replace("downloads/AMT_", "projects/")
+        csv_file = project["data_for_amt"]["csv"]
+        csv_projects = csv_file.replace("downloads/data_", "projects/")
+        delete_file(html)
+        delete_file(csv_file)
+        delete_file(html_projects)
+        delete_file(csv_projects)
+        
         # delete HITs
         cursor.execute("""SELECT hash_id FROM "Hits" WHERE  project_id= %s""", (id,))
         hits = []
@@ -354,11 +368,16 @@ def del_project(id: int, background_tasks: BackgroundTasks):
         #background_tasks.add_task(delete_file, project_id, hash_name, out_file_path_html, out_file_path_csv)
         cursor.execute(""" DELETE FROM "Hits" WHERE  project_id= %s""", (id,))
         # delete project
-        # delete files
+        cursor.execute(""" DELETE FROM "Projects" WHERE  id= %s""", (id,))
 
-
-def delete_file(files):
-    return
+def delete_file(filename):
+    if filename[:4] == "http":
+        filename = "/".join(filename.split("/")[3:])
+    print(f"delete_file: {filename}")
+    try:
+        os.remove(f'./{filename}')
+    except Exception as e:
+        print(e)
 
 """
 @app.post("/rec")
