@@ -5,6 +5,7 @@ A typical Amazon Mechanical Turk (AMT) task can be deployed in this server; part
 in the dataset, and can be downloaded. 
 You can deploy the server on a Linux Virtual Machine. 
 
+
 ## Get started 
 
 The following steps should be performed to prepare the system locally. Similarly it can be deployed on a VM.
@@ -20,7 +21,14 @@ The following steps should be performed to prepare the system locally. Similarly
         cd P.910/hitapp_server
     ```
 
-1. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
+1. Run the following commands to configure the repo:
+   ```bash
+       cd configure
+       pip install pyyaml
+       python configure.py --config configs/online.yaml
+    ```
+
+2. Copy `.env.template` to a new file, name it `.env` put it in the root directory of this project. 
 Then change the passwords inside your `.env` file:  
 
     ```INI
@@ -37,7 +45,7 @@ Then change the passwords inside your `.env` file:
     admin:YOUR_NEW_ENCODED_PASSWORD
     ```
 
-1. Run the docker-compose
+2. Run the docker-compose
 
     ```bash    
     docker-compose up --build -d
@@ -45,9 +53,9 @@ Then change the passwords inside your `.env` file:
     Note, you may need to use `sudo`:
     ```bash    
     sudo docker-compose up --build -d
-    ``` 
-    
-1. Checkout the system on [localhost](http://localhost).
+    ```   
+
+3. Checkout the system on [localhost](http://localhost).
     Use "admin" as username and "hitapp" as password to access the platform if you did not change the username and password 
     in the previous step. 
 
@@ -78,3 +86,5 @@ Then change the passwords inside your `.env` file:
 
 1. Follow the rest of procedure given in the "Get started" section 
 
+## Offline Use
+If you want to use it with a local machine that does not have internet access, you can use the offline configuration. Follow the instructions in `configure/README.md` to configure the repo for offline use. 

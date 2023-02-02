@@ -1,0 +1,72 @@
+common:
+  base_path: "../"
+
+convert:
+  api-frame_template:
+    location: api/res/frame_template.html.template
+    write_to: api/res/frame_template.html # here to show that this variable exists
+    is_template: true
+    substitutions:
+      JQUERY_JS: ../js/jquery.min.js
+
+  api-rand_assignment:
+    location: api/res/HIT_app_rand_assignment.html.template
+    is_template: true # if you have is_template and a file ending in .template, it will be written to a file without the .template
+    substitutions: 
+      JQUERY_JS: ../static/js/jquery.min.js
+      BOOTSTRAP_CSS: ../static/css/bootstrap.min.css
+      BOOTSTRAP_JS: ../static/js/bootstrap.min.js
+
+  frontend-create_project:
+    location: front-end/html/create_project.html.template
+    is_template: true
+    substitutions:
+      JQUERY_JS: /js/jquery.min.js
+      BOOTSTRAP_CSS: /css/bootstrap.min.css
+      BOOTSTRAP_JS: /js/bootstrap.min.js
+  
+  frontend-index:
+    location: front-end/html/index.html.template
+    is_template: true
+    substitutions:
+      JQUERY_JS: /js/jquery.min.js
+      BOOTSTRAP_CSS: /css/bootstrap.min.css
+      BOOTSTRAP_JS: /js/bootstrap.min.js
+  
+  frontend-project_status:
+    location: front-end/html/project_status.html.template
+    is_template: true
+    substitutions:
+      JQUERY_JS: /js/jquery.min.js
+      BOOTSTRAP_CSS: /css/bootstrap.min.css
+      BOOTSTRAP_JS: /js/bootstrap.min.js
+  
+  frontend-verification:
+    location: front-end/html/v/verification.html.template
+    is_template: true
+    substitutions:
+      JQUERY_JS: /js/jquery.min.js
+      BOOTSTRAP_CSS: /css/bootstrap.min.css
+      BOOTSTRAP_JS: /js/bootstrap.min.js
+
+
+download:
+  jquery:
+    location: https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js
+    write_to: 
+      - static/js/jquery.min.js
+      - front-end/js/jquery.min.js
+    
+  bootstrap_css:
+    location: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css
+    write_to: 
+      - static/css/bootstrap.min.css
+      - front-end/css/bootstrap.min.css
+  
+  bootstrap_js:
+    location: https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js
+    write_to: 
+      - static/js/bootstrap.min.js
+      - front-end/js/bootstrap.min.js
+  
+
