@@ -49,6 +49,25 @@ def outliers_modified_z_score(votes):
     v = v[(x < threshold)]
     return v.tolist()
 
+def outliers_iqr(votes):
+    """
+    Remove  outliers, using IRQ outlier detection method
+    :param votes:
+    :return:
+    """
+    if len(votes) < 2 or statistics.stdev(votes) == 0:
+        return votes
+
+    threshold = 1.5
+    q75, q25 = np.percentile(votes, [75, 25])
+    iqr = q75 - q25
+    if iqr == 0:
+        iqr = 0.7
+    x = np.array(votes)
+    v = np.array(votes)
+    v = v[(x <= q75 + threshold * iqr) & (x >= q25 - threshold * iqr)]
+    return v.tolist()
+
 #todo add boxplot as well
 def outliers_z_score(votes):
     """
@@ -407,6 +426,8 @@ def data_cleaning(filename, method, wrong_vcodes):
     for d in worker_list:
         if d['accept'] == 1 and d['accept_and_use'] == 0:
             not_using_further_reasons.extend(d['failures'])
+    # cases with more than 5 wrong vcodes
+    wrong_v_code_freq = check_wrong_vcode_should_block(wrong_vcodes)
 
     write_dict_as_csv(worker_list, report_file)
     save_approved_ones(worker_list, approved_file)
@@ -415,7 +436,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     save_hits_to_be_extended(worker_list, extending_hits_file)
 
     if len(block_list) > 0:
-        save_block_list(block_list, block_list_file)
+        save_block_list(block_list, block_list_file, wrong_v_code_freq)
     not_used_reasons_list = list(collections.Counter(not_using_further_reasons).items())
     not_used_reasons_list.append(('performance', num_not_used_sub_perform))
 
@@ -448,9 +469,10 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
     # rater_min_accepted_hits_current_test
 
     grouped = df.groupby(['worker_id', 'accept_and_use']).size().unstack(fill_value=0).reset_index()
-    grouped.to_csv('tmp.csv')
+    
     grouped = grouped.rename(columns={0: 'not_used_count', 1: 'used_count'})
     grouped['acceptance_rate'] = (grouped['used_count'] * 100)/(grouped['used_count'] + grouped['not_used_count'])
+    grouped.to_csv('tmp.csv')
 
     if 'rater_min_acceptance_rate_current_test' in config[section]:
         rater_min_acceptance_rate_current_test = int(config[section]['rater_min_acceptance_rate_current_test'])
@@ -492,7 +514,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
 
     block_list = []
     if 'block_rater_if_acceptance_and_used_rate_below' in config[section]:
-        tmp = grouped[(grouped.acceptance_rate < int(config[section]['block_rater_if_acceptance_and_used_rate_below']))]
+        tmp = grouped[(grouped.acceptance_rate < int(config[section]['block_rater_if_acceptance_and_used_rate_below'])) &((grouped['used_count'] + grouped['not_used_count']) >=5)]
         block_list = list(tmp['worker_id'])
 
     return result, u_session_update, num_not_used_submissions, block_list
@@ -538,10 +560,10 @@ def save_approve_rejected_ones_for_gui(data, path, wrong_vcodes):
     """
     df = pd.DataFrame(data)
     df = df[df.status == 'Submitted']
-    small_df = df[['assignment', 'HITId', 'Approve', 'Reject']].copy()
-    small_df.rename(columns={'assignment': 'assignmentId'}, inplace=True)
+    small_df = df[['worker_id','assignment', 'HITId', 'Approve', 'Reject']].copy()
+    small_df.rename(columns={'assignment': 'assignmentId', 'worker_id':'WorkerId'}, inplace=True)
     if wrong_vcodes is not None:
-        wrong_vcodes_assignments = wrong_vcodes[['AssignmentId', 'HITId']].copy()
+        wrong_vcodes_assignments = wrong_vcodes[['WorkerId','AssignmentId', 'HITId']].copy()
         wrong_vcodes_assignments["Approve"] = ""
         wrong_vcodes_assignments["Reject"] = "wrong verification code"
         wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)
@@ -569,7 +591,7 @@ def save_approved_ones(data, path):
     small_df.to_csv(path, index=False)
 
 
-def save_block_list(block_list, path):
+def save_block_list(block_list, path, wrong_v_code_freq):
     """
     write the list of workers to be blocked in a csv file.
     :param block_list:
@@ -579,7 +601,28 @@ def save_block_list(block_list, path):
     df = pd.DataFrame(block_list, columns=['Worker ID'])
     df['UPDATE BlockStatus'] = "Block"
     df['BlockReason'] = f'Less than {config["acceptance_criteria"]["block_rater_if_acceptance_and_used_rate_below"]}% acceptance rate'
+
+    if wrong_v_code_freq is not None and len(wrong_v_code_freq) > 0:
+        df2 = pd.DataFrame(wrong_v_code_freq, columns=['Worker ID'])
+        df2['UPDATE BlockStatus'] = "Block"
+        df2['BlockReason'] = "Wrong verification code"
+        # concat the two dataframes
+        df = pd.concat([df, df2], ignore_index=True)
     df.to_csv(path, index=False)
+
+
+def check_wrong_vcode_should_block(wrong_vcodes):
+    if wrong_vcodes is None:
+        return []       
+    # count the number of wrong verification code per worker
+    small_df = wrong_vcodes[['WorkerId']].copy()
+    grouped = small_df.groupby(['WorkerId']).size().reset_index(name='counts')
+    # get the workers that have more than 5 wrong verification code
+    grouped = grouped[grouped.counts >= 5]
+    print(f"{len(grouped.index)} workers have more than 5 wrong verification code")
+    cheater_workers_list = list(grouped['WorkerId'])
+    return cheater_workers_list
+
 
 
 def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons, num_rej_perform):
@@ -909,11 +952,14 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
         # outlier removal per file
         if (not (is_worker_specific) and 'outlier_removal' in config['accept_and_use']) \
                 and (config['accept_and_use']['outlier_removal'].lower() in ['true', '1', 't', 'y', 'yes']):
+
             v_len = len(votes)
             if v_len >5:
-                votes = outliers_z_score(votes)
+                #votes = outliers_z_score(votes)
+                votes = outliers_iqr(votes)
             v_len_after = len(votes)
             if v_len != v_len_after:
+                #print(f'{v_len - v_len_after} removed ({key})')
                 outlier_removed_count += v_len - v_len_after
 
         # extra step:: add votes to the per-condition dict
@@ -977,7 +1023,8 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             if (not(is_worker_specific) and 'outlier_removal' in config['accept_and_use']) \
                     and (config['accept_and_use']['outlier_removal'].lower() in ['true', '1', 't', 'y', 'yes']):
                 v_len = len(votes)
-                votes = outliers_z_score(votes)
+                #votes = outliers_z_score(votes)
+                votes = outliers_iqr(votes)                
                 v_len_after = len(votes)
                 if v_len != v_len_after:
                     outlier_removed_count += v_len-v_len_after
