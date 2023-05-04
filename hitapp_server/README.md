@@ -87,4 +87,17 @@ Then change the passwords inside your `.env` file:
 1. Follow the rest of procedure given in the "Get started" section 
 
 ## Offline Use
-If you want to use it with a local machine that does not have internet access, you can use the offline configuration. Follow the instructions in `configure/README.md` to configure the repo for offline use. 
+If you want to use it with a local machine that does not have internet access, you can use the offline configuration. Follow the instructions in `configure/README.md` to configure the repo for offline use.
+
+
+## Troubleshooting
+
+If you get the following error during the setup:
+
+> Role "docker" does not exist.
+
+Go to your `dbx` docker image's terminal, and run the following command:
+
+```bash
+bash /docker-entrypoint-initdb.d/init-db.sh
+```
