@@ -113,6 +113,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config['min_screen_refresh_rate'] = viewing_condition_cfg['min_screen_refresh_rate'] if 'min_screen_refresh_rate' in viewing_condition_cfg else 30
     config['min_device_resolution'] = viewing_condition_cfg['min_device_resolution'] if 'min_device_resolution' in viewing_condition_cfg else '{w: 1280, h:720}'
     config['accepted_device'] = viewing_condition_cfg['accepted_device'] if 'accepted_device' in viewing_condition_cfg else '["PC"]'
+    config['video_player'] = hit_app_html_cfg['video_player']
     if is_ccr:
         config['scale_points'] = int(hit_app_html_cfg['scale']) if 'scale' in hit_app_html_cfg else 7
         if config['scale_points'] not in [4, 7]:

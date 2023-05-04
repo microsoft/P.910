@@ -1678,7 +1678,7 @@ function generate_training_section(){
 	dcr_tab ='<div class="tab-pane fade {2}" id="T{0}-panel" role="tabpanel" aria-labelledby="T{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
 	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following video clip? </p> <div class="row"> <p align="center">'+
-	'<span class="velmnt" id="t{0}" data-src-clip="{1}" data-onfinished="playedVideoTraining" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<span class="velmnt" id="t{0}" data-src-clip="{1}" data-onfinished="playedVideoTraining" data-scale="{{cfg.video_player}}">&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_t{0}" class="trainingFieldset" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getACRScale(config['scale_points'], true)+
@@ -1715,7 +1715,7 @@ function generate_rating_section(){
 	dcr_tab ='<div class="tab-pane fade {2}" id="Q{0}-panel" role="tabpanel" aria-labelledby="Q{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
 	'<p style="margin-top:10px;">{0}. How do you rate the quality of the following video clip?? </p> <div class="row"> <p align="center">'+
-	'<span class="velmnt" id="Q{0}" data-src-clip="{1}" data-onfinished="playedVideoQ" >&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
+	'<span class="velmnt" id="Q{0}" data-src-clip="{1}" data-onfinished="playedVideoQ" data-scale="{{cfg.video_player}}">&nbsp;</span> </p> </div> </div> <div class="col-sm-2"></div> </div>'+
 	'<div class="row">	<div class="col-sm-4"></div>	<div class="col-sm-4">'+
 	'<fieldset id="fieldset_q{0}" title=""><table class="table md scale" cellspacing="0" cellpadding="0"><thead><tr><th >The quality is</th><th class="c" >Score</th></tr></thead><tbody>'+
 	getACRScale(config['scale_points'], false)+
@@ -2401,6 +2401,11 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<p>Bonuses will be assigned with in 7 days.</p>
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
 
+				<h3>Attention: </h3>
+				  <p>This hit includes one or more Control clips (gold clips). Control clips are ones that we know that answer for and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention and their environment hasn't changed.
+					  Wrong answer to control clip(s) will result in rejection of the HIT.</p>
+  
+				  </p>
 
 			</div>
 		</div>
@@ -2793,7 +2798,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 					Observe carefully the entire video clip before making your judgment.</p>
 
 				   <p> <b>Note</b> that the scale will be activated when the corresponding video clip played until the end. </p>
-				   <p> There is no right or wrong answer as long as you watch the clips carefully and give your honest opinion. If you see a message follow the instruction as given in the message.</p>
+				   <p> If you see a message follow the instruction as given in the message.</p>
 
  				<!-- will be generated -->
 				<ul class="nav nav-tabs" role="tablist" id="trainingTabs">
@@ -2840,7 +2845,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 					Observe carefully the entire video clip before making your judgment.</p>
 
 				   <p> <b>Note</b> that the scale will be activated when the corresponding video clip played until the end. </p>
-				   <p> There is no right or wrong answer as long as you watch the clips carefully and give your honest opinion. If you see a message follow the instruction as given in the message.</p>
+				   <p> If you see a message follow the instruction as given in the message.</p>
 
 
  				<!-- will be generated -->

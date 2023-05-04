@@ -17,7 +17,7 @@ import re
 import random
 import botocore
 import statistics
-import datetime
+from datetime import datetime
 
 def send_message(client, cfg):
     """
@@ -149,6 +149,7 @@ def assign_bonus(client, bonus_list_path):
     if len(proceed) == 0 or proceed.lower() == 'n':
         exit()
 
+    
     failed = 0
     failed_list = []
     for row in entries:
@@ -169,10 +170,11 @@ def assign_bonus(client, bonus_list_path):
             failed += 1
             failed_list.append(row['assignmentId'])
 
+    
     print(f'Bonuses sent, failed {failed}, succeeded {num_bonus_workers - failed}')        
     
     date = datetime.now()    
-    with open('readme.txt', 'w') as f:
+    with open(bonus_list_path.replace('.csv','_sent_report.txt'), 'w') as f:
         report_template = f'Bonuses send on {date} for {num_bonus_workers - failed} workers, total: {total_bonus}, max: {max_bonus}, mean: {mean_bonus}\n {failed} failed to send bonuses: {failed_list}'
         f.write(report_template)
 
