@@ -86,6 +86,10 @@ Then change the passwords inside your `.env` file:
 
 1. Follow the rest of procedure given in the "Get started" section 
 
+## TLS certificate
+It is recommended to use a TLS certificate to make the connection secure, as only Basic Authentication is used to access to admin part.
+To do so, prepare your TLS certificate (self-signed or signed by a public authority) and use `docker-compose-sec.yml` and `front-end/nginx.conf.sec` instead of `docker-compose.yml` and `front-end/nginx.conf`, respectively.
+
 ## Offline Use
 If you want to use it with a local machine that does not have internet access, you can use the offline configuration. Follow the instructions in `configure/README.md` to configure the repo for offline use.
 
