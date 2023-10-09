@@ -102,18 +102,18 @@ def check_if_session_accepted(data):
     if data['correct_matrix'] is not None and data['correct_matrix'] < \
             int(config['acceptance_criteria']['correct_matrix_bigger_equal']):
         accept = False
-        msg += "Brightness test failed."
+        msg += "Your HIT was rejected because you rated one or more control clip incorrectly. Control clips are ones that we know that answer for and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention during the entire HIT and their environment hasn't changed"
         failures.append('brightness_test')
 
     if data['correct_tps'] < int(config['acceptance_criteria']['correct_tps_bigger_equal']):
         accept = False
-        msg += "Wrong answer to the Trapping clip(s);"
+        msg += "Your HIT was rejected because you rated one or more control clip incorrectly. Control clips are ones that we know that answer for and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention during the entire HIT and their environment hasn't changed"
         failures.append('trapping_question')
 
     if 'gold_standard_bigger_equal' in config['acceptance_criteria'] and \
             data['correct_gold_question'] < int(config['acceptance_criteria']['gold_standard_bigger_equal']):
         accept = False
-        msg += "Wrong answer to the Gold clip(s);"
+        msg += "Your HIT was rejected because you rated one or more control clip incorrectly. Control clips are ones that we know that answer for and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention during the entire HIT and their environment hasn't changed"
         failures.append('gold_question')
 
     """
@@ -566,8 +566,8 @@ def save_approve_rejected_ones_for_gui(data, path, wrong_vcodes):
         wrong_vcodes_assignments = wrong_vcodes[['WorkerId','AssignmentId', 'HITId']].copy()
         wrong_vcodes_assignments["Approve"] = ""
         wrong_vcodes_assignments["Reject"] = "wrong verification code"
-        wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)
-        small_df = small_df.append(wrong_vcodes_assignments, ignore_index=True)
+        wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)        
+        small_df = pd.concat([small_df, wrong_vcodes_assignments], ignore_index=True)
     small_df.to_csv(path, index=False)
 
 
@@ -656,7 +656,7 @@ def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons, num_rej_p
         wrong_vcodes_assignments = wrong_vcodes[['AssignmentId']].copy()
         wrong_vcodes_assignments["feedback"] = "Wrong verificatioon code"
         wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)
-        small_df = small_df.append(wrong_vcodes_assignments, ignore_index=True)
+        small_df = pd.concat([small_df, wrong_vcodes_assignments], ignore_index=True)
     small_df.to_csv(path, index=False)
 
 
