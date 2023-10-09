@@ -1160,7 +1160,7 @@ function check_resolution(){
 	let w = Math.floor(window.screen.width * window.devicePixelRatio);
 	let h = Math.floor(window.screen.height * window.devicePixelRatio);
 	console.log("screen is {0}x{1}".f(w,h));
-	$("#device_resolution").val("{0}x{1}".f(w,h));
+	$("#device_resolution").val("{0}x{1}({2})".f(w,h,window.devicePixelRatio));
 	if (w>= config.min_resolution.w && h>= config.min_resolution.h){
 		return true;
 	}
@@ -1805,6 +1805,9 @@ function generate_training_section_ccr(){
 	var urlA,urlB,signA, signB, order;
 	for (i = 0; i < urls.length; i++) {
 		let r = Math.random();
+		if ('knownQuestionInTrainingUrl' in config && urls[i].processed == config['knownQuestionInTrainingUrl']){
+			r = 0.8;
+		}
 		if (r>0.5){
 			urlA = urls[i].ref;
 			urlB = urls[i].processed;
