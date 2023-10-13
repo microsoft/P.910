@@ -2163,6 +2163,11 @@ function playVideo_continue(id, video, is_dcr){
         parent.classList.remove("bg2");
         $("#{0} .vcontainer".f(id)).show();
     }
+	// check aspect ratio of video
+	let w = video.videoWidth;
+    let h = video.videoHeight;
+	let ratio = w/h;
+
     let oldH=video.getAttribute("height");
     let oldW=video.getAttribute("width");
     let fullW=screen.width;
@@ -2179,8 +2184,15 @@ function playVideo_continue(id, video, is_dcr){
 	if (scale_type=="max-height"){
 		console.log('max-height');
 		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
-		video.setAttribute("height",fullH);
-		video.setAttribute("width",fullW);
+		if (ratio > 1) {
+			//video.setAttribute("height",1);
+			video.setAttribute("width",fullW/ window.devicePixelRatio);
+			video.setAttribute("height",fullW / window.devicePixelRatio / ratio);
+		}else{
+			// it is a portrait video
+			video.setAttribute("width", fullH / window.devicePixelRatio * ratio);
+			video.setAttribute("height",fullH / window.devicePixelRatio );						
+		}
 		console.log('video-attributes w:'+fullW +', h:'+fullH);
 	}else{
 		console.log('NOT max-height');

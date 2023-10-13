@@ -241,22 +241,25 @@ def check_gold_question(row, method):
     :return:
     """
     correct_gq = 0
+    details = {}
     try:
         gq_url = row[config['gold_question']['url_found_in']]
         # consider abs to support gold questions in ccr test        
         gq_correct_ans = int(float(row[config['gold_question']['ans_found_in']]))
         gq_var = int(float(config['gold_question']['variance']))
-
+        details ={'gq_url': gq_url, 'gq_correct_ans':gq_correct_ans }
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
                 # found a gold standard question
+                details['given_ans'] = int(row[f'answer.{q_name}'])
                 if int(row[f'answer.{q_name}']) in range(gq_correct_ans-gq_var, gq_correct_ans+gq_var+1):
                     correct_gq = 1
-                    return correct_gq
+                    return correct_gq, details
+            
     except Exception as e:
         print('Gold Question error: '+ e)
-        return None
-    return correct_gq
+        return None, None
+    return correct_gq, details
 
 
 def check_matrix(row):
@@ -327,7 +330,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     use_sessions = []
     not_using_further_reasons = []
     not_accepted_reasons = []
-
+    gold_question_details = []
    #"""
     failed_workers = []
    #in_df.sort_values(by=['answer.visual_acuity_result'], ascending=False, inplace=True)
@@ -355,7 +358,10 @@ def data_cleaning(filename, method, wrong_vcodes):
         # step 4. check tps
         d['correct_tps'] = check_tps(row, method)
         # step5. check gold_standard,
-        d['correct_gold_question']  = check_gold_question(row, method)
+        d['correct_gold_question'], details  = check_gold_question(row, method)
+        details['worker_id'] = d['worker_id']
+        details['is_correct'] = d['correct_gold_question']
+        gold_question_details.append(details)
 
         # step6. check variance in a session rating
         d['variance_in_ratings'] = check_variance(row, method)
@@ -409,7 +415,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     accept_reject_gui_file = os.path.splitext(filename)[0] + '_accept_reject_gui.csv'
     extending_hits_file = os.path.splitext(filename)[0] + '_extending.csv'
     block_list_file = os.path.splitext(filename)[0] + '_block_list.csv'
-
+    gold_q_file = os.path.splitext(filename)[0] + '_gold.csv'
     print(f'{len(worker_list)} submissions are processed.')
 
     # reject hits when the user performed more than the limit
@@ -434,6 +440,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     save_rejected_ones(worker_list, rejected_file, wrong_vcodes, not_accepted_reasons, num_rej_perform)
     save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
     save_hits_to_be_extended(worker_list, extending_hits_file)
+    # saving the answers from gold questions
+    gold_df = pd.DataFrame(gold_question_details)
+    gold_df.to_csv(gold_q_file, index=False)
 
     if len(block_list) > 0:
         save_block_list(block_list, block_list_file, wrong_v_code_freq)
@@ -1142,6 +1151,7 @@ def number_of_unique_workers(answers, used):
     df_used = pd.DataFrame(used)
     df_used.drop_duplicates('workerid', keep='first', inplace=True)
     return len(df), len(df_used)
+
 
 def recover_submission_withoiut_matching_vcode(hit_ans, amt_ans, not_in_hitapp):
     # iterate over daraftame
