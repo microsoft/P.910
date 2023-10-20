@@ -1902,7 +1902,9 @@ function playVideo(video){
         scheduled_video_play = setTimeout(function(){ playVideo_continue(id, video, true); }, dcr_clip_name_duration);
         split_screen_timer = setTimeout(function(){ screen_splitter_timer(id); }, 1000);
     }else{
-        playVideo_continue(id, video, false);
+        parent.classList.add("bg");
+        $("#{0} .vcontainer".f(id)).hide();
+        scheduled_video_play = setTimeout(function(){ playVideo_continue(id, video, false); }, 200);
     }
 }
 
@@ -1939,7 +1941,11 @@ function playVideo_continue(id, video, is_dcr){
         parent.classList.remove("bg1");
         parent.classList.remove("bg2");
         $("#{0} .vcontainer".f(id)).show();
-    }
+    }else{
+		let parent = document.getElementById(id);
+    	parent.classList.remove("bg");
+		$("#{0} .vcontainer".f(id)).show();
+	}
     let oldH=video.getAttribute("height");
     let oldW=video.getAttribute("width");
     let fullW=screen.width;
@@ -1954,11 +1960,31 @@ function playVideo_continue(id, video, is_dcr){
 		scale_type = "no-scale";
 	}
 	if (scale_type=="max-height"){
+		console.log('max-height');
 		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
-		video.setAttribute("height",fullH);
-		video.setAttribute("width",fullW);
+		let fullscreen_width = screen.width * window.devicePixelRatio;
+		let fullscreen_height = screen.height * window.devicePixelRatio;
+		let fullscreen_element = document.fullscreenElement;
+		if (fullscreen_element){
+			fullscreen_width = fullscreen_element.clientWidth;
+			fullscreen_height = fullscreen_element.clientHeight;
+		}
+		if (fullscreen_width / ratio >= fullscreen_height){
+			// no
+			new_h = fullscreen_height;
+			new_w = new_h * ratio;
+			
+		}else {
+			//yes
+			new_w = fullscreen_width;
+			new_h = fullscreen_width / ratio;	
+		}
+		video.setAttribute("width",new_w);
+		video.setAttribute("height",new_h);
+		console.log('video-attributes w:'+video.getAttribute("width") +', h:'+video.getAttribute("height"));
+	}else{
+		console.log('NOT max-height');
 	}
-
     video.play();
     if (video.id.indexOf('video1_')==0){
 	    video_play_start_time.set(id, Date.now());

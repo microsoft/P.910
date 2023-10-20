@@ -1742,9 +1742,26 @@ function playVideo_continue(id, video, is_dcr){
 		scale_type = "no-scale";
 	}
 	if (scale_type=="max-height"){
+		console.log('max-height');
 		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
-		video.setAttribute("height",fullH);
-		video.setAttribute("width",fullW);
+		let fullscreen_element = document.getElementById(id);
+		let fullscreen_width = fullscreen_element.clientWidth;
+		let fullscreen_height = fullscreen_element.clientHeight;
+		if (fullscreen_width / ratio >= fullscreen_height){
+			// no
+			new_h = fullscreen_height;
+			new_w = new_h * ratio;
+			
+		}else {
+			//yes
+			new_w = fullscreen_width;
+			new_h = fullscreen_width / ratio;	
+		}
+		video.setAttribute("width",new_w);
+		video.setAttribute("height",new_h);
+		console.log('video-attributes w:'+video.getAttribute("width") +', h:'+video.getAttribute("height"));
+	}else{
+		console.log('NOT max-height');
 	}
 
     video.play();
