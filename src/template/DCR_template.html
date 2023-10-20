@@ -2124,7 +2124,9 @@ function playVideo(video){
         scheduled_video_play = setTimeout(function(){ playVideo_continue(id, video, true); }, dcr_clip_name_duration);
         split_screen_timer = setTimeout(function(){ screen_splitter_timer(id); }, 1000);
     }else{
-        playVideo_continue(id, video, false);
+        parent.classList.add("bg");
+        $("#{0} .vcontainer".f(id)).hide();
+        scheduled_video_play = setTimeout(function(){ playVideo_continue(id, video, false); }, 200);
     }
 }
 
@@ -2162,7 +2164,11 @@ function playVideo_continue(id, video, is_dcr){
         parent.classList.remove("bg1");
         parent.classList.remove("bg2");
         $("#{0} .vcontainer".f(id)).show();
-    }
+    }else{
+		let parent = document.getElementById(id);
+    	parent.classList.remove("bg");
+		$("#{0} .vcontainer".f(id)).show();
+	}
 	// check aspect ratio of video
 	let w = video.videoWidth;
     let h = video.videoHeight;
@@ -2170,8 +2176,7 @@ function playVideo_continue(id, video, is_dcr){
 
     let oldH=video.getAttribute("height");
     let oldW=video.getAttribute("width");
-    let fullW=screen.width;
-    let fullH=screen.height;
+
     //change height and width
     video.setAttribute("oldwidth",oldW);
     video.setAttribute("oldheight",oldH);
@@ -2184,16 +2189,27 @@ function playVideo_continue(id, video, is_dcr){
 	if (scale_type=="max-height"){
 		console.log('max-height');
 		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
-		if (ratio > 1) {
-			//video.setAttribute("height",1);
-			video.setAttribute("width",fullW/ window.devicePixelRatio);
-			video.setAttribute("height",fullW / window.devicePixelRatio / ratio);
-		}else{
-			// it is a portrait video
-			video.setAttribute("width", fullH / window.devicePixelRatio * ratio);
-			video.setAttribute("height",fullH / window.devicePixelRatio );						
+		let fullscreen_width = screen.width * window.devicePixelRatio;
+		let fullscreen_height = screen.height * window.devicePixelRatio;
+		let fullscreen_element = document.fullscreenElement;
+		if (fullscreen_element){
+			fullscreen_width = fullscreen_element.clientWidth;
+			fullscreen_height = fullscreen_element.clientHeight;
 		}
-		console.log('video-attributes w:'+fullW +', h:'+fullH);
+		// If scale the video to fill the width of screen, does it exceed the height of screen?
+		if (fullscreen_width / ratio >= fullscreen_height){
+			// yes
+			new_h = fullscreen_height;
+			new_w = new_h * ratio;
+			
+		}else {
+			//no
+			new_w = fullscreen_width;
+			new_h = fullscreen_width / ratio;	
+		}
+		video.setAttribute("width",new_w);
+		video.setAttribute("height",new_h);
+		console.log('video-attributes w:'+video.getAttribute("width") +', h:'+video.getAttribute("height"));
 	}else{
 		console.log('NOT max-height');
 	}
@@ -2992,7 +3008,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id1" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_block_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id1" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_block_2.mp4" data-scale="max-height" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -3001,7 +3017,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id2" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_dis_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id2" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_dis_2.mp4" data-scale="max-height" data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
@@ -3009,7 +3025,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
-						<span class="velmnt" id="ins_id3" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_blur_2.mp4" data-onfinished="playedVideoIns"></span>
+						<span class="velmnt" id="ins_id3" data-src-clip="https://p910.azureedge.net/video/instruction_videos/videoSRC14_blur_2.mp4" data-scale="max-height"  data-onfinished="playedVideoIns"></span>
 				</p>
 			</div>
 
