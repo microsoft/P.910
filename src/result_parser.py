@@ -24,6 +24,7 @@ import itertools
 import configparser as CP
 import collections
 import warnings
+import logging
 
 max_found_per_file = -1
 
@@ -257,7 +258,7 @@ def check_gold_question(row, method):
                     return correct_gq, details
             
     except Exception as e:
-        print('Gold Question error: '+ e)
+        logger.info('Gold Question error: '+ e)
         return None, None
     return correct_gq, details
 
@@ -291,11 +292,11 @@ def check_matrix(row):
     if int(c1_correct) == int(given_c1) and int(t1_correct) == int(given_t1):
         n_correct += 1
     #else:
-    #    print(f'wrong matrix 1: c1 {c1_correct},{given_c1} | t1 {t1_correct},{given_t1}')
+    #    logger.info(f'wrong matrix 1: c1 {c1_correct},{given_c1} | t1 {t1_correct},{given_t1}')
     if int(c2_correct) == int(given_c2) and int(t2_correct) == int(given_t2):
         n_correct += 1
     #else:
-    #    print(f'wrong matrix 2: c2 {c2_correct},{given_c2} | t2 {t2_correct},{given_t2}')
+    #    logger.info(f'wrong matrix 2: c2 {c2_correct},{given_c2} | t2 {t2_correct},{given_t2}')
     return n_correct
 
 
@@ -319,7 +320,7 @@ def data_cleaning(filename, method, wrong_vcodes):
    :param method: acr, dcr, or ccr
    :return:
    """
-   print('Start by Data Cleaning...')
+   logger.info('Start by Data Cleaning...')
    with open(filename, encoding="utf8") as csvfile:
 
     reader = csv.DictReader(csvfile)
@@ -416,7 +417,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     extending_hits_file = os.path.splitext(filename)[0] + '_extending.csv'
     block_list_file = os.path.splitext(filename)[0] + '_block_list.csv'
     gold_q_file = os.path.splitext(filename)[0] + '_gold.csv'
-    print(f'{len(worker_list)} submissions are processed.')
+    logger.info(f'{len(worker_list)} submissions are processed.')
 
     # reject hits when the user performed more than the limit
     worker_list = evaluate_maximum_hits(worker_list)
@@ -449,8 +450,8 @@ def data_cleaning(filename, method, wrong_vcodes):
     not_used_reasons_list = list(collections.Counter(not_using_further_reasons).items())
     not_used_reasons_list.append(('performance', num_not_used_sub_perform))
 
-    print(f"   {len(accept_and_use_sessions)} answers are good to be used further {not_used_reasons_list}")
-    print(f"   Data cleaning report is saved in: {report_file}")
+    logger.info(f"   {len(accept_and_use_sessions)} answers are good to be used further {not_used_reasons_list}")
+    logger.info(f"   Data cleaning report is saved in: {report_file}")
     tmp_path = os.path.splitext(filename)[0] + '_not_used_reasons.csv'
     with open(tmp_path, 'w') as fp:
         fp.write('\n'.join('%s, %s' % x for x in not_used_reasons_list))
@@ -541,7 +542,7 @@ def evaluate_maximum_hits(data):
     grouped = small_df.groupby(['worker_id']).size().reset_index(name='counts')
     grouped = grouped[grouped.counts > int(config['acceptance_criteria']['allowedMaxHITsInProject'])]
     # grouped.to_csv('out.csv')
-    print(f"{len(grouped.index)} workers answered more than the allowedMaxHITsInProject"
+    logger.info(f"{len(grouped.index)} workers answered more than the allowedMaxHITsInProject"
           f"(>{config['acceptance_criteria']['allowedMaxHITsInProject']})")
     cheater_workers_list = list(grouped['worker_id'])
 
@@ -592,9 +593,9 @@ def save_approved_ones(data, path):
     c_accepted = df.shape[0]
     df = df[df.status == 'Submitted']
     if df.shape[0] == c_accepted:
-        print(f'    {c_accepted} answers are accepted')
+        logger.info(f'    {c_accepted} answers are accepted')
     else:
-        print(f'    overall {c_accepted} answers are accepted, from them {df.shape[0]} were in submitted status')
+        logger.info(f'    overall {c_accepted} answers are accepted, from them {df.shape[0]} were in submitted status')
     small_df = df[['assignment']].copy()
     small_df.rename(columns={'assignment': 'assignmentId'}, inplace=True)
     small_df.to_csv(path, index=False)
@@ -628,7 +629,7 @@ def check_wrong_vcode_should_block(wrong_vcodes):
     grouped = small_df.groupby(['WorkerId']).size().reset_index(name='counts')
     # get the workers that have more than 5 wrong verification code
     grouped = grouped[grouped.counts >= 5]
-    print(f"{len(grouped.index)} workers have more than 5 wrong verification code")
+    logger.info(f"{len(grouped.index)} workers have more than 5 wrong verification code")
     cheater_workers_list = list(grouped['WorkerId'])
     return cheater_workers_list
 
@@ -648,16 +649,16 @@ def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons, num_rej_p
         c_rejected += len(wrong_vcodes.index)
     df = df[df.status == 'Submitted']
     if df.shape[0] == c_rejected:
-        print(f'    {c_rejected} answers are rejected')
+        logger.info(f'    {c_rejected} answers are rejected')
     else:
-        print(f'    overall {c_rejected} answers are rejected, from them {df.shape[0]} were in submitted status')
+        logger.info(f'    overall {c_rejected} answers are rejected, from them {df.shape[0]} were in submitted status')
 
     not_accepted_reasons_list = list(collections.Counter(not_accepted_reasons).items())
     not_accepted_reasons_list.append(('Wrong Verification Code', len(wrong_vcodes.index)))
     if num_rej_perform != 0:
         not_accepted_reasons_list.append(('Performance', num_rej_perform))
 
-    print(f'         Rejection reasons: {not_accepted_reasons_list}')
+    logger.info(f'         Rejection reasons: {not_accepted_reasons_list}')
 
     small_df = df[['assignment', 'Reject']].copy()
     small_df.rename(columns={'assignment': 'assignmentId', 'Reject': 'feedback'}, inplace=True)
@@ -718,7 +719,7 @@ def calc_quantity_bonuses(answer_list, conf, path):
     :return:
     """
     if path is not None:
-        print('Calculate the quantity bonuses...')
+        logger.info('Calculate the quantity bonuses...')
     df = pd.DataFrame(answer_list)
 
     old_answers = df[df['status'] != "Submitted"]
@@ -753,7 +754,7 @@ def calc_quantity_bonuses(answer_list, conf, path):
 
     if path is not None:
         merged.to_csv(path, index=False)
-        print(f'   Quantity bonuses report is saved in: {path}')
+        logger.info(f'   Quantity bonuses report is saved in: {path}')
     return merged
 
 
@@ -809,7 +810,7 @@ def calc_quality_bonuses(quantity_bonus_result, answer_list, overall_mos, conf, 
     :return:
     """
 
-    print('Calculate the quality bonuses...')
+    logger.info('Calculate the quality bonuses...')
     max_workers = int(n_workers * int(conf['bonus']['quality_top_percentage']) / 100)
     eligible_df, _ = calc_inter_rater_reliability(answer_list, overall_mos, test_method, use_condition_level)
 
@@ -826,7 +827,7 @@ def calc_quality_bonuses(quantity_bonus_result, answer_list, overall_mos, conf, 
     else:
         smaller_df = pd.DataFrame(columns=['workerId',	'r', 'accept', 'assignmentId', 	'bonusAmount', 'reason'])
     smaller_df.head(max_workers).to_csv(path, index=False)
-    print(f'   Quality bonuses report is saved in: {path}')
+    logger.info(f'   Quality bonuses report is saved in: {path}')
 
 
 def write_dict_as_csv(dic_to_write, file_name, *args, **kwargs):
@@ -948,7 +949,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 tmp.update(cond)
                 data_per_worker.append(tmp)
             except Exception as err:
-                print(err)
+                logger.info(err)
                 pass
     # convert the format: one row per file
     group_per_file = []
@@ -968,7 +969,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 votes = outliers_iqr(votes)
             v_len_after = len(votes)
             if v_len != v_len_after:
-                #print(f'{v_len - v_len_after} removed ({key})')
+                #logger.info(f'{v_len - v_len_after} removed ({key})')
                 outlier_removed_count += v_len - v_len_after
 
         # extra step:: add votes to the per-condition dict
@@ -1019,7 +1020,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             max_found_per_file = tmp['n']
         group_per_file.append(tmp)
     if outlier_removed_count != 0:
-        print(f'  Overall {outlier_removed_count} outliers are removed in per file aggregation.')
+        logger.info(f'  Overall {outlier_removed_count} outliers are removed in per file aggregation.')
     # convert the format: one row per condition
     group_per_condition = []
     outlier_removed_count = 0
@@ -1053,7 +1054,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
 
             group_per_condition.append(tmp)
         if outlier_removed_count != 0:
-            print(f'  Overall {outlier_removed_count} outliers are removed in per condition aggregation.')
+            logger.info(f'  Overall {outlier_removed_count} outliers are removed in per condition aggregation.')
     return group_per_file, group_per_condition, data_per_worker
 
 
@@ -1124,8 +1125,8 @@ def calc_stats(input_file):
             'Work duration (median) MM:SS': [overall_time, full_time, only_r_time ],
             'payment per hour ($)': [overall_pay, full_pay, only_r_pay]}
     stat = pd.DataFrame.from_dict(data)
-    print('Payment statistics:')
-    print(stat.to_string(index=False))
+    logger.info('Payment statistics:')
+    logger.info(stat.to_string(index=False))
 
 
 def calc_correlation(cs, lab):
@@ -1160,7 +1161,7 @@ def recover_submission_withoiut_matching_vcode(hit_ans, amt_ans, not_in_hitapp):
         amt_row = amt_ans[amt_ans['AssignmentId'] == row['Answer.hitapp_assignmentId']]
         if len(amt_row) == 1:
             # add the row to the hitapp
-            print('Find a potential match for a wrong vcode submission (internal assignment id: ' + row['Answer.hitapp_assignmentId'] + ')')
+            logger.info('Find a potential match for a wrong vcode submission (internal assignment id: ' + row['Answer.hitapp_assignmentId'] + ')')
 
 def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     """
@@ -1244,7 +1245,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
     full_data, accepted_sessions = data_cleaning(answer_path, test_method, wrong_v_code)
 
     n_workers, n_workers_used = number_of_unique_workers(full_data, accepted_sessions)
-    print(f"{n_workers} workers participated in this batch, answers of {n_workers_used} are used.")
+    logger.info(f"{n_workers} workers participated in this batch, answers of {n_workers_used} are used.")
     # disabled becuase of the HITAPP_server
     calc_stats(answer_path)
     # votes_per_file, votes_per_condition = transform(accepted_sessions)
@@ -1252,7 +1253,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
         condition_set = []
         for suffix in suffixes:
             question_name_suffix = suffix
-            print("Transforming data (the ones with 'accepted_and_use' ==1 --> group per clip")
+            logger.info("Transforming data (the ones with 'accepted_and_use' ==1 --> group per clip")
             use_condition_level = config.has_option('general', 'condition_pattern')
 
             votes_per_file, vote_per_condition, data_per_worker = transform(test_method, accepted_sessions,
@@ -1268,7 +1269,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
                 condition_keys.append('Unknown')
             headers = create_headers_for_per_file_report(test_method, condition_keys)
             write_dict_as_csv(votes_per_file, votes_per_file_path, headers=headers)
-            print(f'   Votes per files are saved in: {votes_per_file_path}')
+            logger.info(f'   Votes per files are saved in: {votes_per_file_path}')
 
             if test_method in ['acr-hr']:
                 add_dmos_acrhr(votes_per_file_path, config)
@@ -1276,7 +1277,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
             if use_condition_level:
                 vote_per_condition = sorted(vote_per_condition, key=lambda i: i['condition_name'])
                 write_dict_as_csv(vote_per_condition, votes_per_cond_path)
-                print(f'   Votes per files are saved in: {votes_per_cond_path}')
+                logger.info(f'   Votes per files are saved in: {votes_per_cond_path}')
                 condition_set.append(pd.DataFrame(vote_per_condition))
             if create_per_worker:
                 write_dict_as_csv(data_per_worker, os.path.splitext(answer_path)[0] + f'_votes_per_worker{question_name_suffix}.csv')
@@ -1308,10 +1309,12 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
         else:
             text = f"Average Inter-rater reliability of study: {avg_irr:.3f}"
 
-        print(text)
+        logger.info(text)
 
 
 if __name__ == '__main__':
+    
+
     parser = argparse.ArgumentParser(description='Utility script to evaluate answers to the pcrowd batch')
     # Configuration: read it from mturk.cfg
     parser.add_argument("--cfg", required=True,
@@ -1362,5 +1365,14 @@ if __name__ == '__main__':
 
     np.seterr(divide='ignore', invalid='ignore')
     question_names = [f"q{i}" for i in range(1, int(config['general']['number_of_questions_in_rating']) + 1)]
+    # setup the logging system
+    logger = logging.getLogger("my_logger")
+    logger.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    file_log_path = os.path.splitext(answer_path)[0] + f'_logs.txt'
+    file_handler = logging.FileHandler(file_log_path)
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    logger.info(f"Start analyzing the results of {test_method} test")
     # start
     analyze_results(config, test_method,  answer_path, amt_ans_path,  list_of_req, args.quality_bonus)
