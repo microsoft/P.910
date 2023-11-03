@@ -182,18 +182,21 @@ def add_clips_random(clips, n_clips_per_session, output_df):
     :param output_df:
     :return:
     """
-    n_clips = clips.count()
+    n_clips = clips['pvs'].count()
     n_sessions = math.ceil(n_clips / n_clips_per_session)
     needed_clips = n_sessions * n_clips_per_session
 
-    all_clips = np.tile(clips.to_numpy(), (needed_clips // n_clips) + 1)[:needed_clips]
-    #   check the method: clips_selection_strategy
-    random.shuffle(all_clips)
+    clips = pd.concat([clips] * (needed_clips // n_clips) + [clips.iloc[:needed_clips % n_clips]], ignore_index=True)
 
-    clips_sessions = np.reshape(all_clips, (n_sessions, n_clips_per_session))
+    #   check the method: clips_selection_strategy
+    clips = clips.sample(frac=1)
+
+    clips_sessions = np.reshape(clips['pvs'], (n_sessions, n_clips_per_session))
+    vpp_sessions = np.reshape(clips['vpp'], (n_sessions, n_clips_per_session))
 
     for q in range(n_clips_per_session):
         output_df[f'Q{q}'] = clips_sessions[:, q]
+        output_df[f'Q{q}_vpp'] = vpp_sessions[:, q]
 
 
 # checked
@@ -262,14 +265,21 @@ def create_input_for_acr(cfg, df, output_path):
     :param output_path:
     :return:
     """
-    clips = df['pvs'].dropna()
-    n_clips = clips.count()
+    packing_strategy = cfg.get("clip_packing_strategy", "random").strip().lower()
+    df = df.dropna(subset=['pvs'])
+    if cfg['video_player'] == 'None':
+        df['vpp'] = 100
+    elif cfg['video_player'] == 'scale_from_csv' and packing_strategy == "random":
+        clips = df[['pvs', 'vpp']]
+    else:
+        raise NotImplementedError()
+    clips = df[['pvs', 'vpp']]
+    n_clips = len(clips)
     n_clips_per_session = int(cfg['number_of_clips_per_session'])
     output_df = pd.DataFrame()
-    packing_strategy = cfg.get("clip_packing_strategy", "random").strip().lower()
 
     if packing_strategy == "balanced_block":
-        add_clips_balanced_block(clips, cfg["condition_pattern"], cfg.get("block_keys", cfg["condition_keys"]),
+        add_clips_balanced_block(clips['pvs'], cfg["condition_pattern"], cfg.get("block_keys", cfg["condition_keys"]),
                                  n_clips_per_session, output_df)
     elif packing_strategy == "random":
         add_clips_random(clips, n_clips_per_session, output_df)
@@ -303,22 +313,26 @@ def create_input_for_acr(cfg, df, output_path):
             print("more than one TP is not supported for now - continue with 1")
         # n_trappings = int(cfg['general']['number_of_trapping_per_session']) * n_sessions
         n_trappings = n_sessions
-        tmp = df[['trapping_pvs', 'trapping_ans']].copy()
+        tmp = df[['trapping_pvs', 'trapping_ans', 'trapping_vpp']].copy()
         tmp.dropna(inplace=True)
         tmp = tmp.sample(n=n_trappings, replace=True)
         trap_source = tmp['trapping_pvs'].dropna()
         trap_ans_source = tmp['trapping_ans'].dropna()
+        trap_vpp = tmp['trapping_vpp'].dropna()
 
         full_trappings = np.tile(trap_source.to_numpy(), (n_trappings // trap_source.count()) + 1)[:n_trappings]
         full_trappings_answer = np.tile(trap_ans_source.to_numpy(), (n_trappings // trap_ans_source.count()) + 1)[
                                 :n_trappings]
+        full_trappings_vpp = np.tile(trap_vpp.to_numpy(), (n_trappings // trap_vpp.count()) + 1)[
+                                :n_trappings]
 
-        full_tp = list(zip(full_trappings, full_trappings_answer))
+        full_tp = list(zip(full_trappings, full_trappings_answer, full_trappings_vpp))
         random.shuffle(full_tp)
 
-        full_trappings, full_trappings_answer = zip(*full_tp)
+        full_trappings, full_trappings_answer, full_trappings_vpp = zip(*full_tp)
         output_df['TP_CLIP'] = full_trappings
         output_df['TP_ANS'] = full_trappings_answer
+        output_df['TP_VPP'] = full_trappings_vpp
 
     # gold_clips
     if int(cfg['number_of_gold_clips_per_session']) > 0:
@@ -327,17 +341,21 @@ def create_input_for_acr(cfg, df, output_path):
         n_gold_clips = n_sessions
         gold_clip_source = df['gold_clips_pvs'].dropna()
         gold_clip_ans_source = df['gold_clips_ans'].dropna()
+        gold_clip_vpp = df['gold_clips_vpp'].dropna()
 
         full_gold_clips = np.tile(gold_clip_source.to_numpy(),
                                   (n_gold_clips // gold_clip_source.count()) + 1)[:n_gold_clips]
         full_gold_clips_answer = np.tile(gold_clip_ans_source.to_numpy(), (n_gold_clips // gold_clip_ans_source.count())
                                          + 1)[:n_gold_clips]
-        full_gc = list(zip(full_gold_clips, full_gold_clips_answer))
+        full_gold_clips_vpp = np.tile(gold_clip_vpp.to_numpy(), (n_gold_clips // gold_clip_vpp.count())
+                                         + 1)[:n_gold_clips]                                         
+        full_gc = list(zip(full_gold_clips, full_gold_clips_answer, full_gold_clips_vpp))
         random.shuffle(full_gc)
 
-        full_gold_clips, full_gold_clips_answer = zip(*full_gc)
+        full_gold_clips, full_gold_clips_answer, full_gold_clips_vpp = zip(*full_gc)
         output_df['GOLD_CLIP'] = full_gold_clips
         output_df['GOLD_ANS'] = full_gold_clips_answer
+        output_df['GOLD_VPP'] = full_gold_clips_vpp
 
     output_df.to_csv(output_path, index=False)
     return len(output_df)
