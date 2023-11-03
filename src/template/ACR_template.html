@@ -1959,31 +1959,62 @@ function playVideo_continue(id, video, is_dcr){
 	}else{
 		scale_type = "no-scale";
 	}
-	if (scale_type=="max-height"){
-		console.log('max-height');
+	if (scale_type=="max-height" || scale_type!="no_scale"){
+		console.log('max-height or percent:'+scale_type);
 		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
 		let fullscreen_width = screen.width * window.devicePixelRatio;
 		let fullscreen_height = screen.height * window.devicePixelRatio;
 		let fullscreen_element = document.fullscreenElement;
+
+		// check aspect ratio of video
+		let w = video.videoWidth;
+    	let h = video.videoHeight;
+		let ratio = w/h;
+
 		if (fullscreen_element){
 			fullscreen_width = fullscreen_element.clientWidth;
 			fullscreen_height = fullscreen_element.clientHeight;
 		}
+
+		$("#full_screen_size_px").val(''+fullscreen_width+'x'+fullscreen_height);
+		// If scale the video to fill the width of screen, does it exceed the height of screen?
 		if (fullscreen_width / ratio >= fullscreen_height){
-			// no
+			// yes
 			new_h = fullscreen_height;
 			new_w = new_h * ratio;
 			
 		}else {
-			//yes
+			//no
 			new_w = fullscreen_width;
 			new_h = fullscreen_width / ratio;	
 		}
+		// check if scale_type includes %
+		if (scale_type.indexOf('%')>=0){
+			// catch exception
+			try{
+				p = parseInt(scale_type.replace('%',''));
+			}catch(error){
+				p = 100;
+				console.log('percent:'+scale_type+error);
+			}
+			
+			console.log('percent:'+p);
+			new_w = Math.floor(new_w * p/100);
+			new_h = Math.floor(new_h * p/100);
+		}
+		video_play_back_size = id+':('+new_w+'x'+new_h+')';
+		$("#play_back_size_px").val($("#play_back_size_px").val()+';'+video_play_back_size);
+		console.log(video_play_back_size);
 		video.setAttribute("width",new_w);
 		video.setAttribute("height",new_h);
-		console.log('video-attributes w:'+video.getAttribute("width") +', h:'+video.getAttribute("height"));
+		
 	}else{
-		console.log('NOT max-height');
+		console.log('NOT max-height or %');
+		let fullscreen_element = document.fullscreenElement;
+		if (fullscreen_element){
+			$("#full_screen_size_px").val(''+fullscreen_element.clientWidth+'x'+fullscreen_element.clientHeight);			
+		}
+		$("#play_back_size_px").val(''+video.getAttribute("width")+'x'+video.getAttribute("height"));
 	}
     video.play();
     if (video.id.indexOf('video1_')==0){
@@ -2352,6 +2383,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 <input id="device_estimated_size_w_cc" name="device_estimated_size_w_cc" type="hidden" value="" />
 <input id="device_estimated_size_h_cc" name="device_estimated_size_h_cc" type="hidden" value="" />
+
+<input id="full_screen_size_px" name="full_screen_size_px" type="hidden" value="" />
+<input id="play_back_size_px" name="play_back_size_px" type="hidden" value="" />
 
 <input id="device_os" name="device_os" type="hidden" value="unknown" />
 
