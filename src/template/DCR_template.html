@@ -2679,12 +2679,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<p><b>Rules:</b></p>
 				<ul>
 					<li>You must use a <b class="instruction_device">XX</b>, otherwise your response will be rejected</li>
-					<li>You must perform the task in a good lighting condition without <b>glare on your screen</b>. Typically semi-dark environment is recommended. </li>
-					<li>Do not change the brightness of your screen and your distance to the screen after the Setup section.</li>
+					<li>You must perform the task in good lighting conditions without <b>glare on your screen</b>. Typically a semi-dark environment is recommended. </li>
+					<li>Do not change the brightness of your screen or your distance to the screen after the Setup section.</li>
 				</ul>
 
 				<p><b>Payment:</b></p>
-				<p>The result of this experiment is <b>very important for us and other scientist</b> working in this area. We have methods that analyse the consistency of your answers. We will use these methods to rank the submitted assignments according to quality.</p>
+				<p>The result of this experiment is <b>very important for us and other scientists</b> working in this area. We have methods that analyze the consistency of your answers. We will use these methods to rank the submitted assignments according to quality.</p>
 				<p>For this experiment, we will pay a base reward of <b>${{cfg.hit_base_payment}}/HIT</b> for every accepted HIT. We have made available a set of <b class="max_allowed_hits">0 </b> different HITs. You will receive a bonus of:</p>
 
 				<ul>
@@ -2758,7 +2758,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>5.&nbsp;What device are you using now to do this HIT?</label>
+			  <fieldset class="qualificationFieldset"><label>5.&nbsp;What device are you using to do this HIT?</label>
 				  <div class="radio">
 					  <label> <input type="radio" name="5_device" value="mobile" required>Smartphone / Tablet</label>
 				  </div>
@@ -2779,7 +2779,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			  </fieldset>
 
 			  <!-- color vision check -->
-			  <fieldset class="qualificationFieldset"><label>7.&nbsp; Type in the number you see in the following pictures. In case you do not see a number insert "x".</label>
+			  <fieldset class="qualificationFieldset"><label>7.&nbsp; Type in the number you see in the following pictures. If you do not see a number insert "x".</label>
 					<div class="table-responsive 2_lds">
 						  <table class="table" border="0" cellpadding="0" cellspacing="0" >
 							<tbody>	<tr>
@@ -2795,7 +2795,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				</fieldset>
 
 			  <!-- visual acuity check -->
-			  <fieldset class="qualificationFieldset"><label>8.&nbsp;This is a two-step visual acuity check. Please follow the setup instruction below and answer to the following 5 questions.</label>
+			  <fieldset class="qualificationFieldset"><label>8.&nbsp;This is a two-step visual acuity check. Please follow the setup instructions below and answer the following 5 questions.</label>
 
 				  		<div class="row" style="margin-top:20px">
 							<div class="col-md-2"></div>
@@ -2823,7 +2823,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 						</div>
 					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
 							<p><b>Step 2:</b></p>
-							<p>We will show you couple of broken rings with gaps which making them similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
+							<p>We will show you couple of broken rings with gaps which makes them look similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
 							<div class="row" style="margin: 30px ">
 										<div class="col-md-3" style=""></div>
 										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
@@ -2833,7 +2833,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 							</div>
 
 							<p>
-								Your task is for each ring to click the button on the side where the gap of the ring is.
+								Your task for each ring is to click the button on the side where the gap of the ring is.
 								There could be 8 orientations. In the examples above the gaps of the rings are on the  <b>&rarr;</b>, &darr;, and &nwarr;, from left to right respectively.
 								You should guess the location of the gap if you are not sure where it is.
   							</p>
@@ -2881,7 +2881,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 <section class="container" id="qualification_msg">
 	<div  class="alert alert-warning" role="alert" >
-		Next section will be activated when you successfully pass the qualification.
+		The next section will be activated when you successfully pass the qualification steps.
 	</div>
 </section>
 
@@ -2889,7 +2889,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 <section class="container" id="alert-qualification" hidden>
 	<div  class="alert alert-success" role="alert" >
-		Well-done! Now you can continue to next section.
+		Well-done! Now you can continue to the next section.
 	</div>
 </section>
 
@@ -2915,7 +2915,7 @@ function avoidAnsweringBeforeWatchingThrough(){
   						<li><b>Windows:</b> Change the <a href="https://support.microsoft.com/en-us/windows/view-display-settings-in-windows-37f0e05e-98a9-474c-317a-e85422daa8bb" target="_blank">display resolution</a> to the "Recommended" one</li>
   						<li><b>Mac:</b> <a href="https://support.apple.com/guide/mac-help/change-your-displays-resolution-mchl86d72b76/mac" target="_blank">Set the resolution</a> to "Default for Display"</li>
 					</ul>
-					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_resolution" onclick="on_resolution_change();" required>I followed the above description and changed the resolution of my display as recommended.</label></div></fieldset>
+					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_resolution" onclick="on_resolution_change();" required>I followed the instructions above and changed the resolution of my display as recommended.</label></div></fieldset>
 
 					<p style="margin-top:20px"><b>2. Colors:</b> To ensure that colors are represented accurately on your screen, please use the "Display Color Calibration" provided by your OS. Otherwise you may fail the steps in the setup section.
 					For further instructions use the following links:</p>
@@ -2925,7 +2925,7 @@ function avoidAnsweringBeforeWatchingThrough(){
   						<li><b>Mac:</b> Run <a href="https://support.apple.com/guide/mac-help/calibrate-your-display-mchlp1109/mac" target="_blank">Display Calibrator Assistant</a>. <b>Note:</b> for Mac OS 12.0.1, you can reach the Color Profile, from
 						 Settings -> Displays -> Display Settings… . Then continue from Step 2 of above document.</li>
 					</ul>
-					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_color" required>I followed the above description and calibrated the display color as recommended.</label></div></fieldset>
+					<fieldset class="calibrationFieldset"><div class="checkbox"><label><input type="checkbox" value="y" name="calib_color" required>I followed the instructions above and calibrated the display color as recommended.</label></div></fieldset>
 				</div>
 			</div>
 		</div>
@@ -2957,7 +2957,7 @@ function avoidAnsweringBeforeWatchingThrough(){
   						<li>Mac: <a href="https://support.apple.com/guide/mac-help/change-your-displays-brightness-mchlp2704/mac" target="_blank">Manually adjust display brightness</a></li>
 					</ul>
 
-				<p style="margin-top:50px">How many <b>circles and triangles</b> do you see in this picture?. You may <b>change</b> the brightness of your screen, light in your environment, or your position on your seat until you can see all of the shapes. </p>
+				<p style="margin-top:50px">How many <b>circles and triangles</b> do you see in this picture?. You may <b>change</b> the brightness of your screen, light in your environment, or your position in your seat until you can see all of the shapes. </p>
 
 				<div class="row">
 
@@ -3024,12 +3024,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div  class="panel-collapse collapse in" id="instructionImp">
 			<div class="panel-body">
 			<p>Almost ready to start. </p>
-			<p>Here are <b>some</b> of impairments that you may observe within the test with an example. Please read the followings carefully and watch the videos before continuing:
+			<p>Here are <b>some</b> impairments that you may observe within the test with examples. Please read the following carefully and watch the videos before continuing:
 			</p>
 
 			<ul>
 
-			<li> The video (or part of it) can be <b>fragmented</b>. It means that part of the video sample is played <b>blocky</b> and <b>dismembered</b>.</li>
+			<li> The video (or portions of it) can be <b>fragmented</b>. It means that part of the video sample is played <b>blocky</b> and <b>dismembered</b>.</li>
 
 			<div class="row">
 				<p>Here is an example:</p>
@@ -3039,7 +3039,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 
 
-			<li> The video (or part of it) could be <b>not smooth</b> rather <b>jerky</b>, <b>stuttering</b>, and <b>wobbly</b>. In anotehr term, partly <b>discountinud</b>. </li>
+			<li> The video (or portions of it) could be <b>unsmooth</b> appearing  <b>wobbly</b>, or <b>stuttering</b>, and <b>wobbly</b>. In other words, partly <b>discountinous</b>. </li>
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
@@ -3047,7 +3047,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				</p>
 			</div>
 
-				<li> The video (or part of it) cloud be <b>blurred</b>, <b>unclear</b> or <b>washed out</b>.</li>
+				<li> The video (or portions of it) cloud be <b>blurred</b>, <b>unclear</b> or <b>washed out</b>.</li>
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
@@ -3061,12 +3061,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 			<b>Important notes:</b>
 			<ul>
-				<li> Impairments can happen in specific area (corners or center of image) and for a short period of time within a video clip.
-					So it is very important that when watching a video, fully concentrate on the entire scene. If something distracting you,
+				<li> Impairments can happen in a specific area (corners or center of image) and for a short period of time within a video clip.
+					So it is very important that you fully concentrate on the entire scene when watching a video. If something is distracting you,
 					please watch the video again.</li>
-				<li>Your ratings will be used for scientific work, <u>please treat them very serious to cIfontribute with valid results </u>.</li>
-				<li>You may think that an impairment your recognized was due to your Internet connection, but whatever you see in the
-					videos are created beforehand, and <b>not related to your network</b>, so <u>consider them all when you rate the <b>overall quality</b></u>.</li>
+				<li>Your ratings will be used for scientific work, <u>please treat them very seriously to contribute with valid results </u>.</li>
+				<li>You may think that an impairment your recognized was due to your internet connection, but anything you see in the
+					videos was created beforehand, and is <b>not related to your network</b>, so <u>consider everything when you rate the <b>overall quality</b></u>.</li>
 			</ul>
 			</div>
 			</div>
@@ -3084,15 +3084,15 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<div  class="panel-collapse collapse in" id="trainingS">
 				<div class="panel-body">
 				<p> Please answer the following <b class="question_number_training"> 0 </b> questions.
-					In this experiment you see short video clips on the screen.</p>
-					<p>For each question, please carefully watch pair of clips by clicking on the play button. Clips will be shown one after each other.
+					In this experiment you will see short video clips on the screen.</p>
+					<p>For each question, please carefully watch the pair of clips by clicking on the play button. Clips will be shown one after each other.
 
 					<span id = "training_section_explain"></span>
 					You will express your judgment by using the given scale.
-					Observe carefully the entire pair of video clips before making your judgment.</p>
+					Carefully observe the entire pair of video clips before making your judgment.</p>
 
-				   <p> <b>Note</b> that the scale will be activated when video clips played until the end. </p>
-				   <p> If you see a message follow the instruction as given in the message.</p>
+				   <p> <b>Note</b> that the scale will not be activated until the video clips are played until the end. </p>
+				   <p> If you see a message follow the instructions given in the message.</p>
 
  				<!-- will be generated -->
 				<ul class="nav nav-tabs" role="tablist" id="trainingTabs">
@@ -3134,17 +3134,17 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 			<div class="panel-body">
 				<p> Please answer the following <b class="question_number"> 0 </b> questions.
-					In this experiment you see short video clips on the screen.</p>
+					In this experiment you will see short video clips on the screen.</p>
 				<p>
 					For each question, please carefully watch pair of clips by clicking on the play button. Clips will be shown one after each other.
 
 				<span id = "rating_section_explain"></span>
 
 					You will express your judgment by using the given scale.
-					Observe carefully the entire pair of video clips before making your judgment.</p>
+					Carefully observe the entire pair of video clips before making your judgment.</p>
 
-				   <p> <b>Note</b> that the scale will be activated when video clips played until the end. </p>
-				   <p>  If you see a message follow the instruction as given in the message.</p>
+				   <p> <b>Note</b> that the scale will not be activated until the video clips are played until the end. </p>
+				   <p>  If you see a message follow the instruction givens in the message.</p>
 
  				<!-- will be generated -->
 				<ul class="nav nav-tabs" role="tablist" id="nav-tab-ul"> </ul>
@@ -3184,7 +3184,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
-			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of your submissions.
+			  <b>NOTE:</b> Any attempt to neglect this message and perform assignments is forbidden and leads to rejection of your submissions.
 			</div>
 </section>
 
@@ -3193,7 +3193,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
-			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of your submissions.
+			  <b>NOTE:</b> Any attempt to neglect this message and perform assignments is forbidden and leads to rejection of your submissions.
 			</div>
 </section>
 
@@ -3202,6 +3202,6 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
-			  <b>NOTE:</b> Any try to perform assignments and neglecting this message is forbidden and leads to rejection of your submissions.
+			  <b>NOTE:</b> Any attempt to neglect this message and perform assignments is forbidden and leads to rejection of your submissions.
 			</div>
 </section>
