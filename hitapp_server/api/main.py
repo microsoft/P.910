@@ -304,8 +304,8 @@ async def add_answer(response: Response, info : Request, x_real_ip: str = Header
     with conn.cursor() as cursor:
         v_code = generate_vcode()
         answers['v_code'] = v_code     
-        # annonymize the ip   
-        answers['X-Real-IP'] = '.'.join(x_real_ip.split('.')[:-1])+'.0/24'
+        # annonymize the ip, uncomment it if you want to log this information in the answer table
+        #answers['X-Real-IP'] = '.'.join(x_real_ip.split('.')[:-1])+'.0/24'
         cursor.execute(
             """INSERT INTO "Answers"("HITTypeId", "HITId", "Answer", "AssignmentStatus", "WorkerId", 
             "AssignmentId", "ProjectId") VALUES (%s, %s, %s, %s, %s, %s, %s)""",
