@@ -6,7 +6,7 @@
 @author: Babak Naderi
 """
 
-from fastapi import FastAPI,  Response, Request,  status, BackgroundTasks
+from fastapi import FastAPI,  Response, Request,  status, BackgroundTasks,  Header
 from fastapi import Form
 from fastapi.staticfiles import StaticFiles
 import psycopg2
@@ -298,12 +298,14 @@ def get_amt_data(request: Request, response: Response, id: int):
 
 
 @app.post("/answers/{project_id}")
-async def add_answer(response: Response, info : Request):
+async def add_answer(response: Response, info : Request, x_real_ip: str = Header(None, alias='X-Real-IP')):
     req_info = await info.json()
     key_data, answers = json_formater(req_info, 'Answer.')
     with conn.cursor() as cursor:
         v_code = generate_vcode()
-        answers['v_code'] = v_code
+        answers['v_code'] = v_code     
+        # annonymize the ip, uncomment it if you want to log this information in the answer table
+        #answers['X-Real-IP'] = '.'.join(x_real_ip.split('.')[:-1])+'.0/24'
         cursor.execute(
             """INSERT INTO "Answers"("HITTypeId", "HITId", "Answer", "AssignmentStatus", "WorkerId", 
             "AssignmentId", "ProjectId") VALUES (%s, %s, %s, %s, %s, %s, %s)""",

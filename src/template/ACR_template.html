@@ -1092,10 +1092,13 @@ function getScreenRefreshRate(callback){
 	Check if the resolution satisfied the minimum given in the config
 **/
 function check_resolution(){
-	let w = Math.floor(window.screen.width * window.devicePixelRatio);
-	let h = Math.floor(window.screen.height * window.devicePixelRatio);
+	//let w = Math.floor(window.screen.width * window.devicePixelRatio);
+	//let h = Math.floor(window.screen.height * window.devicePixelRatio);
+	// check the resolution of the device (Physical Pixels)
+	let w = window.screen.width;
+	let h = window.screen.height;
 	console.log("screen is {0}x{1}".f(w,h));
-	$("#device_resolution").val("{0}x{1}".f(w,h));
+	$("#device_resolution").val("{0}x{1}({2})".f(w,h,window.devicePixelRatio));
 	if (w>= config.min_resolution.w && h>= config.min_resolution.h){
 		return true;
 	}
