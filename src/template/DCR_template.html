@@ -198,8 +198,8 @@ var config ={
     randomizeTrainingQuestions:"true",
     randomizeRatingQuestions:"true",
     emailAddress: "ic3ai@outlook.com"
-}
-*/
+}*/
+
 //---- for video player
 max_accepted_extra_playing_time_sec = 2.5;
 const videos_not_loaded_yet_set = new Set()
@@ -293,7 +293,27 @@ function initializeActivePageMonitoring(){
 	});
 }
 
+function recordTTFB(){
+	// <input id="ttfb" name="ttfb" type="hidden" value="" />	
 
+	url = 	url = 'https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster-no-cache.png';
+	// add random to avoid caching
+	url = url + "?"+Math.random();
+	// measure the time to first byte
+	performance.mark("start_ttfb");
+	fetch(url).then(response => {
+		// content is 164 bytes, so it should be fast
+		performance.mark("end_ttfb");
+		performance.measure("ttfb", "start_ttfb", "end_ttfb");
+		const ttfb = performance.getEntriesByName("ttfb")[0].duration;
+		$('#ttfb').val(ttfb);
+		console.log(`TTFB: ${ttfb} ms`);
+	}).catch(err => {
+		console.error('Failed to fetch:', err);
+	});
+
+
+}
 /**
 	check if there is any parallel session available.
 **/
@@ -1098,6 +1118,7 @@ function activate_hit(){
 	$("#start_working_time").val(start_time.toISOString());
 	console.log($("#start_working_time").val());
 	$("#submit_id").show;
+	recordTTFB();
 }
 
 
@@ -1157,8 +1178,11 @@ function getScreenRefreshRate(callback){
 	Check if the resolution satisfied the minimum given in the config
 **/
 function check_resolution(){
-	let w = Math.floor(window.screen.width * window.devicePixelRatio);
-	let h = Math.floor(window.screen.height * window.devicePixelRatio);
+	//let w = Math.floor(window.screen.width * window.devicePixelRatio);
+	//let h = Math.floor(window.screen.height * window.devicePixelRatio);
+	// check the resolution of the device (Physical Pixels)
+	let w = window.screen.width;
+	let h = window.screen.height;
 	console.log("screen is {0}x{1}".f(w,h));
 	$("#device_resolution").val("{0}x{1}({2})".f(w,h,window.devicePixelRatio));
 	if (w>= config.min_resolution.w && h>= config.min_resolution.h){
@@ -2030,7 +2054,7 @@ function fullscreen_closed(e, video, caller){
       	var idT=video.id;
 		var id=idT.substring(7,idT.length);
 		reset_video_player(idT, video);
-
+		video.style.marginTop = 0;
 		$("#velmnt_"+id).show();
 
         //restore the old height and weight
@@ -2186,9 +2210,20 @@ function playVideo_continue(id, video, is_dcr){
 	}else{
 		scale_type = "no-scale";
 	}
-	if (scale_type=="max-height" || scale_type!="no_scale"){
+	if (scale_type == "no-scale"){
+		// check that the video is not bigger than the screen
+		let fullscreen_element = document.fullscreenElement;
+		if (fullscreen_element){
+			fullscreen_width = fullscreen_element.clientWidth;
+			fullscreen_height = fullscreen_element.clientHeight;
+			if (w > fullscreen_width || h > fullscreen_height){
+				scale_type="max-height";
+			}
+		}
+	}
+	$( "#"+video.id ).closest( "td" ).removeClass("vtd");
+	if (scale_type=="max-height" || scale_type!="no-scale"){
 		console.log('max-height or percent:'+scale_type);
-		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
 		let fullscreen_width = screen.width * window.devicePixelRatio;
 		let fullscreen_height = screen.height * window.devicePixelRatio;
 		let fullscreen_element = document.fullscreenElement;
@@ -2225,6 +2260,10 @@ function playVideo_continue(id, video, is_dcr){
 		video_play_back_size = id+':('+new_w+'x'+new_h+')';
 		$("#play_back_size_px").val($("#play_back_size_px").val()+';'+video_play_back_size);
 		console.log(video_play_back_size);
+		if (new_h<fullscreen_height){
+			video.style.marginTop = Math.floor((fullscreen_height-new_h)/2);
+		}
+
 		video.setAttribute("width",new_w);
 		video.setAttribute("height",new_h);
 		
@@ -2232,7 +2271,18 @@ function playVideo_continue(id, video, is_dcr){
 		console.log('NOT max-height or %');
 		let fullscreen_element = document.fullscreenElement;
 		if (fullscreen_element){
-			$("#full_screen_size_px").val(''+fullscreen_element.clientWidth+'x'+fullscreen_element.clientHeight);			
+			$("#full_screen_size_px").val(''+fullscreen_element.clientWidth+'x'+fullscreen_element.clientHeight);	
+			fullscreen_height = fullscreen_element.clientHeight;
+			video_h = Math.floor(video.videoHeight / window.devicePixelRatio);
+			if (video_h>fullscreen_height){
+				video_h = fullscreen_height;
+			}
+			new_w = Math.floor(video_h * ratio);
+			if (video_h<fullscreen_height){
+				video.style.marginTop = Math.floor((fullscreen_height-video_h)/2);
+			}		
+			video.setAttribute("width",new_w);
+			video.setAttribute("height",video_h);
 		}
 		$("#play_back_size_px").val(''+video.getAttribute("width")+'x'+video.getAttribute("height"));
 	}
@@ -2328,6 +2378,7 @@ function isended(){
 
 		// remove size set from video1 and restore the old height and weight
 		var video = document.getElementById("video1_"+id);
+		video.style.marginTop = 0;
         let oldH=video.getAttribute("oldheight");
         let oldW=video.getAttribute("oldwidth");
         video.setAttribute("width",oldW);
@@ -2629,6 +2680,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="start_video_loading_time" name="start_video_loading_time" type="hidden" value="" />
 <input id="video_loading_duration" name="video_loading_duration_ms" type="hidden" value="" />
 <input id="internet_speed_estimate" name="internet_speed_estimate_Mb" type="hidden" value="" />
+
+<input id="ttfb" name="ttfb" type="hidden" value="" />
 
 <!-- just for backup -->
 <input id="matrix_t1_circle_history" name="matrix_t1_circle_history" type="hidden" value="" />

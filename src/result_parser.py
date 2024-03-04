@@ -196,13 +196,15 @@ def check_tps(row, method):
         for q_name in question_names:
             if tp_url in row[f'answer.{q_name}_url']:
                 # found a trapping clips question
-                given_ans = int(row[f'answer.{q_name}{suffix}'])
+                given_ans = int(float(row[f'answer.{q_name}{suffix}']))
+                
                 if method == 'ccr' and row[f'answer.{q_name}_order'] == 'pr':
                     given_ans= given_ans * -1
                 if given_ans in tp_correct_ans:
                     correct_tps = 1
                     return correct_tps
     except:
+        print(given_ans, tp_correct_ans)
         pass
     return correct_tps
 
@@ -222,9 +224,9 @@ def check_variance(row, method):
         try:
             if method == 'ccr':
                 order = 1 if row[f'answer.{q_name}{question_name_suffix}_order'] == 'pr' else -1
-                r.append(int(row[f'answer.{q_name}{question_name_suffix}']) * order)
+                r.append(int(float(row[f'answer.{q_name}{question_name_suffix}'])) * order)
             else:
-                r.append(int(row[f'answer.{q_name}{question_name_suffix}']))
+                r.append(int(float(row[f'answer.{q_name}{question_name_suffix}'])))
         except:
             pass
     try:
@@ -252,13 +254,13 @@ def check_gold_question(row, method):
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
                 # found a gold standard question
-                details['given_ans'] = int(row[f'answer.{q_name}'])
-                if int(row[f'answer.{q_name}']) in range(gq_correct_ans-gq_var, gq_correct_ans+gq_var+1):
+                details['given_ans'] = int(float(row[f'answer.{q_name}']))
+                if int(float(row[f'answer.{q_name}'])) in range(gq_correct_ans-gq_var, gq_correct_ans+gq_var+1):
                     correct_gq = 1
                     return correct_gq, details
             
     except Exception as e:
-        logger.info('Gold Question error: '+ e)
+        logger.info('Gold Question error: '+ e)        
         return None, None
     return correct_gq, details
 
@@ -306,11 +308,18 @@ def check_play_duration(row):
     :param row:
     :return: ration of play-back to clip
     """
-    total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
-    total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
-    if total_duration == 0:
+    # add try catch
+    try:
+        total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
+        total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
+        if total_duration == 0:
+            return float('inf')
+        return total_play_duration/total_duration
+    except  Exception as e: 
+        #print(row)
         return float('inf')
-    return total_play_duration/total_duration
+    
+    
 
 
 def data_cleaning(filename, method, wrong_vcodes):
@@ -482,7 +491,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
     
     grouped = grouped.rename(columns={0: 'not_used_count', 1: 'used_count'})
     grouped['acceptance_rate'] = (grouped['used_count'] * 100)/(grouped['used_count'] + grouped['not_used_count'])
-    grouped.to_csv('tmp.csv')
+    grouped.to_csv('debug_workers_performance.csv')
 
     if 'rater_min_acceptance_rate_current_test' in config[section]:
         rater_min_acceptance_rate_current_test = int(config[section]['rater_min_acceptance_rate_current_test'])
@@ -572,12 +581,18 @@ def save_approve_rejected_ones_for_gui(data, path, wrong_vcodes):
     df = df[df.status == 'Submitted']
     small_df = df[['worker_id','assignment', 'HITId', 'Approve', 'Reject']].copy()
     small_df.rename(columns={'assignment': 'assignmentId', 'worker_id':'WorkerId'}, inplace=True)
+
     if wrong_vcodes is not None:
         wrong_vcodes_assignments = wrong_vcodes[['WorkerId','AssignmentId', 'HITId']].copy()
         wrong_vcodes_assignments["Approve"] = ""
-        wrong_vcodes_assignments["Reject"] = "wrong verification code"
+        wrong_vcodes_assignments["Reject"] = "wrong verification code or incomplete submission"
         wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)        
         small_df = pd.concat([small_df, wrong_vcodes_assignments], ignore_index=True)
+
+    # Count number of duplicate in assignmentId
+    small_df['n_duplicate'] = small_df.groupby('assignmentId')['assignmentId'].transform('size')
+    small_df['n_duplicate'] = small_df['n_duplicate'].apply(lambda x: x - 1)
+            
     small_df.to_csv(path, index=False)
 
 
@@ -655,6 +670,7 @@ def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons, num_rej_p
 
     not_accepted_reasons_list = list(collections.Counter(not_accepted_reasons).items())
     not_accepted_reasons_list.append(('Wrong Verification Code', len(wrong_vcodes.index)))
+
     if num_rej_perform != 0:
         not_accepted_reasons_list.append(('Performance', num_rej_perform))
 
@@ -664,9 +680,10 @@ def save_rejected_ones(data, path, wrong_vcodes, not_accepted_reasons, num_rej_p
     small_df.rename(columns={'assignment': 'assignmentId', 'Reject': 'feedback'}, inplace=True)
     if wrong_vcodes is not None:
         wrong_vcodes_assignments = wrong_vcodes[['AssignmentId']].copy()
-        wrong_vcodes_assignments["feedback"] = "Wrong verificatioon code"
+        wrong_vcodes_assignments["feedback"] = "Wrong verificatioon code or incomplete submission"
         wrong_vcodes_assignments.rename(columns={'AssignmentId': 'assignmentId'}, inplace=True)
         small_df = pd.concat([small_df, wrong_vcodes_assignments], ignore_index=True)
+
     small_df.to_csv(path, index=False)
 
 
@@ -938,13 +955,13 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 data_per_file[file_name] = []
             votes = data_per_file[file_name]
             try:
-                votes.append(int(session[f'answer.{question}{question_name_suffix}']))
+                votes.append(int(float(session[f'answer.{question}{question_name_suffix}'])))
                 cond =conv_filename_to_condition(file_name)
                 tmp = {'HITId': session['hitid'],
                     'workerid': session['workerid'],
                         'file':file_name,
                        'short_file_name': file_name.rsplit('/', 1)[-1],
-                        'vote': int(session[f'answer.{question}{question_name_suffix}'])}
+                        'vote': int(float(session[f'answer.{question}{question_name_suffix}']))}
 
                 tmp.update(cond)
                 data_per_worker.append(tmp)
@@ -1181,6 +1198,17 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
                                "AssignmentId": "hitapp_assignmentid",
                                "HITId": "hitapp_hitid",
                                "HITTypeId": "hitapp_hittypeid"},  inplace=True)
+    # cut rows with no device_type value from hitapp and save them separately. 
+    # These rows are the ones that are not submitted by the workers
+    hitapp_ans_incomplete = hitapp_ans[hitapp_ans['Answer.device_type'].isna()]
+    hitapp_ans = hitapp_ans[~hitapp_ans['Answer.device_type'].isna()]
+    hitapp_ans_incomplete.to_csv(os.path.splitext(hitapp_ans_path)[0] + '_incomplete_submissions.csv', index=False)
+    unique_assignments = hitapp_ans_incomplete['hitapp_assignmentid'].unique()
+    # print the size
+    logger.info(f"** {len(unique_assignments)} submissions are not completed by the workers.")
+
+    # 
+
     # remove stript vcodes entered by workers
     amt_ans['Answer.v_code'] = amt_ans['Answer.v_code'].str.strip()
     # check if there are submission without conuter part key in hitapp servers
