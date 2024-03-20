@@ -24,7 +24,7 @@ If you use this tool in your research please cite it with the following referenc
 @article{naderi2024,
   title={A crowdsourcing approach to video quality assessment},
   author={Naderi, Babak and Cutler, Ross},
-  conference={ICASSP},
+  booktitle={ICASSP},
   year={2024}
 }
 ```
