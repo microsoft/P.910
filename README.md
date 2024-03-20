@@ -21,11 +21,11 @@ Technical description of the implementation and validation is given in this pape
 If you use this tool in your research please cite it with the following references:
 
 ```BibTex
-@article{naderi2022,
+@article{naderi2024,
   title={A crowdsourcing approach to video quality assessment},
   author={Naderi, Babak and Cutler, Ross},
-  journal={arXiv preprint arXiv:2204.06784},
-  year={2022}
+  conference={ICASSP},
+  year={2024}
 }
 ```
 
