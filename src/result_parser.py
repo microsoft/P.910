@@ -1192,7 +1192,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     columns_to_remove = amt_ans.columns.difference(['WorkerId', 'Answer.v_code', 'HITId',
                                              'HITTypeId', 'AssignmentId', 'WorkTimeInSeconds',
-                                             'Reward', 'Answer.hitapp_assignmentId'])
+                                             'Reward', 'Answer.hitapp_assignmentId', 'Input.url'])
     amt_ans.drop(columns=columns_to_remove, inplace=True)
     hitapp_ans.rename(columns={"WorkerId": "hitapp_workerid",
                                "AssignmentId": "hitapp_assignmentid",
@@ -1207,10 +1207,19 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     # print the size
     logger.info(f"** {len(unique_assignments)} submissions are not completed by the workers.")
 
-    # 
-
     # remove stript vcodes entered by workers
     amt_ans['Answer.v_code'] = amt_ans['Answer.v_code'].str.strip()
+    # number of rows in amt
+    submissiones = len(amt_ans)
+    # find rows with duplicate v_code
+    amt_ans['is_duplicate'] = amt_ans.duplicated(subset=['Answer.v_code'], keep=False)
+    duplicate_vc = amt_ans[amt_ans['is_duplicate'] == True]
+    amt_ans.drop_duplicates(subset=['Answer.v_code'], keep=False, inplace=True)
+    # number of rows in amt after removing duplicates
+    submissiones_after = len(amt_ans)
+    logger.info(f"** {submissiones - submissiones_after} duplicate vcodes are removed from the AMT data.")
+
+
     # check if there are submission without conuter part key in hitapp servers
     not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
     recover_submission_withoiut_matching_vcode(hitapp_ans, amt_ans, not_in_hitapp)
@@ -1226,6 +1235,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     merged_ans_path = os.path.splitext(hitapp_ans_path)[0] + '_merged.csv'
     merged.to_csv(merged_ans_path, index=False)
     #todo: check if the assignment ids are also equal
+    not_in_hitapp = pd.concat([not_in_hitapp, duplicate_vc], ignore_index=True)
     return merged_ans_path, not_in_hitapp
 
 

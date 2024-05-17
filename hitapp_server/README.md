@@ -35,12 +35,12 @@ Then change the passwords inside your `.env` file:
     POSTGRES_PASSWORD=[Your_password]
     APP_DB_PASS=[Your_password]
     ```
-1. (recommended) Change the  username/password for accessing to the front end by editing the `front-end/.htpasswd`. 
+1. Change the username/password for accessing to the front end by editing the `front-end/.htpasswd`. 
     You can use _openssl_ to create a new encoded password:
     ```bash    
-    openssl passwd -crypt PASSWORD
+    openssl passwd -apr1 PASSWORD
     ```
-    Then edit the `front-end/.htpasswd` file to:
+    Then edit the `front-end/.htpasswd` file, change "admin" with your username, and "YOUR_NEW_ENCODED_PASSWORD" with what you got from _openssl_ command above:
     ```INI    
     admin:YOUR_NEW_ENCODED_PASSWORD
     ```
