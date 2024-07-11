@@ -956,18 +956,21 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             votes = data_per_file[file_name]
             try:
                 votes.append(int(float(session[f'answer.{question}{question_name_suffix}'])))
+                
                 cond =conv_filename_to_condition(file_name)
                 tmp = {'HITId': session['hitid'],
                     'workerid': session['workerid'],
                         'file':file_name,
-                       'short_file_name': file_name.rsplit('/', 1)[-1],
+                        'short_file_name': file_name.rsplit('/', 1)[-1],
                         'vote': int(float(session[f'answer.{question}{question_name_suffix}']))}
 
                 tmp.update(cond)
                 data_per_worker.append(tmp)
+                
             except Exception as err:
                 logger.info(err)
                 pass
+    data_per_worker_df = pd.DataFrame(data_per_worker)
     # convert the format: one row per file
     group_per_file = []
     condition_detail = {}
@@ -988,6 +991,9 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             if v_len != v_len_after:
                 #logger.info(f'{v_len - v_len_after} removed ({key})')
                 outlier_removed_count += v_len - v_len_after
+                # also only keep the rows from data_per_worker_df when the file is "key" then vote should be in votes.
+                data_per_worker_df = data_per_worker_df[(data_per_worker_df['file'] != key) | (data_per_worker_df['vote'].isin(votes))]
+                
 
         # extra step:: add votes to the per-condition dict
         tmp_n = conv_filename_to_condition(key)
@@ -1055,6 +1061,8 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 v_len_after = len(votes)
                 if v_len != v_len_after:
                     outlier_removed_count += v_len-v_len_after
+                # TODO: drop 
+
             tmp = {**tmp, **condition_detail[key]}
             tmp['n'] = len(votes)
             if tmp['n'] > 0:
@@ -1072,7 +1080,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             group_per_condition.append(tmp)
         if outlier_removed_count != 0:
             logger.info(f'  Overall {outlier_removed_count} outliers are removed in per condition aggregation.')
-    return group_per_file, group_per_condition, data_per_worker
+    return group_per_file, group_per_condition, data_per_worker_df
 
 
 def create_headers_for_per_file_report(test_method, condition_keys):
@@ -1099,7 +1107,9 @@ def calc_payment_stat(df):
     :return:
     """
     if 'Answer.time_page_hidden_sec' in df.columns:
-        df['Answer.time_page_hidden_sec'].where(df['Answer.time_page_hidden_sec'] < 3600, 0, inplace=True)
+        #df['Answer.time_page_hidden_sec'].where(df['Answer.time_page_hidden_sec'] < 3600, 0, inplace=True)
+        # set all values smaller than 3600 to 0
+        df['Answer.time_page_hidden_sec'] = np.where(df['Answer.time_page_hidden_sec'] < 3600, 0, df['Answer.time_page_hidden_sec'])
         df['time_diff'] = df["work_duration_sec"] - df['Answer.time_page_hidden_sec']
         median_time_in_sec = df["time_diff"].median()
     else:
@@ -1222,7 +1232,13 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     # check if there are submission without conuter part key in hitapp servers
     not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
+    # print the lenght
+    logger.info(f"** {len(not_in_hitapp)} submissions are not found in the HITAPP server.")
     recover_submission_withoiut_matching_vcode(hitapp_ans, amt_ans, not_in_hitapp)
+
+    # print number of rows for both dataframes
+    logger.info(f"** {len(amt_ans)} rows in the AMT data.")
+    logger.info(f"** {len(hitapp_ans)} rows in the HITAPP server data.")
     merged = pd.merge(hitapp_ans, amt_ans, left_on='v_code', right_on='Answer.v_code')
 
     columns_to_remove = ['Answer.v_code']
@@ -1234,6 +1250,12 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     merged_ans_path = os.path.splitext(hitapp_ans_path)[0] + '_merged.csv'
     merged.to_csv(merged_ans_path, index=False)
+    # filter hitapp_ans and only keep the ones that are not in merged using the id column
+    hitapp_ans_not_found_in_amt = hitapp_ans[~hitapp_ans['id'].isin(merged.id)]
+    hitapp_ans_not_found_in_amt.to_csv(os.path.splitext(hitapp_ans_path)[0] + '_not_found_in_amt.csv', index=False)
+    # print the size
+    logger.info(f"** {len(hitapp_ans_not_found_in_amt)} submissions in HITAPP data are not found in the AMT data.")
+
     #todo: check if the assignment ids are also equal
     not_in_hitapp = pd.concat([not_in_hitapp, duplicate_vc], ignore_index=True)
     return merged_ans_path, not_in_hitapp
@@ -1294,7 +1316,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
             logger.info("Transforming data (the ones with 'accepted_and_use' ==1 --> group per clip")
             use_condition_level = config.has_option('general', 'condition_pattern')
 
-            votes_per_file, vote_per_condition, data_per_worker = transform(test_method, accepted_sessions,
+            votes_per_file, vote_per_condition, data_per_worker_df = transform(test_method, accepted_sessions,
                                                            config.has_option('general', 'condition_pattern'), False)
 
             votes_per_file_path = os.path.splitext(answer_path)[0] + f'_votes_per_clip{question_name_suffix}.csv'
@@ -1318,7 +1340,8 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
                 logger.info(f'   Votes per files are saved in: {votes_per_cond_path}')
                 condition_set.append(pd.DataFrame(vote_per_condition))
             if create_per_worker:
-                write_dict_as_csv(data_per_worker, os.path.splitext(answer_path)[0] + f'_votes_per_worker{question_name_suffix}.csv')
+                #write_dict_as_csv(data_per_worker, os.path.splitext(answer_path)[0] + f'_votes_per_worker{question_name_suffix}.csv')
+                data_per_worker_df.to_csv(os.path.splitext(answer_path)[0] + f'_votes_per_worker{question_name_suffix}.csv', index=False)
 
 
         bonus_file = os.path.splitext(answer_path)[0] + '_quantity_bonus_report.csv'
