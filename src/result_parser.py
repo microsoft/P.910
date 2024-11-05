@@ -485,6 +485,7 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
         return data, use_sessions, 0, []
 
     df = pd.DataFrame(data)
+    
     # rater_min_accepted_hits_current_test
 
     grouped = df.groupby(['worker_id', 'accept_and_use']).size().unstack(fill_value=0).reset_index()
@@ -1061,7 +1062,8 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
                 v_len_after = len(votes)
                 if v_len != v_len_after:
                     outlier_removed_count += v_len-v_len_after
-                # TODO: drop 
+                    # remove everyvotes from data_per_worker_df where conditio_name=key and the vote is not in votes
+                    data_per_worker_df = data_per_worker_df[(data_per_worker_df['condition_name'] != key) | (data_per_worker_df['vote'].isin(votes))]                   
 
             tmp = {**tmp, **condition_detail[key]}
             tmp['n'] = len(votes)
@@ -1224,6 +1226,8 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     # find rows with duplicate v_code
     amt_ans['is_duplicate'] = amt_ans.duplicated(subset=['Answer.v_code'], keep=False)
     duplicate_vc = amt_ans[amt_ans['is_duplicate'] == True]
+    # save the duplicate vcodes in a separate file
+    duplicate_vc.to_csv(amt_ans_path.replace('.csv' , '_duplicate_vc.csv'), index=False)
     amt_ans.drop_duplicates(subset=['Answer.v_code'], keep=False, inplace=True)
     # number of rows in amt after removing duplicates
     submissiones_after = len(amt_ans)

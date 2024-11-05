@@ -232,7 +232,7 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     config['accepted_device'] = viewing_condition_cfg[
         'accepted_device'] if 'accepted_device' in viewing_condition_cfg else '["PC"]'
     config['scale_points'] = hit_app_html_cfg['scale'] if 'scale' in hit_app_html_cfg else 5
-
+    config['video_player'] = hit_app_html_cfg['video_player']
 
     config = {**config, **general_cfg}
 
