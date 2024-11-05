@@ -1215,6 +1215,9 @@ function check_brightness_test(){
 	if (c==(correct_ans['circles'] -2)&& t == (correct_ans['triangles']-3)){
 		//alert('Great! Your answer is correct, continue!');
 		$("#check_matrix").prop("disabled",true);
+		$('#t1_circles').attr('readonly', true);
+		$('#t1_triangles').attr('readonly', true);
+
 		activate_rest_setup();
 	}else{
 		num_tries_block_matrix++;
@@ -1387,6 +1390,11 @@ function showPreviousQuestionInTrainingSection(){
 }
 
 
+function set_training_timer(){
+	createCookie(config['cookieName']+"_training","un_important",config['forceRetrainingInHours']*60);
+	createCookie(config['cookieName']+"_impInstruct","un_important",config['forceRetrainingInHours']*60);
+}
+
 var trainingStimulusPlayed;
 
 /*
@@ -1399,7 +1407,7 @@ function playedVideoTraining(id){
 	$('input[name="{0}"]'.f(id)).off('change');
 	eval("trainingStimulusPlayed["+id_num+"-1]=1;");
 	if (trainingStimulusPlayed.reduce(getSum, 0) ==  trainingStimulusPlayed.length){
-		createCookie(config['cookieName']+"_training","un_important",config['forceRetrainingInHours']*60);
+		set_training_timer();
 	}
 	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionInTrainingUrl']){
 		element = $('input[name="t{0}"]'.f(id_num));
@@ -1416,7 +1424,7 @@ const play_video_ins = new Set()
 function playedVideoIns(id){
 	play_video_ins.add(id);
 	if (play_video_ins.size == 3){
-		createCookie(config['cookieName']+"_impInstruct","un_important",config['forceRetrainingInHours']*60);
+		set_training_timer();
 	}
 }
 
@@ -1465,6 +1473,8 @@ function playedVideoQ(id){
 	played= $("#video_n_finish_{0}".f(id)).val();
 	if (played== 0 )return;
 	console.log("playedVideoQ  continue");
+	// re-training is needed only after X hours from last participation.
+	set_training_timer();
 
 	if ($('span[id="'+id+'"]').attr("data-src-clip") == config['knownQuestionUrl']){
 		element = $('input[name="q{0}"]'.f(id_num));
@@ -1928,6 +1938,7 @@ function convertMS(timeString){
   return seconds;
 }
 
+
 /**
 	Called to play the Clip B
 **/
@@ -1949,6 +1960,11 @@ function playVideo_continue(id, video, is_dcr){
     	parent.classList.remove("bg");
 		$("#{0} .vcontainer".f(id)).show();
 	}
+	// check aspect ratio of video
+	let w = video.videoWidth;
+    let h = video.videoHeight;
+	let ratio = w/h;
+
     let oldH=video.getAttribute("height");
     let oldW=video.getAttribute("width");
     let fullW=screen.width;
@@ -1962,23 +1978,28 @@ function playVideo_continue(id, video, is_dcr){
 	}else{
 		scale_type = "no-scale";
 	}
-	if (scale_type=="max-height" || scale_type!="no_scale"){
+	if (scale_type == "no-scale"){
+		// check that the video is not bigger than the screen
+		let fullscreen_element = document.fullscreenElement;
+		if (fullscreen_element){
+			fullscreen_width = fullscreen_element.clientWidth;
+			fullscreen_height = fullscreen_element.clientHeight;
+			if (w > fullscreen_width || h > fullscreen_height){
+				scale_type="max-height";
+			}
+		}
+	}
+	$( "#"+video.id ).closest( "td" ).removeClass("vtd");
+	if (scale_type=="max-height" || scale_type!="no-scale"){
 		console.log('max-height or percent:'+scale_type);
 		$( "#"+video.id ).closest( "td" ).removeClass("vtd");
 		let fullscreen_width = screen.width * window.devicePixelRatio;
 		let fullscreen_height = screen.height * window.devicePixelRatio;
 		let fullscreen_element = document.fullscreenElement;
-
-		// check aspect ratio of video
-		let w = video.videoWidth;
-    	let h = video.videoHeight;
-		let ratio = w/h;
-
 		if (fullscreen_element){
 			fullscreen_width = fullscreen_element.clientWidth;
 			fullscreen_height = fullscreen_element.clientHeight;
 		}
-
 		$("#full_screen_size_px").val(''+fullscreen_width+'x'+fullscreen_height);
 		// If scale the video to fill the width of screen, does it exceed the height of screen?
 		if (fullscreen_width / ratio >= fullscreen_height){
@@ -2008,6 +2029,10 @@ function playVideo_continue(id, video, is_dcr){
 		video_play_back_size = id+':('+new_w+'x'+new_h+')';
 		$("#play_back_size_px").val($("#play_back_size_px").val()+';'+video_play_back_size);
 		console.log(video_play_back_size);
+		if (new_h<fullscreen_height){
+			video.style.marginTop = Math.floor((fullscreen_height-new_h)/2);
+		}
+
 		video.setAttribute("width",new_w);
 		video.setAttribute("height",new_h);
 		
@@ -2016,15 +2041,27 @@ function playVideo_continue(id, video, is_dcr){
 		let fullscreen_element = document.fullscreenElement;
 		if (fullscreen_element){
 			$("#full_screen_size_px").val(''+fullscreen_element.clientWidth+'x'+fullscreen_element.clientHeight);			
+			fullscreen_height = fullscreen_element.clientHeight;
+			video_h = Math.floor(video.videoHeight / window.devicePixelRatio);
+			if (video_h>fullscreen_height){
+				video_h = fullscreen_height;
+			}
+			new_w = Math.floor(video_h * ratio);
+			if (video_h<fullscreen_height){
+				video.style.marginTop = Math.floor((fullscreen_height-video_h)/2);
+			}		
+			video.setAttribute("width",new_w);
+			video.setAttribute("height",video_h);
 		}
 		$("#play_back_size_px").val(''+video.getAttribute("width")+'x'+video.getAttribute("height"));
 	}
+
     video.play();
     if (video.id.indexOf('video1_')==0){
 	    video_play_start_time.set(id, Date.now());
+
 	 }
 }
-
 
 /**
 	Called when the video should be paused
