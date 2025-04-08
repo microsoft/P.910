@@ -88,7 +88,7 @@ want to have experiment specific criteria for data cleansing process.
         --quality_bonus
     ```
     * `--cfg` use the configuration file generated for your project in the [preparation](preparation.md) step here (i.e.`YOUR_PROJECT_NAME_ccr_result_parser.cfg`).
-    * `--method` could be `dcr`, `acr` or `acr-hr` .
+    * `--method` could be `acr`, `dcr`, `ccr`, `acr-hr`, `avatar_a` and `avatar_b`.
     * `--quantity_bonus` could be `all`, or `submitted`. It specify which assignments should be considered when calculating
     the amount of quantity bonus (everything i.e. `all` or just the assignments with status submitted i.e. `submitted`).
     * `--answers` the answer csv file downloaded from HIT App Server.

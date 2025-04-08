@@ -21,6 +21,7 @@ import create_input as ca
 
 from jinja2 import Template
 from azure_clip_storage import AzureClipStorage, TrappingSamplesInStore, GoldSamplesInStore
+import math
 
 
 def create_analyzer_cfg(cfg, template_path, out_path, n_HITs):
@@ -56,12 +57,16 @@ def create_analyzer_cfg(cfg, template_path, out_path, n_HITs):
     config['accepted_device'] = cfg['viewing_condition']['accepted_device']
     config['min_device_resolution'] = cfg['viewing_condition']['min_device_resolution']
     config['min_screen_refresh_rate'] = cfg['viewing_condition']['min_screen_refresh_rate']
+    # gold    
+    if 'gold_clips_src' in cfg['hit_app_html']:
+        config['gold_ans_format'] = cfg['hit_app_html']['gold_ans_format']
 
     with open(template_path, 'r') as file:
         content = file.read()
         file.seek(0)
     t = Template(content)
     cfg_file = t.render(cfg=config)
+       
 
     with open(out_path, 'w') as file:
         file.write(cfg_file)
@@ -79,7 +84,8 @@ def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
     return ''.join(random.choice(chars) for _ in range(N))
 
 
-async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs, is_ccr):
+async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs,
+                             is_ccr):
     """
     Create the hit_app (html file) corresponding to this project for dcr
     :param master_cfg:
@@ -166,7 +172,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
             df_trap = await trapclipsstore.get_dataframe()
         # trapping clips are required, at list 1 clip should be available here
         if len(df_trap.index) < 1:
-            raise ("At least one trapping clip is required")
+            raise "At least one trapping clip is required"
         for _, row in df_trap.head(n=1).iterrows():
             trap_ref = row['trapping_src']
             trap_pvs = row['trapping_pvs']
@@ -205,7 +211,19 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     hit_app_html_cfg = master_cfg['hit_app_html']
     viewing_condition_cfg = master_cfg['viewing_condition']
 
-    config = {}
+    config = dict()
+    config['debug'] = hit_app_html_cfg['debug'] if 'debug' in hit_app_html_cfg else 'false'
+    config['use_trapping_question'] = hit_app_html_cfg['use_trapping_question']
+    config['use_repeated_question'] = hit_app_html_cfg['use_repeated_question']
+    #config['instruction_html'] = hit_app_html_cfg['instruction_html']
+    #config['rating_questions'] = hit_app_html_cfg['rating_questions']
+    #config['rating_answers'] = hit_app_html_cfg['rating_answers']
+    if test_method == 'avatar':
+        config['template'] = hit_app_html_cfg['template'].lower().strip()
+        # check for accepted values : avatar_a, avatar_b, or avatar_problem_token
+        if config['template'] not in ['avatar_a', 'avatar_b', 'avatar_problem_token']:
+            raise SystemExit("Error: 'template' should be one of the following values: avatar_a, avatar_b, or avatar_problem_token. Update the config file:", config['template'])
+
     config['cookie_name'] = hit_app_html_cfg['cookie_name'] if 'cookie_name' in hit_app_html_cfg else \
         f'acr_{get_rand_id()}'
     config['qual_cookie_name'] = hit_app_html_cfg['qual_cookie_name'] if 'qual_cookie_name' in hit_app_html_cfg else \
@@ -275,11 +293,32 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     config['training_trap_ans'] = trap_ans
 
     # training urls
-    df_train = pd.read_csv(training_path)
     train_urls = []
-    for _, row in df_train.iterrows():
-        train_urls.append(row['training_pvs'])
-    train_urls.append(trap_url)
+    if not args.training_gold_clips:
+        df_train = pd.read_csv(training_path)
+        train_urls = []
+        for _, row in df_train.iterrows():
+            train_urls.append(row['training_pvs'])
+        train_urls.append(trap_url)
+
+    if args.training_gold_clips:
+        df_train = pd.read_csv(args.training_gold_clips)
+        gold_in_train = []
+        cols = list(df_train.columns.where(df_train.columns.str.endswith('_ans')).dropna())
+
+        for _, row in df_train.iterrows():
+            train_urls.append(row["training_pvs"])
+            data = {
+                'url': row["training_pvs"],
+            }
+            for col in cols:
+                if not math.isnan(row[col]):
+                    # coded_ans = get_encoded_gold_ans(row["training_clips"], row[col])
+                    prfx = col.split('_')[0]
+                    data[prfx] = {'ans': str(int(row[col])), 'msg': row[f"{prfx}_msg"],
+                                  'var': round(row[f"{prfx}_var"])}
+            gold_in_train.append(data.copy())
+        config["training_gold_clips"] = gold_in_train
 
     config['training_urls'] = train_urls
 
@@ -406,7 +445,7 @@ async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_pat
 
 
 # checked
-async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, general):
+async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, general, color_vision_res_path):
     """
     Merge different input files into one dataframe
     :param test_method
@@ -436,6 +475,12 @@ async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, 
         df_clips = pd.DataFrame({'pvs': rating_clips})
 
     df_general = pd.read_csv(general)
+    df_color_vision = pd.read_csv(color_vision_res_path)
+    # add prefix cv_ to color vision columns
+    df_color_vision.columns = ['cv_'+col for col in df_color_vision.columns]
+    # randomize 
+    df_color_vision = df_color_vision.sample(frac=1).reset_index(drop=True)
+    df_general = df_general.sample(frac=1).reset_index(drop=True) 
 
     if gold and os.path.exists(gold):
         df_gold = pd.read_csv(gold)
@@ -450,7 +495,7 @@ async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, 
         trapclipsstore = TrappingSamplesInStore(cfg['TrappingQuestions'], 'TrappingQuestions')
         df_trap = await trapclipsstore.get_dataframe()
         print('total trapping clips from store [{0}]'.format(len(await trapclipsstore.clip_names)))
-    result = pd.concat([df_clips, df_gold, df_trap, df_general], axis=1, sort=False)
+    result = pd.concat([df_clips, df_gold, df_trap, df_general, df_color_vision], axis=1, sort=False)
     return result
 
 
@@ -490,11 +535,17 @@ def get_path(test_method):
     dcr_ccr_cfg_template_path = os.path.join(os.path.dirname(__file__),
                                              'assets_master_script/result_parser_template.cfg')
 
-    method_to_template = { # (method, is_p831_fest)
+    #   for avatar
+    avatar_template_path = os.path.join(os.path.dirname(__file__), 'template/avatar_template.html')
+    avatar_cfg_template_path = os.path.join(os.path.dirname(__file__),
+                                         'assets_master_script/result_parser_template.cfg')
+
+    method_to_template = {  # (method, is_p831_fest)
         ('acr'): (acr_template_path, acr_cfg_template_path),
         ('dcr'): (dcr_template_path, dcr_ccr_cfg_template_path),
         ('acr-hr'): (acrhr_template_path, acrhr_cfg_template_path),
         ('ccr'): (dcr_template_path, dcr_ccr_cfg_template_path),
+        ('avatar'): (avatar_template_path, avatar_cfg_template_path),
     }
 
     template_path, cfg_path = method_to_template[(test_method)]
@@ -509,7 +560,15 @@ async def main(cfg, test_method, args):
 
     # check assets
     general_path = os.path.join(os.path.dirname(__file__), 'assets_master_script/general.csv')
+    internal_general_path = os.path.join(os.path.dirname(__file__), 'assets_master_script/internal_general.csv')
+    if os.path.exists(internal_general_path):
+        general_path = internal_general_path
     assert os.path.exists(general_path), f"No csv file containing general infos in {general_path}"
+    color_vision_res_path = os.path.join(os.path.dirname(__file__), 'assets_master_script/color_vision_plates.csv')
+    internal_color_vision_res_path = os.path.join(os.path.dirname(__file__), 'assets_master_script/internal_color_vision_plates_20122024.csv')
+    if os.path.exists(internal_color_vision_res_path):
+        color_vision_res_path = internal_color_vision_res_path
+    assert os.path.exists(color_vision_res_path), f"No csv file containing color vision plates infos in {color_vision_res_path}"
     template_path, cfg_path = get_path(test_method)
 
     cfg_hit_app = cfg["hit_app_html"]
@@ -535,7 +594,7 @@ async def main(cfg, test_method, args):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     # prepare format
-    df = await prepare_csv_for_create_input(cfg, test_method, args.clips, args.gold_clips, args.trapping_clips, general_path)
+    df = await prepare_csv_for_create_input(cfg, test_method, args.clips, args.gold_clips, args.trapping_clips, general_path, color_vision_res_path)
 
     # create inputs
     print('Start validating inputs')
@@ -543,6 +602,8 @@ async def main(cfg, test_method, args):
     print('... validation is finished.')
 
     output_csv_file = os.path.join(output_dir, args.project+'_publish_batch.csv')
+    df.to_csv(output_csv_file, index=False)
+    print(f"  [{output_csv_file}] is created")
     n_HITs = ca.create_input_for_mturk(cfg['create_input'], df, test_method, output_csv_file)
 
     # check settings of quantity bonus
@@ -559,8 +620,8 @@ async def main(cfg, test_method, args):
     # ********************
     if test_method in ['dcr', 'ccr']:
         await create_hit_app_dcr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
-                                     general_cfg, n_HITs, test_method=='ccr')
-    elif test_method == 'acr':
+                                 general_cfg, n_HITs, test_method == 'ccr')
+    elif test_method in ['acr', 'avatar']:
         await create_hit_app_acr(cfg, template_path, output_html_file, args.training_clips, args.trapping_clips,
                                  general_cfg, n_HITs)
     elif test_method == 'acr-hr':
@@ -581,7 +642,7 @@ if __name__ == '__main__':
     parser.add_argument("--project", help="Name of the project", required=True)
     parser.add_argument("--cfg", help="Configuration file, see master.cfg", required=True)
     parser.add_argument("--method", required=True,
-                        help="one of the test methods: 'acr', 'acr-hr', 'dcr', 'ccr'")
+                        help="one of the test methods: 'acr', 'acr-hr', 'dcr', 'ccr', 'avatar'")
     parser.add_argument("--clips", help="A csv containing urls of all clips to be rated in column 'pvs', in "
                                         "case of DCR it should also contain a column for 'src'")
     parser.add_argument("--gold_clips", help="A csv containing urls of all gold clips in column 'gold_clips_pvs' and "
@@ -589,17 +650,28 @@ if __name__ == '__main__':
                                              "is needed")
     parser.add_argument("--training_clips", help="A csv containing urls of all training clips to be rated in training "
                                                  "section. Columns 'training_pvs' and 'training_src' in case of DCR",
-                        required=True)
+                        required=False)
     parser.add_argument("--trapping_clips", help="A csv containing urls of all trapping clips. Columns 'trapping_pvc'"
                                                  "and 'trapping_ans'. In case of DCR also 'trapping_src'")
+    parser.add_argument(
+        "--training_gold_clips", default=None, help="A csv containing urls and details of gold training questions ",
+        required=False)
+
     # check input arguments
     args = parser.parse_args()
 
-    methods = ['acr', 'dcr', 'acr-hr', 'pc', 'ccr']
+    methods = ['acr', 'dcr', 'acr-hr', 'pc', 'ccr', 'avatar']
     test_method = args.method.lower()
     assert test_method in methods, f"No such a method supported, please select between {methods}"
     assert os.path.exists(args.cfg), f"No config file in {args.cfg}"
-    assert os.path.exists(args.training_clips), f"No csv file containing training clips in {args.training_clips}"
+
+    if args.training_clips:
+        assert os.path.exists(args.training_clips), f"No csv file containing training clips in {args.training_clips}"
+    elif args.training_gold_clips:
+        assert os.path.exists(
+            args.training_gold_clips), f"No csv file containing training_gold_clips in {args.training_gold_clips}"
+    else:
+        raise ValueError("No training or training_gold clips provided")
 
     cfg = CP.ConfigParser()
     cfg._interpolation = CP.ExtendedInterpolation()

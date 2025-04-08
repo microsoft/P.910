@@ -137,7 +137,7 @@ def create_trap_db(cfg, source_folder, des):
                                  output_path, cfg)
             count += 1
             list_of_file.append({'trapping_pvs': output_f_name, 'trapping_ans': score})
-    output_report = join(des, 'output_report.csv')
+    output_report = join(des, 'trapping_output_report.csv')
     with open(output_report, 'w', newline='') as output_file:
         headers_written = False
         for f in list_of_file:

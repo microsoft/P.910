@@ -32,14 +32,14 @@ def validate_inputs(df, method):
 
     # check mandatory columns
     required_columns_acr = ['pvs', 'block_matrix_url', 'circles', 'triangles', 'trapping_ans', 'trapping_pvs',
-                            'gold_clips_pvs', 'gold_clips_ans']
+                            'gold_clips_pvs', 'gold_clips_ans', 'cv_plate', 'cv_url']
     # tps are always the references.
     required_columns_dcr = ['pvs', 'src', 'block_matrix_url', 'circles', 'triangles', 'trapping_ans', 'trapping_pvs',
-                            'trapping_src', 'gold_clips_pvs', 'gold_clips_src', 'gold_clips_ans']
+                            'trapping_src', 'gold_clips_pvs', 'gold_clips_src', 'gold_clips_ans', 'cv_plate', 'cv_url']
 
     required_columns_acrhr = ['pvs', 'src', 'block_matrix_url', 'circles', 'triangles', 'trapping_ans', 'trapping_pvs',
                               'gold_clips_pvs', 'gold_clips_ans']
-    if method in ['acr']:
+    if method in ['acr', 'avatar']:
         req = required_columns_acr
     elif method in ['dcr', 'ccr']:
         req = required_columns_dcr
@@ -254,6 +254,40 @@ def add_clips_random_acrhr(clips, refs, n_clips_per_session, output_df):
         output_df[f'Q{q}_R'] = refs_sessions[:, q]
 
 
+def get_random_plate(df, plate,n_sessions):
+    df_cv = df[['cv_plate', 'cv_url']].copy()
+    # filter for cv_plate = plate_3
+    df_cv_plate = df_cv[df_cv['cv_plate'] == plate].copy()
+    # randomly select n_sessions , it could be n_sessions > number of rows in df_cv_plate3
+    if n_sessions > df_cv_plate.shape[0]:
+        df_cv_plate = df_cv_plate.sample(n=n_sessions, replace=True)
+    else:
+        df_cv_plate = df_cv_plate.sample(n=n_sessions, replace=False)
+
+    return df_cv_plate['cv_url'].tolist()
+
+def get_random_block_matrix(df, type, n_sessions): 
+    
+    cols = ['circles','triangles','block_matrix_url']
+    if 'type' in df.columns:        
+        cols.append('type')
+        # only keep cols 
+        df_cv = df[cols].copy()
+        df_cv = df_cv[df_cv['type'] == type].dropna()
+        # drop type column
+        df_cv = df_cv.drop(columns=['type'])
+    else:
+        df_cv = df[cols].copy().dropna()        
+    
+    if n_sessions > df_cv.shape[0]:
+        df_cv = df_cv.sample(n=n_sessions, replace=True)
+    else:
+        df_cv = df_cv.sample(n=n_sessions, replace=False)
+    # drop empty rows
+    df_cv = df_cv.dropna().reset_index(drop=True)
+    
+    return df_cv
+
 def create_input_for_acr(cfg, df, output_path):
     """
     create the input for the acr methods
@@ -278,67 +312,59 @@ def create_input_for_acr(cfg, df, output_path):
     print(f'{n_clips} clips and {n_sessions} sessions')
 
     # block_matrix
-    nPairs = 2 * n_sessions
-    urls = df['block_matrix_url'].dropna()
-    circles = df['circles'].dropna()
-    triangles = df['triangles'].dropna()
-
-    urls_extended = np.tile(urls.to_numpy(), (nPairs // urls.count()) + 1)[:nPairs]
-    circles_extended = np.tile(circles.to_numpy(), (nPairs // circles.count()) + 1)[:nPairs]
-    triangles_extended = np.tile(triangles.to_numpy(), (nPairs // triangles.count()) + 1)[:nPairs]
-
-    full_array = np.transpose(np.array([urls_extended, circles_extended, triangles_extended]))
-    new_2 = np.reshape(full_array, (n_sessions, 6))
-    np.random.shuffle(new_2)
-    output_df = output_df.assign(
-        **{'t1_matrix_url': new_2[:, 0], 't1_matrix_c': new_2[:, 1], 't1_matrix_t': new_2[:, 2],
-           't2_matrix_url': new_2[:, 3], 't2_matrix_c': new_2[:, 4], 't2_matrix_t': new_2[:, 5]})
+    
+    q1_blocks_df = get_random_block_matrix(df, 'q1', n_sessions)
+    # rename columns block_matrix_url: t1_matrix_url, circles: t1_matrix_c, triangles: t1_matrix_t
+    q1_blocks_df = q1_blocks_df.rename(columns={'block_matrix_url': 't1_matrix_url', 'circles': 't1_matrix_c', 'triangles': 't1_matrix_t'})        
+    
+    q2_blocks_df = get_random_block_matrix(df, 'q2', n_sessions)    
+    # rename columns block_matrix_url: t2_matrix_url, circles: t2_matrix_c, triangles: t2_matrix_t
+    q2_blocks_df = q2_blocks_df.rename(columns={'block_matrix_url': 't2_matrix_url', 'circles': 't2_matrix_c', 'triangles': 't2_matrix_t'})
+    output_df = pd.concat([output_df, q1_blocks_df, q2_blocks_df], axis=1)
+   
+    
     # to obfuscate the correct answer
     output_df['t1_matrix_c'] = output_df['t1_matrix_c'] + 2
     output_df['t1_matrix_t'] = output_df['t1_matrix_t'] + 3
+
+
+    # randomly select color vision plates
+    output_df['cv_plate_3_url'] = get_random_plate(df, 'plate_3', n_sessions)
+    output_df['cv_plate_4_url'] = get_random_plate(df, 'plate_4', n_sessions)
 
     # trappings
     if int(cfg['number_of_trapping_per_session']) > 0:
         if int(cfg['number_of_trapping_per_session']) > 1:
             print("more than one TP is not supported for now - continue with 1")
         # n_trappings = int(cfg['general']['number_of_trapping_per_session']) * n_sessions
-        n_trappings = n_sessions
+        #n_trappings = n_sessions
         tmp = df[['trapping_pvs', 'trapping_ans']].copy()
-        tmp.dropna(inplace=True)
-        tmp = tmp.sample(n=n_trappings, replace=True)
-        trap_source = tmp['trapping_pvs'].dropna()
-        trap_ans_source = tmp['trapping_ans'].dropna()
-
-        full_trappings = np.tile(trap_source.to_numpy(), (n_trappings // trap_source.count()) + 1)[:n_trappings]
-        full_trappings_answer = np.tile(trap_ans_source.to_numpy(), (n_trappings // trap_ans_source.count()) + 1)[
-                                :n_trappings]
-
-        full_tp = list(zip(full_trappings, full_trappings_answer))
-        random.shuffle(full_tp)
-
-        full_trappings, full_trappings_answer = zip(*full_tp)
-        output_df['TP_CLIP'] = full_trappings
-        output_df['TP_ANS'] = full_trappings_answer
+        tmp.dropna(inplace=True)            
+        if n_sessions > tmp.shape[0]:
+            tmp = tmp.sample(frac=1).reset_index(drop=True)
+            delta = n_sessions - tmp.shape[0]
+            tmp = pd.concat([tmp, tmp.sample(n=delta, replace=True)])
+        else:
+            tmp = tmp.sample(n=n_sessions, replace=False)      
+        output_df['TP_CLIP'] = tmp['trapping_pvs'].tolist()
+        output_df['TP_ANS'] = tmp['trapping_ans'].tolist()
 
     # gold_clips
     if int(cfg['number_of_gold_clips_per_session']) > 0:
         if int(cfg['number_of_gold_clips_per_session']) > 1:
             print("more than one gold_clip is not supported for now - continue with 1")
-        n_gold_clips = n_sessions
-        gold_clip_source = df['gold_clips_pvs'].dropna()
-        gold_clip_ans_source = df['gold_clips_ans'].dropna()
+        
+        tmp = df[['gold_clips_pvs', 'gold_clips_ans']].copy()
+        tmp.dropna(inplace=True)            
+        if n_sessions > tmp.shape[0]:
+            tmp = tmp.sample(frac=1).reset_index(drop=True)
+            delta = n_sessions - tmp.shape[0]
+            tmp = pd.concat([tmp, tmp.sample(n=delta, replace=True)])
+        else:
+            tmp = tmp.sample(n=n_sessions, replace=False)
 
-        full_gold_clips = np.tile(gold_clip_source.to_numpy(),
-                                  (n_gold_clips // gold_clip_source.count()) + 1)[:n_gold_clips]
-        full_gold_clips_answer = np.tile(gold_clip_ans_source.to_numpy(), (n_gold_clips // gold_clip_ans_source.count())
-                                         + 1)[:n_gold_clips]
-        full_gc = list(zip(full_gold_clips, full_gold_clips_answer))
-        random.shuffle(full_gc)
-
-        full_gold_clips, full_gold_clips_answer = zip(*full_gc)
-        output_df['GOLD_CLIP'] = full_gold_clips
-        output_df['GOLD_ANS'] = full_gold_clips_answer
-
+        output_df['GOLD_CLIP'] = tmp['gold_clips_pvs'].tolist()
+        output_df['GOLD_ANS'] = tmp['gold_clips_ans'].tolist()
     output_df.to_csv(output_path, index=False)
     return len(output_df)
 
@@ -479,100 +505,63 @@ def create_input_for_dcr(cfg, df, output_path):
     print(f'{n_clips} clips and {n_sessions} sessions')
 
     # block_matrix
-    nPairs = 2 * n_sessions
-    urls = df['block_matrix_url'].dropna()
-    circles = df['circles'].dropna()
-    triangles = df['triangles'].dropna()
-
-    urls_extended = np.tile(urls.to_numpy(), (nPairs // urls.count()) + 1)[:nPairs]
-    circles_extended = np.tile(circles.to_numpy(), (nPairs // circles.count()) + 1)[:nPairs]
-    triangles_extended = np.tile(triangles.to_numpy(), (nPairs // triangles.count()) + 1)[:nPairs]
-
-    full_array = np.transpose(np.array([urls_extended, circles_extended, triangles_extended]))
-    new_2 = np.reshape(full_array, (n_sessions, 6))
-    np.random.shuffle(new_2)
-    output_df = output_df.assign(**{'t1_matrix_url': new_2[:, 0], 't1_matrix_c': new_2[:, 1], 't1_matrix_t': new_2[:, 2],
-                                    't2_matrix_url': new_2[:, 3], 't2_matrix_c': new_2[:, 4], 't2_matrix_t': new_2[:, 5]})
+    q1_blocks_df = get_random_block_matrix(df, 'q1', n_sessions)
+    # rename columns block_matrix_url: t1_matrix_url, circles: t1_matrix_c, triangles: t1_matrix_t
+    q1_blocks_df = q1_blocks_df.rename(columns={'block_matrix_url': 't1_matrix_url', 'circles': 't1_matrix_c', 'triangles': 't1_matrix_t'})        
+    
+    q2_blocks_df = get_random_block_matrix(df, 'q2', n_sessions)    
+    # rename columns block_matrix_url: t2_matrix_url, circles: t2_matrix_c, triangles: t2_matrix_t
+    q2_blocks_df = q2_blocks_df.rename(columns={'block_matrix_url': 't2_matrix_url', 'circles': 't2_matrix_c', 'triangles': 't2_matrix_t'})
+    output_df = pd.concat([output_df, q1_blocks_df, q2_blocks_df], axis=1)
+   
+    
     # to obfuscate the correct answer
     output_df['t1_matrix_c'] = output_df['t1_matrix_c'] + 2
     output_df['t1_matrix_t'] = output_df['t1_matrix_t'] + 3
 
-    # rating_clips
-    #   repeat some clips to have a full design
-    ## TODO: check why they are added here as well, they actually should be added in  add_clips_random_dcr(...) above
-    """
-    n_questions = int(cfg['number_of_clips_per_session'])
-    needed_clips = n_sessions * n_questions
 
-    full_clips = np.tile(clips.to_numpy(), (needed_clips // n_clips) + 1)[:needed_clips]
-    full_refs = np.tile(refs.to_numpy(), (needed_clips // n_clips) + 1)[:needed_clips]
+    # randomly select color vision plates
+    output_df['cv_plate_3_url'] = get_random_plate(df, 'plate_3', n_sessions)
+    output_df['cv_plate_4_url'] = get_random_plate(df, 'plate_4', n_sessions)
 
-    full = list(zip(full_clips, full_refs))
-    random.shuffle(full)
-    full_clips, full_refs = zip(*full)
-
-    clips_sessions = np.reshape(full_clips, (n_sessions, n_questions))
-    refs_sessions = np.reshape(full_refs, (n_sessions, n_questions))
-
-    for q in range(n_questions):
-        output_df[f'Q{q}_P'] = clips_sessions[:, q]
-        output_df[f'Q{q}_R'] = refs_sessions[:, q]
-    """
     # trappings
     if int(cfg['number_of_trapping_per_session']) > 0:
         if int(cfg['number_of_trapping_per_session']) > 1:
             print("more than one TP is not supported for now - continue with 1")
         # n_trappings = int(cfg['general']['number_of_trapping_per_session']) * n_sessions
-        n_trappings = n_sessions
+        #n_trappings = n_sessions
 
         tmp = df[['trapping_pvs', 'trapping_src', 'trapping_ans']].copy()
-        tmp.dropna(inplace=True)
-        tmp = tmp.sample(n=n_trappings, replace=True)
+        tmp.dropna(inplace=True)        
+        if n_sessions > tmp.shape[0]:
+            tmp = tmp.sample(frac=1).reset_index(drop=True)
+            delta = n_sessions - tmp.shape[0]
+            tmp = pd.concat([tmp, tmp.sample(n=delta, replace=True)])
+        else:
+            tmp = tmp.sample(n=n_sessions, replace=False)            
+        
+        output_df['TP_CLIP'] = tmp['trapping_pvs'].tolist()
+        output_df['TP_REF'] = tmp['trapping_src'].tolist()
+        output_df['TP_ANS'] = tmp['trapping_ans'].tolist()
 
-        trap_pvs = tmp['trapping_pvs'].dropna()
-        trap_source = tmp['trapping_src'].dropna()
-        trap_ans_source = tmp['trapping_ans'].dropna()
-
-        full_trappings_src = np.tile(trap_source.to_numpy(), (n_trappings // trap_source.count()) + 1)[:n_trappings]
-        full_trappings_pvs = np.tile(trap_pvs.to_numpy(), (n_trappings // trap_pvs.count()) + 1)[:n_trappings]
-        full_trappings_answer = np.tile(trap_ans_source.to_numpy(), (n_trappings // trap_ans_source.count()) + 1)[
-                                :n_trappings]
-
-        full_tp = list(zip(full_trappings_src, full_trappings_pvs,  full_trappings_answer))
-        random.shuffle(full_tp)
-
-        full_trappings_src, full_trappings_pvs, full_trappings_answer = zip(*full_tp)
-        output_df['TP_REF'] = full_trappings_src
-        output_df['TP_CLIP'] = full_trappings_pvs
-        output_df['TP_ANS'] = full_trappings_answer
 
     # gold clips
     if int(cfg['number_of_gold_clips_per_session']) > 0:
         if int(cfg['number_of_gold_clips_per_session']) > 1:
             print("more than one Gold Question is not supported for now - continue with 1")
 
-        n_gold = n_sessions
-
         tmp = df[['gold_clips_pvs', 'gold_clips_src', 'gold_clips_ans']].copy()
-        tmp.dropna(inplace=True)
-        tmp = tmp.sample(n=n_gold, replace=True)
+        tmp.dropna(inplace=True)        
+        if n_sessions > tmp.shape[0]:            
+            tmp = tmp.sample(frac=1).reset_index(drop=True)            
+            delta = n_sessions - tmp.shape[0]            
+            tmp = pd.concat([tmp, tmp.sample(n=delta, replace=True)])            
+        else:
+            tmp = tmp.sample(n=n_sessions, replace=False)  
 
-        gold_pvs = tmp['gold_clips_pvs'].dropna()
-        gold_source = tmp['gold_clips_src'].dropna()
-        gold_ans_source = tmp['gold_clips_ans'].dropna()
-
-        full_gold_src = np.tile(gold_source.to_numpy(), (n_gold // gold_source.count()) + 1)[:n_gold]
-        full_gold_pvs = np.tile(gold_pvs.to_numpy(), (n_gold // gold_pvs.count()) + 1)[:n_gold]
-        full_gold_answer = np.tile(gold_ans_source.to_numpy(), (n_gold // gold_ans_source.count()) + 1)[
-                                :n_gold]
-
-        full_set = list(zip(full_gold_src, full_gold_pvs,  full_gold_answer))
-        random.shuffle(full_set)
-
-        full_gold_src, full_gold_pvs, full_gold_answer = zip(*full_set)
-        output_df['GOLD_REF'] = full_gold_src
-        output_df['GOLD_CLIP'] = full_gold_pvs
-        output_df['GOLD_ANS'] = full_gold_answer
+        output_df['GOLD_REF'] = tmp['gold_clips_src'].tolist()
+        output_df['GOLD_CLIP'] = tmp['gold_clips_pvs'].tolist()
+        output_df['GOLD_ANS'] = tmp['gold_clips_ans'].tolist()
     output_df.to_csv(output_path, index=False)
     return len(output_df)
 
@@ -584,7 +573,7 @@ def create_input_for_mturk(cfg, df, method, output_path):
     :param df:  row input, see validate_inputs for details
     :param output_path: path to output file
     """
-    if method in ['acr']:
+    if method in ['acr', 'avatar']:
         return create_input_for_acr(cfg, df, output_path)
     elif method in ['dcr', 'ccr']:
         return create_input_for_dcr(cfg, df, output_path)

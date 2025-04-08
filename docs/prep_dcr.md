@@ -1,6 +1,6 @@
 [Home](../README.md) > [Preparation](preparation.md) > Preparation for Degradation Category Rating (DCR)
 
-# Preparation of DCR test
+# Preparation of DCR/CCR test
 
 The following steps should be performed to prepare the DCR test setup.
 For all the resource files (steps 1-4) an example is provided in `sample_inputs` directory using 
