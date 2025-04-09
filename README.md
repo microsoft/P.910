@@ -1,24 +1,25 @@
 # P.910 Crowd
-The P.910-Crowd Toolkit is a software package that enables users to run subjective video quality assessment test
-in a crowdsourcing platform like Amazon Mechanical Turk (AMT) or remote testing with a dedicated panel of workers.
-It is intended to be counter part of the ITU-T Recommendation P.910 for crowdsourcing. 
- 
 
-Note: Currently full-screen play-back is not supported by HITs builds inside AMT. Therefore, we provide, the [HITAPP Server](hitapp_server/README.md)
-which can serve the experiment. Consequently you can use AMT or any other crowdsourcing platform and post your study URL.
+The P.910-Crowd Toolkit is a software package designed to enable users to conduct subjective video quality assessment tests on crowdsourcing platforms like Amazon Mechanical Turk (AMT) or through remote testing with a dedicated panel of workers. It serves as a counterpart to the ITU-T Recommendation P.910 for crowdsourcing.
 
+## Updates
+* **April 2025**: The toolkit has been updated to support multi-dimensional measurement of the quality of experience for Photorealistic Avatars.
 
-For more information about the ITU-T Rec. P.910 please read:
+**Note**: Full-screen playback is currently not supported by HITs built within AMT. To address this, we provide the [HITAPP Server](hitapp_server/README.md), which can host the experiment. This allows you to use AMT or any other crowdsourcing platform by posting your study URL.
 
-[ITU-T Recommendation P.910, _Subjective video quality assessment methods for multimedia applications._](https://www.itu.int/rec/T-REC-P.910/en) 
+For more information about ITU-T Recommendation P.910, refer to:
+
+[ITU-T Recommendation P.910, _Subjective video quality assessment methods for multimedia applications._](https://www.itu.int/rec/T-REC-P.910/en)  
 Geneva: International Telecommunication Union, 2021.
 
-Technical description of the implementation and validation is given in this paper:
+A technical description of the implementation and validation is provided in the following papers:
 
-* [A crowdsourcing approach to video quality assessment](https://arxiv.org/pdf/2204.06784.pdf) Babak Naderi, Ross Cutler, arXiv preprint arXiv:2204.06784 (2022).
+* "[_A crowdsourcing approach to video quality assessment_](https://arxiv.org/pdf/2204.06784.pdf)," Babak Naderi, Ross Cutler, ICASSP 2024 and arXiv preprint 2022.
+
+* "[_A multidimensional measurement of Photorealistic Avatar Quality of Experience_](https://arxiv.org/pdf/2411.09066)," Ross Cutler, Babak Naderi, Vishak Gopal, Dharmendar Palle, 2025.
 
 ## Citation
-If you use this tool in your research please cite it with the following references:
+If you use this toolkit in your research, please cite it using the following references:
 
 ```BibTex
 @article{naderi2024,
@@ -27,6 +28,13 @@ If you use this tool in your research please cite it with the following referenc
   booktitle={ICASSP},
   year={2024}
 }
+
+@article{cutler2024multidimensional,
+  title={A multidimensional measurement of photorealistic avatar quality of experience},
+  author={Cutler, Ross and Naderi, Babak and Gopal, Vishak and Palle, Dharmendar},
+  journal={CSCW},
+  year={2025}
+}
 ```
 
 ## Getting Started
@@ -34,11 +42,9 @@ If you use this tool in your research please cite it with the following referenc
 * [Running the Crowdsourcing Test](docs/running_test_mturk.md)
 * [Analyzing Data](docs/results.md)
 
-
 ## Troubleshooting
 For bug reports and issues with this code, please see the 
 [_github issues page_](https://github.com/microsoft/P.910/issues). Please review this page before contacting the authors.
-
 
 ## Contact
 
@@ -55,7 +61,6 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 ## Contributing
 

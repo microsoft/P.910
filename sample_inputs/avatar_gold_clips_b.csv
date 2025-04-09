@@ -1,0 +1,4 @@
+gold_clips_pvs,gold_clips_ans,lookslike,facialexpressions,gesture_acc
+https://audiosamplesp808.blob.core.windows.net/p910-assets/sample_videos/avatar/gb1.mp4,"(1,1,1)",1,1,1
+https://audiosamplesp808.blob.core.windows.net/p910-assets/sample_videos/avatar/gb2.mp4,"(5,_,1)",5,,1
+https://audiosamplesp808.blob.core.windows.net/p910-assets/sample_videos/avatar/gb3.mp4,"(5,5,5)",5,5,5
