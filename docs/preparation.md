@@ -30,4 +30,5 @@ You may use [Azure Virtual Machine](https://azure.microsoft.com/en-us/services/v
 
 1.  Follow the rest of preparation process based on the test methodology you want to apply:    
     - [Preparation for Absolute Category Rating (ACR) and ACR-HR](prep_acr.md)
-    - [Preparation for Degradation Category Rating (DCR)](prep_dcr.md)
+    - [Preparation for Degradation Category Rating (DCR) and Comparison Category Rating (CCR)](prep_dcr.md)
+    - [Preparation for Photorealistic Avatars evaluation](prep_avatar.md)
