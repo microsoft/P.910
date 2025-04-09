@@ -10,9 +10,13 @@ import argparse
 from os.path import isfile, join, basename
 import configparser as CP
 import csv
+import json
 import cv2
 from PIL import Image, ImageFont, ImageDraw
-from moviepy.editor import *
+from moviepy import VideoFileClip, concatenate_videoclips
+import base64
+import os
+import uuid
 
 video_extension = '.mp4'
 trapping_videos = []
@@ -72,9 +76,13 @@ def create_msg_img(cfg, score, des, v_width, v_height):
     expected_text_width = v_width*0.8
     percentage = 0
     font_size = 15
-    text = ''
-    if len(cfg['message_line1']) > len(cfg['message_line2']):
-        text = cfg['message_line1']
+
+    score_text = str(score)
+    if args.avatar and 'avatar_rating_answers' in cfg:
+        score_text = {json.loads(cfg['avatar_rating_answers'])[str(score)]
+
+    if len(cfg['message_line1'].format(score_text)) > len(cfg['message_line2'].format(score_text)):
+        text = cfg['message_line1'].format(score_text)
     else:
         text = cfg['message_line2']
     while percentage < 0.95 or percentage > 1.05:
@@ -83,7 +91,7 @@ def create_msg_img(cfg, score, des, v_width, v_height):
         else:
             font_size -= 1
         font = ImageFont.truetype("arial.ttf", font_size)
-        text_width = font.getsize(text)[0]
+        text_width = font.getbbox(text)[2]
         percentage = text_width / expected_text_width
 
     # create the image
@@ -92,16 +100,17 @@ def create_msg_img(cfg, score, des, v_width, v_height):
     font = ImageFont.truetype("arial.ttf", font_size)
 
     text = title
-    text_width = font.getsize(text)[0]
-    text_height = font.getsize(text)[1]
+    text_bbox = font.getbbox(text)
+    text_width = text_bbox[2]
+    text_height = text_bbox[3]
     d.text(xy=((v_width-text_width)/2, v_height/2-3*text_height), text=text, font=font, fill=(255, 255, 255))
 
-    text = cfg['message_line1'].format(score)
-    text_width = font.getsize(text)[0]
+    text = cfg['message_line1'].format(score_text)
+    text_width = font.getbbox(text)[2]
     d.text(xy=((v_width - text_width) / 2, v_height / 2 - text_height), text=text, font=font, fill=(255, 255, 255))
 
-    text = cfg['message_line2'].format(score)
-    text_width = font.getsize(text)[0]
+    text = cfg['message_line2'].format(score_text)
+    text_width = font.getbbox(text)[2]
     d.text(xy=((v_width - text_width) / 2, v_height / 2 + text_height/2), text=text, font=font, fill=(255, 255, 255))
     image_path = join(des, f'tmp_{v_width}_{v_height}_{score}.png')
     img.save(image_path)
@@ -174,12 +183,17 @@ def create_trap_stimulus(source, message, output, cfg):
         prefix_duration = source_duration - msg_duration -post_fix_duration_sec
         if prefix_duration < 3:
             prefix_duration = 3
-        prefix_video = source_video.subclip(0, prefix_duration)
+        prefix_video = source_video.subclipped(0, prefix_duration)
     else:
-        prefix_video = source_video.subclip(0, min(int(cfg["include_from_source_stimuli_in_second"]), src_duration))
+        prefix_video = source_video.subclipped(0, min(int(cfg["include_from_source_stimuli_in_second"]), src_duration))
 
-    postfix_clip = source_video.subclip(source_duration-post_fix_duration_sec, source_duration)
+    postfix_clip = source_video.subclipped(source_duration-post_fix_duration_sec, source_duration)
+    # concat the clips
     final_clip = concatenate_videoclips([prefix_video, msg_video, postfix_clip])
+        
+    # print the lenght of each component
+    print(prefix_video.duration, msg_video.duration, postfix_clip.duration, final_clip.duration)
+    
     final_clip.write_videofile(output)
 
 
@@ -191,6 +205,8 @@ if __name__ == '__main__':
     # Configuration: read it from trapping.cfg
     parser.add_argument("--cfg",
                         help="Check trapping.cfg for all the details", required=True)
+    # is avatar
+    parser.add_argument("--avatar", help="Is avatar", action='store_true', default=False)
     args = parser.parse_args()
 
     cfgpath = args.cfg

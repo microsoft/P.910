@@ -56,9 +56,10 @@ For details about the different test methods for Photorealistic Avatars, please 
       python create_trapping_clips.py ^
           --source tp_src ^
           --des tp_out ^
-          --cfg your_config_file.cfg
+          --cfg your_config_file.cfg ^
+          --avatar
       ```
-   4. Trapping clips will be stored in the `tp_out` directory. The list of clips and their correct answers can be found in `tp_out\output_report.csv`.
+   4. Trapping clips will be stored in the `tp_out` directory. The list of clips and their correct answers can be found in `tp_out\trapping_output_report.csv`.
 
 5. **Upload Trapping Clips**  
    Upload your **trapping clips** to a cloud server and create the `trapping_clips.csv` file with the following columns:
