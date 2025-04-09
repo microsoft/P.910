@@ -2,8 +2,7 @@
 
 The P.910-Crowd Toolkit is a software package designed to enable users to conduct subjective video quality assessment tests on crowdsourcing platforms like Amazon Mechanical Turk (AMT) or through remote testing with a dedicated panel of workers. It serves as a counterpart to the ITU-T Recommendation P.910 for crowdsourcing.
 
-## Updates
-* **April 2025**: The toolkit has been updated to support multi-dimensional measurement of the quality of experience for Photorealistic Avatars.
+
 
 **Note**: Full-screen playback is currently not supported by HITs built within AMT. To address this, we provide the [HITAPP Server](hitapp_server/README.md), which can host the experiment. This allows you to use AMT or any other crowdsourcing platform by posting your study URL.
 
@@ -16,7 +15,11 @@ A technical description of the implementation and validation is provided in the 
 
 * "[_A crowdsourcing approach to video quality assessment_](https://arxiv.org/pdf/2204.06784.pdf)," Babak Naderi, Ross Cutler, ICASSP 2024 and arXiv preprint 2022.
 
-* "[_A multidimensional measurement of Photorealistic Avatar Quality of Experience_](https://arxiv.org/pdf/2411.09066)," Ross Cutler, Babak Naderi, Vishak Gopal, Dharmendar Palle, 2025.
+* "[_A multidimensional measurement of Photorealistic Avatar Quality of Experience_](https://arxiv.org/pdf/2411.09066)," Ross Cutler, Babak Naderi, Vishak Gopal, Dharmendar Palle, CSCW 2025.
+
+### Updates
+* **April 2025**: The toolkit has been updated to support multi-dimensional measurement of the quality of experience for Photorealistic Avatars.
+
 
 ## Citation
 If you use this toolkit in your research, please cite it using the following references:
