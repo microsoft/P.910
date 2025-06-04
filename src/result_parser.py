@@ -366,6 +366,18 @@ def check_variance(row, method):
     return -1
 
 def check_gold_question_avatarb(row):
+    """Check correctness of gold question answers for Avatar-B template.
+
+    Parameters
+    ----------
+    row : pandas.Series
+        Row from the results CSV containing worker answers.
+
+    Returns
+    -------
+    tuple
+        (1, details) if answered correctly, otherwise (0, details).
+    """
     correct_gq = 0
     details = {}
     try:
@@ -952,8 +964,9 @@ def save_block_list(block_list, path, wrong_v_code_freq):
 
 
 def check_wrong_vcode_should_block(wrong_vcodes):
+    """Return worker IDs that repeatedly submitted wrong verification codes."""
     if wrong_vcodes is None:
-        return []       
+        return []
     # count the number of wrong verification code per worker
     small_df = wrong_vcodes[['WorkerId']].copy()
     grouped = small_df.groupby(['WorkerId']).size().reset_index(name='counts')
@@ -1549,8 +1562,9 @@ def number_of_unique_workers(answers, used):
 
 
 def recover_submission_withoiut_matching_vcode(hit_ans, amt_ans, not_in_hitapp):
-    # iterate over daraftame
-    for index, row in not_in_hitapp.iterrows(): 
+    """Try to match AMT answers with submissions missing in the HIT app."""
+    # iterate over dataframe
+    for index, row in not_in_hitapp.iterrows():
         # find the matching row in amt
         amt_row = amt_ans[amt_ans['AssignmentId'] == row['Answer.hitapp_assignmentId']]
         if len(amt_row) == 1:

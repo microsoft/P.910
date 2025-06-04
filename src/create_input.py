@@ -161,6 +161,27 @@ def add_clips_balanced_block(clips, condition_pattern, keys, n_clips_per_session
 
 
 def add_clips_balanced_block_ccr(clips, refs, condition_pattern, keys, n_clips_per_session, output_df):
+    """Create the balanced block structure for CCR/DCR tests.
+
+    Parameters
+    ----------
+    clips : pd.Series
+        List of clips to be used as processed videos.
+    refs : pd.Series
+        List of reference clips matching ``clips``.
+    condition_pattern : str
+        Regex pattern describing the conditions embedded in the filenames.
+    keys : str
+        Keys describing the order of the conditions.
+    n_clips_per_session : int
+        Number of clips that should appear in a session.
+    output_df : pd.DataFrame
+        DataFrame that will be filled with the packed clips.
+
+    Returns
+    -------
+    None
+    """
     # create the structure only using clips
     add_clips_balanced_block(clips, condition_pattern, keys, n_clips_per_session, output_df)
     clips = clips.tolist()
@@ -254,11 +275,28 @@ def add_clips_random_acrhr(clips, refs, n_clips_per_session, output_df):
         output_df[f'Q{q}_R'] = refs_sessions[:, q]
 
 
-def get_random_plate(df, plate,n_sessions):
+def get_random_plate(df, plate, n_sessions):
+    """Randomly choose color vision plates for the given session count.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing ``cv_plate`` and ``cv_url`` columns.
+    plate : str
+        Plate identifier to filter on (e.g. ``'plate_3'``).
+    n_sessions : int
+        Number of sessions requiring a plate.
+
+    Returns
+    -------
+    list[str]
+        List of URLs to be used for the selected sessions.
+    """
     df_cv = df[['cv_plate', 'cv_url']].copy()
-    # filter for cv_plate = plate_3
+    # Filter for the requested plate number
     df_cv_plate = df_cv[df_cv['cv_plate'] == plate].copy()
-    # randomly select n_sessions , it could be n_sessions > number of rows in df_cv_plate3
+    # Randomly select ``n_sessions`` rows. Sampling with replacement is used
+    # when the number of available rows is smaller than ``n_sessions``.
     if n_sessions > df_cv_plate.shape[0]:
         df_cv_plate = df_cv_plate.sample(n=n_sessions, replace=True)
     else:
@@ -266,9 +304,27 @@ def get_random_plate(df, plate,n_sessions):
 
     return df_cv_plate['cv_url'].tolist()
 
-def get_random_block_matrix(df, type, n_sessions): 
-    
-    cols = ['circles','triangles','block_matrix_url']
+def get_random_block_matrix(df, type, n_sessions):
+    """Select random block-matrix entries for each session.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing columns ``circles``, ``triangles`` and
+        ``block_matrix_url``. Optionally a ``type`` column may be present.
+    type : str
+        When the DataFrame contains a ``type`` column only rows matching this
+        value are considered.
+    n_sessions : int
+        Number of sessions that need a block matrix.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with ``n_sessions`` randomly selected rows.
+    """
+
+    cols = ['circles', 'triangles', 'block_matrix_url']
     if 'type' in df.columns:        
         cols.append('type')
         # only keep cols 

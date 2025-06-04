@@ -79,7 +79,7 @@ def create_msg_img(cfg, score, des, v_width, v_height):
 
     score_text = str(score)
     if args.avatar and 'avatar_rating_answers' in cfg:
-        score_text = {json.loads(cfg['avatar_rating_answers'])[str(score)]
+        score_text = json.loads(cfg['avatar_rating_answers'])[str(score)]
 
     if len(cfg['message_line1'].format(score_text)) > len(cfg['message_line2'].format(score_text)):
         text = cfg['message_line1'].format(score_text)

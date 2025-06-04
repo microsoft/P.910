@@ -557,6 +557,22 @@ def get_path(test_method):
 
 # checked
 async def main(cfg, test_method, args):
+    """Entry point for the master script.
+
+    This routine validates inputs, prepares the CSV files used by MTurk and
+    generates the HTML HIT application as well as the result parser
+    configuration.
+
+    Parameters
+    ----------
+    cfg : configparser.ConfigParser
+        Loaded configuration file.
+    test_method : str
+        One of the supported test methods ('acr', 'dcr', 'acr-hr', 'ccr',
+        'avatar').
+    args : argparse.Namespace
+        Parsed command line arguments.
+    """
 
     # check assets
     general_path = os.path.join(os.path.dirname(__file__), 'assets_master_script/general.csv')
