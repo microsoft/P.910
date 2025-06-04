@@ -658,7 +658,10 @@ function loadTextPlaceHolders(){
 		$('.training_time').html(config['forceRetrainingInHours']+" hours" );
 	$('.question_number_training').html(config['trainingUrls'].length);
 	$('.question_number').html(config['questionUrls'].length);
-	$('.instruction_device').html(config['device_accepted_device'].join());
+        $('.instruction_device').html(config['device_accepted_device'].join());
+
+        $('.min_resolution').html(config.min_resolution.w + 'x' + config.min_resolution.h);
+        $('.min_speed').html(config['internet_speed_Mbps']);
 
 	dcr = 'Within each pair only the second clip is processed.' +
 	'At the end of each paired presentation, you should evaluate the impairment of the <b>second clip (Clip B)</b> with respect to the  <b> first clip (Clip A)</b>.';
@@ -1056,12 +1059,16 @@ function hardware_test(){
 
 		record_screen_size();
 		record_os();
-		if (refresh_rate_passed && resolution_check && device_accepted){
-			activate_hit();
-		}else{
-			//alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
-			disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
-		}
+                if (refresh_rate_passed && resolution_check && device_accepted){
+                        activate_hit();
+                }else{
+                        if(!resolution_check){
+                                alert('Your screen resolution is below the required ' +
+                                      config.min_resolution.w + 'x' + config.min_resolution.h + '.');
+                        }
+                        //alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
+                        disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+                }
 	}
 }
 
@@ -1072,12 +1079,12 @@ var page_loading_timer =null;
 	Called when downloading of all videos took too long, show a message and block the hit.
 **/
 function show_message_too_long_loading(){
-	if(page_loading_timer){
-		clearTimeout(page_loading_timer);
-		page_loading_timer= null;
-	}
-	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
-	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+        if(page_loading_timer){
+                clearTimeout(page_loading_timer);
+                page_loading_timer= null;
+        }
+        alert('It looks like that your Internet connection is below the required ' + config['internet_speed_Mbps'] + ' Mbps. Please return this hit and try it later with a better network connection. Thanks');
+        disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
 /**
@@ -2733,8 +2740,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<ul>
 					<li>You must use a <b class="instruction_device">XX</b>, otherwise your response will be rejected</li>
 					<li>You must perform the task in good lighting conditions without <b>glare on your screen</b>. Typically a semi-dark environment is recommended. </li>
-					<li>Do not change the brightness of your screen or your distance to the screen after the Setup section.</li>
-				</ul>
+                                        <li>Do not change the brightness of your screen or your distance to the screen after the Setup section.</li>
+                                        <li>Your monitor resolution must be at least <b class="min_resolution"></b></li>
+                                        <li>Your internet connection must be at least <b class="min_speed"></b> Mbps</li>
+                                </ul>
 
 				<p><b>Payment:</b></p>
 				<p>The result of this experiment is <b>very important for us and other scientists</b> working in this area. We have methods that analyze the consistency of your answers. We will use these methods to rank the submitted assignments according to quality.</p>
@@ -3251,7 +3260,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 </section>
 
 <section class="container" id="automatic_test_failed" hidden>
-	<p>Unfortunately your hardware/connection did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT and <u>try again in about <b class="training_time">1 hour</b></u>. If you try it sooner, you may see a message that there is no "There is no assignments that match to your qualification or device/connection."</p>
+        <p>Unfortunately your hardware/connection did not meet the minimum requirements (resolution <b class="min_resolution"></b>, download speed <b class="min_speed"></b> Mbps). You may refresh this page once, if you see this message for the second time, please return this HIT and <u>try again in about <b class="training_time">1 hour</b></u>. If you try it sooner, you may see a message that there is no "There is no assignments that match to your qualification or device/connection."</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
