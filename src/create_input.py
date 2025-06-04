@@ -79,7 +79,9 @@ def add_clips_balanced_block(clips, condition_pattern, keys, n_clips_per_session
     block_keys = [x.strip() for x in keys.split(',')]
     if len(block_keys) > 2:
         raise SystemExit("Error: balanced_block design- only up to 2 keys in 'block_keys' are supported")
-    data = pd.DataFrame(columns=block_keys.copy().insert(0,' url'))
+
+    columns = ['url'] + block_keys.copy()
+    data = pd.DataFrame(columns=columns)
 
     for clip in clips:
         condition = conv_filename_to_condition(clip, condition_pattern)
