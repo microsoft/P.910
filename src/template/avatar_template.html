@@ -2970,6 +2970,18 @@ function avoidAnsweringBeforeWatchingThrough(){
 	}
 }
 
+function reportProblem(){
+        var desc = prompt('Please describe the problem you encountered:');
+        if(desc === null){
+                return;
+        }
+        var videoUrls = config['questionUrls'].join('\n');
+        var browserInfo = $('#browser_info').val();
+        var problems = problematic_urls.replace(/<li>/g,'').replace(/<\/li>/g,'\n');
+        var body = encodeURIComponent(desc + '\n\nVideo URLs:\n' + videoUrls + '\n\nBrowser Info:\n' + browserInfo + '\n\nProblematic URLs:\n' + problems);
+        window.location.href = 'mailto:' + config['emailAddress'] + '?subject=Problem Report&body=' + body;
+}
+
 //-------------------------------------------
 </script>
 
@@ -3547,11 +3559,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<div class="tab-content" id="nav-tabContent-rating">	</div>
 				<div style="margin-top:0px;font-size:90%;text-align:center">Click <b>next</b> to answer all <b class="question_number">0</b> questions, then submit your response.</div>
 				<nav aria-label="..." id="navNextPre">
-				  <ul class="pager">
-					<li class="previous" id="prev-rating"><a href="#navNextPre" class="page-link"  role="button" ><span aria-hidden="true">&larr;</span>Previous</a></li>
-					<li class="next" id= "next-rating" ><a href="#navNextPre" class="page-link"  role="button">Next <span aria-hidden="true">&rarr;</span></a></li>
-				  </ul>
-				</nav>
+                                  <ul class="pager">
+                                        <li class="previous" id="prev-rating"><a href="#navNextPre" class="page-link"  role="button" ><span aria-hidden="true">&larr;</span>Previous</a></li>
+                                        <li class="next" id= "next-rating" ><a href="#navNextPre" class="page-link"  role="button">Next <span aria-hidden="true">&rarr;</span></a></li>
+                                  </ul>
+                                </nav>
+                                <button type="button" class="btn btn-warning" onclick="reportProblem();">Report Problem</button>
 
 			</div>
 		</div>
