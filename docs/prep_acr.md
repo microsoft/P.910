@@ -64,7 +64,8 @@ column name `training_pvs` (see [training_clips_acr.csv](../sample_inputs/traini
     python create_trapping_clips.py ^
         --source tp_src ^
         --des tp_out ^
-        --cfg your_config_file.cfg
+        --cfg your_config_file.cfg ^
+        --font path_to_font.ttf
     ```    
     5. Trapping clips are stored in `tp_out` directory. List of clips and their correct answer can 
     be found in `tp_out\output_report.csv`.

@@ -18,6 +18,19 @@ import base64
 import os
 import uuid
 
+DEFAULT_FONT = "arial.ttf"
+font_file = DEFAULT_FONT
+
+def load_font(size):
+    """Load the configured font, falling back to a default if not found."""
+    try:
+        return ImageFont.truetype(font_file, size)
+    except OSError:
+        try:
+            return ImageFont.truetype("DejaVuSans-Bold.ttf", size)
+        except OSError:
+            return ImageFont.load_default()
+
 video_extension = '.mp4'
 trapping_videos = []
 tmp_files = []
@@ -79,7 +92,7 @@ def create_msg_img(cfg, score, des, v_width, v_height):
 
     score_text = str(score)
     if args.avatar and 'avatar_rating_answers' in cfg:
-        score_text = {json.loads(cfg['avatar_rating_answers'])[str(score)]
+        score_text = json.loads(cfg['avatar_rating_answers'])[str(score)]
 
     if len(cfg['message_line1'].format(score_text)) > len(cfg['message_line2'].format(score_text)):
         text = cfg['message_line1'].format(score_text)
@@ -90,14 +103,14 @@ def create_msg_img(cfg, score, des, v_width, v_height):
             font_size += 5
         else:
             font_size -= 1
-        font = ImageFont.truetype("arial.ttf", font_size)
+        font = load_font(font_size)
         text_width = font.getbbox(text)[2]
         percentage = text_width / expected_text_width
 
     # create the image
     img = Image.new('RGB', (v_width, v_height), color=(127, 127, 127))
     d = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", font_size)
+    font = load_font(font_size)
 
     text = title
     text_bbox = font.getbbox(text)
@@ -207,7 +220,10 @@ if __name__ == '__main__':
                         help="Check trapping.cfg for all the details", required=True)
     # is avatar
     parser.add_argument("--avatar", help="Is avatar", action='store_true', default=False)
+    parser.add_argument("--font", help="path to a TrueType font file to use for the messages", default=DEFAULT_FONT)
+
     args = parser.parse_args()
+    font_file = args.font
 
     cfgpath = args.cfg
     assert os.path.exists(cfgpath), f"No configuration file in {cfgpath}]"

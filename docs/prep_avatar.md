@@ -57,6 +57,7 @@ For details about the different test methods for Photorealistic Avatars, please 
           --source tp_src ^
           --des tp_out ^
           --cfg your_config_file.cfg ^
+          --font path_to_font.ttf ^
           --avatar
       ```
    4. Trapping clips will be stored in the `tp_out` directory. The list of clips and their correct answers can be found in `tp_out\trapping_output_report.csv`.
