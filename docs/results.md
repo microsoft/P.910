@@ -48,7 +48,7 @@ want to have experiment specific criteria for data cleansing process.
     threshold, the worker will be added to the "block" list with a proper message. You may upload the "block" list later 
     in your AMT account to block those workers.
    
-    1. All submissions that are accepted and passed the following criteria are consider reliable and wil be used/aggregated.
+    1. All submissions that are accepted and passed the following criteria are considered reliable and will be used/aggregated.
     Consequently if they failed then the submission will not be used but the worker will be paid.
       
     ```INI
