@@ -1139,16 +1139,22 @@ function hardware_test(){
 		return;
 	}
 	if (!startScreenRefreshRateMeasures){
-		if (videos_not_loaded_yet_set.size == 0){
-			record_video_loading_time();
-			getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
+                if (videos_not_loaded_yet_set.size == 0){
+                        $("#loading_percent").html("100%");
+                        record_video_loading_time();
+                        getScreenRefreshRate(function(fps){check_screen_refresh_rate(fps);});
 			startScreenRefreshRateMeasures = true;
 
 		}else{
 
-			$("#remaining_videos").html(videos_not_loaded_yet_set.size);
-			window.setTimeout(hardware_test, 200);
-			return;
+                $("#remaining_videos").html(videos_not_loaded_yet_set.size);
+                if(total_videos_count > 0){
+                        let loaded = total_videos_count - videos_not_loaded_yet_set.size;
+                        let percent = Math.round(100 * loaded / total_videos_count);
+                        $("#loading_percent").html(percent + "%");
+                }
+                window.setTimeout(hardware_test, 200);
+                return;
 		}
 	}
 	if(refresh_rate_passed === null) {
@@ -1180,6 +1186,7 @@ function hardware_test(){
 //just tmp for test
 var video_size_MB = 0;
 var page_loading_timer =null;
+var total_videos_count = 0;
 
 /**
 	Called when downloading of all videos took too long, show a message and block the hit.
@@ -2881,6 +2888,7 @@ $(function() {
         recordError("on loading video clips",e.target.src, true);
         //$("#error_loading_files").show();
     });
+    total_videos_count = videos_not_loaded_yet_set.size;
     velements_added = true;
 });
 
@@ -3015,9 +3023,10 @@ function avoidAnsweringBeforeWatchingThrough(){
 	<div class="col-md-3" sytle="text-align: left;"> <h1>Loading</h1>
 		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
-		<p><span id ="remaining_videos">0</span> remains.</p>
-		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
-	<div class="col-md-3"></div>
+                <p><span id ="remaining_videos">0</span> remains.</p>
+                <p>Progress: <span id="loading_percent">0%</span></p>
+                <p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
+        <div class="col-md-3"></div>
 </div>
 
 <!-- Instructions -->
