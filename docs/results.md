@@ -71,8 +71,8 @@ want to have experiment specific criteria for data cleansing process.
     * `gold_standard_bigger_equal:1` Submissions with wrong answers to the gold questions will not be used.
     * `viewing_duration_over:1.15` If the overall play-back duration exceed 115% of videos' duration, the submission will not be used
     * `correct_matrix_bigger_equal: 2` Both brightness tests (matrix with images) should be answered correctly
-    * `rater_min_acceptance_rate_current_test : 80` Minimum acceptance rate for a worker in this test. If they have 
-    an acceptance rate below this percentage all of their submission will to be used.
+* `rater_min_acceptance_rate_current_test : 80` Minimum acceptance rate for a worker in this test. If they have
+    an acceptance rate below this percentage, all of their submissions will not be used.
     * `rater_min_accepted_hits_current_test : 1` The minimum number of accepted submissions that a worker should have.   
     
 1. Run `result_parser.py` 
