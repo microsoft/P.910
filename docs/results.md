@@ -33,7 +33,8 @@ want to have experiment specific criteria for data cleansing process.
         # if workers fail in these performance criteria their submissions will be failed.
         rater_min_acceptance_rate_current_test : 30
         rater_min_accepted_hits_current_test : 0
-        block_rater_if_acceptance_and_used_rate_below : 20              
+        block_rater_if_acceptance_and_used_rate_below : 20
+        block_rater_if_accept_and_use_failures_greater_equal : 5
     ```
     
     * `all_video_played_equal: 1` : All the videos has should have been watched until the end.        
@@ -43,10 +44,12 @@ want to have experiment specific criteria for data cleansing process.
     * `gold_standard_bigger_equal:0`: if you set it to 1, then the submissions with wrong answer to gold-clip will be rejected. 
     * `rater_min_acceptance_rate_current_test : 30`:  Minimum acceptance rate for a worker in this test. If they have 
     an acceptance rate below this percentage all of their submission will be rejected. 
-    * `rater_min_accepted_hits_current_test : 0` The minimum number of accepted submissions that a worker should have. 
+    * `rater_min_accepted_hits_current_test : 0` The minimum number of accepted submissions that a worker should have.
     * `block_rater_if_acceptance_and_used_rate_below : 20`: If the accidence rate of a worker in this study is below this
-    threshold, the worker will be added to the "block" list with a proper message. You may upload the "block" list later 
+    threshold, the worker will be added to the "block" list with a proper message. You may upload the "block" list later
     in your AMT account to block those workers.
+    * `block_rater_if_accept_and_use_failures_greater_equal : 5`: If a worker accumulates at least this many
+    "accept and use" failures in the current study, the worker will be added to the block list.
    
     1. All submissions that are accepted and passed the following criteria are considered reliable and will be used/aggregated.
     Consequently if they failed then the submission will not be used but the worker will be paid.
@@ -61,7 +64,8 @@ want to have experiment specific criteria for data cleansing process.
         # rater performance criteria
         # percentage of "accept and used" submissions in current job
         rater_min_acceptance_rate_current_test : 80
-        rater_min_accepted_hits_current_test : 1                    
+        rater_min_accepted_hits_current_test : 1
+        block_rater_if_accept_and_use_failures_greater_equal : 5
     ```
     * `variance_bigger_equal: 0.15` Minimum variance in ratings of a session (beside votes to gold and trapping questions). 
     It is to detect straightliners.
@@ -71,9 +75,11 @@ want to have experiment specific criteria for data cleansing process.
     * `gold_standard_bigger_equal:1` Submissions with wrong answers to the gold questions will not be used.
     * `viewing_duration_over:1.15` If the overall play-back duration exceed 115% of videos' duration, the submission will not be used
     * `correct_matrix_bigger_equal: 2` Both brightness tests (matrix with images) should be answered correctly
-    * `rater_min_acceptance_rate_current_test : 80` Minimum acceptance rate for a worker in this test. If they have 
+    * `rater_min_acceptance_rate_current_test : 80` Minimum acceptance rate for a worker in this test. If they have
     an acceptance rate below this percentage all of their submission will to be used.
-    * `rater_min_accepted_hits_current_test : 1` The minimum number of accepted submissions that a worker should have.   
+    * `rater_min_accepted_hits_current_test : 1` The minimum number of accepted submissions that a worker should have.
+    * `block_rater_if_accept_and_use_failures_greater_equal : 5` Same as in the acceptance criteria section but applied
+    after data cleansing. Workers reaching this number of failures will be added to the block list.
     
 1. Run `result_parser.py` 
         

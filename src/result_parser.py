@@ -851,6 +851,11 @@ def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
         tmp = grouped[(grouped.acceptance_rate < int(config[section]['block_rater_if_acceptance_and_used_rate_below'])) &((grouped['used_count'] + grouped['not_used_count']) >=5)]
         block_list = list(tmp['worker_id'])
 
+    if 'block_rater_if_accept_and_use_failures_greater_equal' in config[section]:
+        thr = int(config[section]['block_rater_if_accept_and_use_failures_greater_equal'])
+        tmp = grouped[grouped.not_used_count >= thr]
+        block_list = list(set(block_list + list(tmp['worker_id'])))
+
     return result, u_session_update, num_not_used_submissions, block_list
 
 
