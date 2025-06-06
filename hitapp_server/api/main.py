@@ -79,15 +79,18 @@ while True:
 
 @app.get("/")
 async def root():
+    """Health check endpoint."""
     return {"message": "Welcome to the HIT App server."}
 
 
 @app.get("/version")
 def test():
+    """Return the service version."""
     return {'version': '0.1'}
 
 
 def set_base_url(url):
+    """Extract and store the base URL used for redirections."""
     global BASE_URL
     if BASE_URL is not None:
         return
@@ -115,6 +118,7 @@ async def create_project(response: Response,
                          project_name: str = Form(...),
                          num_assignment: int = Form(...),
                          platform: str = Form(...)):
+    """Create a new project and start HIT creation in the background."""
     set_base_url(request.headers['referer'])
     with conn.cursor() as cursor:
         response.status_code = status.HTTP_202_ACCEPTED
@@ -148,20 +152,18 @@ async def create_project(response: Response,
 
 
 def generate_hit_id(row):
+    """Generate a unique identifier for a HIT."""
     flatten_row = ''.join(row.values())+str(random.randint(1000, 9999))
     return hashlib.md5(flatten_row.encode()).hexdigest()
 
 
 def get_customized_html(hit_app_template, row):
+    """Render the HIT HTML template with row values."""
     return hit_app_template.render(row)
 
 
 async def create_hits(project_id, project_name, html_template, input_csv):
-    """
-    Runs in the background and create the HITs from the template
-    :param project_id:
-    :return:
-    """
+    """Background task that creates the HITs from the template."""
     print('start background task')
     with conn.cursor() as cursor:
         config = {}
@@ -221,6 +223,7 @@ async def create_hits(project_id, project_name, html_template, input_csv):
 
 @app.get("/projects")
 def list_project(request: Request, skip: int = 0, limit: int = 20):
+    """Return a list of projects."""
     set_base_url(request.headers['referer'])
     projects = []
     with conn.cursor() as cursor:
@@ -232,6 +235,7 @@ def list_project(request: Request, skip: int = 0, limit: int = 20):
 
 @app.get("/projects/{id}")
 def get_project(request: Request, id: int):
+    """Return details of a single project."""
     set_base_url(request.headers['referer'])
     with conn.cursor() as cursor:
         print(id)
@@ -241,16 +245,13 @@ def get_project(request: Request, id: int):
     
 @app.get("/projects/{id}/answers/download")
 def get_project_results(request: Request, id:int, background_tasks: BackgroundTasks):
+    """Start generation of the result CSV for a project."""
     set_base_url(request.headers['referer'])
     background_tasks.add_task(create_ans_csv, id)
 
 
 async def create_ans_csv(project_id):
-    """
-    Runs in the background and create the answer.csv to download
-    :param project_id:
-    :return:
-    """
+    """Background task that creates the answer CSV to download."""
     hits = {}
     # get the HITs
     with conn.cursor() as cursor:
@@ -273,15 +274,14 @@ async def create_ans_csv(project_id):
 
 
 async def write_dict_as_csv(dic_to_write, file_name):
-    """
+    """Write a list of dictionaries to a CSV file."""
     async with aiofiles.open(file_name, 'w', newline='', encoding="utf8") as output_file:
-        if len(dic_to_write)>0:
+        if len(dic_to_write) > 0:
             headers = list(dic_to_write[0].keys())
             writer = csv.DictWriter(output_file, fieldnames=headers)
             await writer.writeheader()
             for d in dic_to_write:
                 await writer.writerow(d)
-    """
     df = pd.DataFrame(dic_to_write)
     df = df.fillna("")
     df.to_csv(file_name, index=False)
@@ -289,6 +289,7 @@ async def write_dict_as_csv(dic_to_write, file_name):
 
 @app.get("/projects/{id}/answers/count")
 def get_amt_data(request: Request, response: Response, id: int):
+    """Return the number of answers stored for a project."""
     set_base_url(request.headers['referer'])
     with conn.cursor() as cursor:
         cursor.execute("""SELECT count(id) as count FROM "Answers" where "ProjectId"=%s """, (id,))
@@ -299,6 +300,7 @@ def get_amt_data(request: Request, response: Response, id: int):
 
 @app.post("/answers/{project_id}")
 async def add_answer(response: Response, info : Request, x_real_ip: str = Header(None, alias='X-Real-IP')):
+    """Store an answer coming from the HIT application."""
     req_info = await info.json()
     key_data, answers = json_formater(req_info, 'Answer.')
     with conn.cursor() as cursor:
@@ -317,6 +319,7 @@ async def add_answer(response: Response, info : Request, x_real_ip: str = Header
 
 
 def json_formater(ajax_post, prefix=""):
+    """Split AJAX post data into key data and answer dictionary."""
     key_prop = ["hittypeid", "hitid", "assignmentid", "workerid", "url", "campaignid", "projectid"]
     key_remove = ["start_working_time","submission_time"]
     key_without_prefix = ["work_duration_sec"]
@@ -335,15 +338,14 @@ def json_formater(ajax_post, prefix=""):
 
 
 def generate_vcode():
+    """Generate a random verification code."""
     rand = str(random.randint(1000, 9999)) + str(random.randint(1000, 9999)) + str(random.randint(1000, 9999))
     return hashlib.md5(rand.encode()).hexdigest()
 
 
 @app.delete("/projects/{id}")
 def del_project(id: int, background_tasks: BackgroundTasks):
-    """
-    Deletes a project
-    """
+    """Delete a project and its associated files."""
     with conn.cursor() as cursor:
         # delete answers
         #cursor.execute(""" DELETE FROM public."Answers" WHERE  ProjectId= %s""", (id,))
@@ -373,6 +375,7 @@ def del_project(id: int, background_tasks: BackgroundTasks):
         cursor.execute(""" DELETE FROM "Projects" WHERE  id= %s""", (id,))
 
 def delete_file(filename):
+    """Remove a file from disk."""
     if filename[:4] == "http":
         filename = "/".join(filename.split("/")[3:])
     print(f"delete_file: {filename}")
@@ -381,9 +384,9 @@ def delete_file(filename):
     except Exception as e:
         print(e)
 
-"""
 @app.post("/rec")
 async def store_recordings(assignment_id: str = Form(...) , file: UploadFile = File(...)):
+    """Store uploaded audio recordings."""
     v_code = generate_vcode()
     print(f'store_recordings: {assignment_id}, {v_code}')
     out_file_path_html=Path(BASE_DIR, f"static/rec/{assignment_id}.wav")
@@ -397,16 +400,16 @@ async def store_recordings(assignment_id: str = Form(...) , file: UploadFile = F
 
 @app.post("/recjson")
 async def store_recordings2(response: Response, info : Request):
+    """Store recordings provided as JSON payload."""
     req_info = await info.json()
     print(req_info)
 
 
 @app.get("/rec_exist/{assignment_id}")
 def check_recording_exist(response: Response, assignment_id:str):
+    """Check if a recording exists for the given assignment."""
     out_file_path_html = Path(BASE_DIR, f"static/rec/{assignment_id}.wav")
     if os.path.isfile(out_file_path_html):
         return {'exist': 1}
     else:
         return {'exist': 0}
-
-"""

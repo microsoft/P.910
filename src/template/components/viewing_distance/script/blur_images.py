@@ -12,6 +12,7 @@ from os import path
 
 
 def blur_img(source, output, r):
+    """Blur ``source`` image with radius ``r`` and save it to ``output``."""
     source_img = Image.open(source)
     out_img = source_img.filter(ImageFilter.BoxBlur(r))
     out_img.save(output)

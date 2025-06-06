@@ -8,7 +8,18 @@ from azure.storage.blob import BlobServiceClient, generate_container_sas, Contai
 
 
 class AzureClipStorage:
+    """Helper class to access clips stored in Azure blob containers."""
+
     def __init__(self, config, alg):
+        """Initialize the storage helper.
+
+        Parameters
+        ----------
+        config : dict
+            Dictionary containing the Azure storage configuration.
+        alg : str
+            Name of the algorithm this storage belongs to.
+        """
         self._account_name = os.path.basename(
             config['StorageUrl']).split('.')[0]
 
@@ -51,8 +62,9 @@ class AzureClipStorage:
         return self._modified_clip_names
 
     async def retrieve_contents(self, list_generator, dirname=''):
+        """Populate ``_clip_names`` from an Azure blob listing."""
         for e in list_generator:
-            if not '.wav' in e.name:
+            if '.wav' not in e.name:
                 continue
 
             if dirname:
@@ -62,6 +74,7 @@ class AzureClipStorage:
                 self._clip_names.append(clip_path)
 
     async def get_clips(self):
+        """Retrieve clip names from the container."""
         blobs = self.store_service.list_blobs(
             name_starts_with=self.clips_path)
 
@@ -77,15 +90,19 @@ class AzureClipStorage:
         await self.retrieve_contents(blobs)
 
     def make_clip_url(self, filename):
+        """Create a full URL for a clip inside the container."""
         return f"https://{self._account_name}.blob.core.windows.net/{self._container}/{filename}?{self._SAS_token}"
 
 # todo what about dcr
 class GoldSamplesInStore(AzureClipStorage):
+    """Storage helper for gold standard clips."""
+
     def __init__(self, config, alg):
         super().__init__(config, alg)
         self._SAS_token = ''
 
     async def get_dataframe(self):
+        """Return a DataFrame describing all gold clips."""
         clips = await self.clip_names
         df = pd.DataFrame(columns=['gold_clips_pvs', 'gold_clips_ans'])
         clipsList = []
@@ -102,7 +119,10 @@ class GoldSamplesInStore(AzureClipStorage):
 
 # todo what about dcr
 class TrappingSamplesInStore(AzureClipStorage):
+    """Storage helper for trapping question clips."""
+
     async def get_dataframe(self):
+        """Return a DataFrame describing all trapping clips."""
         clips = await self.clip_names
         df = pd.DataFrame(columns=['trapping_pvs', 'trapping_ans'])
         clipsList = []
@@ -129,9 +149,11 @@ class TrappingSamplesInStore(AzureClipStorage):
         df = df.append(clipsList)
         return df
 
-"""
 class PairComparisonSamplesInStore(AzureClipStorage):
+    """Storage helper for pair-comparison clips."""
+
     async def get_dataframe(self):
+        """Return a DataFrame describing all pair-comparison clips."""
         clips = await self.clip_names
         pair_a_clips = [self.make_clip_url(clip)
                         for clip in clips if '40S_' in clip]
@@ -139,4 +161,3 @@ class PairComparisonSamplesInStore(AzureClipStorage):
 
         df = pd.DataFrame({'pair_a': pair_a_clips, 'pair_b': pair_b_clips})
         return df
-"""

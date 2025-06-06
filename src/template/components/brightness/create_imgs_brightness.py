@@ -64,6 +64,7 @@ def create_image(path, level, text, background):
 
 
 def create_image_shapes():
+    """Create example image containing basic shapes."""
     background = (15, 15, 15)
     W, H = (500, 500)
     # create an empty image 500x500 px
@@ -76,6 +77,7 @@ def create_image_shapes():
 
 
 def create_image_range(bg):
+    """Generate a set of images over the defined brightness range."""
     background = (bg, bg, bg)
     levels = range(min_level, max_level+1)
     path_dir = f"pics_{bg}"
@@ -87,6 +89,7 @@ def create_image_range(bg):
 
 
 def get_color(background, level):
+    """Return a color brighter than ``background`` by ``level``."""
     c = (background[0]+level, background[1]+level, background[2]+level)
     return c
 
@@ -97,6 +100,7 @@ TRIANGLE = 2
 
 
 def create_block(background, level, shape):
+    """Create a single block with the chosen shape."""
     canvas = Image.new('RGB', (100, 100), background)
     img_draw = ImageDraw.Draw(canvas)
     front_color = get_color(background, level)
@@ -111,6 +115,7 @@ def create_block(background, level, shape):
 
 
 def create_matrix_image(level):
+    """Create a matrix image of random shapes for the given level."""
     backgrounds = [15, 72, 128, 185, 240]
     #levels = [2, 3, 4]
     # levels = [4]
@@ -175,6 +180,7 @@ def method2_shapes():
 
 
 def print_matrix_name():
+    """Utility to print encoded matrix names used for debugging."""
     data =['Yzo0X3Q6MTA=','Yzo0X3Q6Mw==','Yzo0X3Q6Ng==','Yzo0X3Q6Nw==','Yzo0X3Q6OA==','Yzo1X3Q6Mg==','Yzo1X3Q6Mw==','Yzo1X3Q6NA==','Yzo1X3Q6Ng==','Yzo1X3Q6NQ==','Yzo1X3Q6Nw==','Yzo1X3Q6OA==','Yzo1X3Q6OQ==','Yzo2X3Q6Mg==','Yzo2X3Q6Mw==','Yzo2X3Q6NA==','Yzo2X3Q6Ng==','Yzo2X3Q6NQ==','Yzo2X3Q6Nw==','Yzo2X3Q6OA==','Yzo3X3Q6Mg==','Yzo3X3Q6Mw==','Yzo3X3Q6NA==','Yzo3X3Q6Ng==','Yzo3X3Q6NQ==','Yzo3X3Q6Nw==','Yzo3X3Q6OA==','Yzo4X3Q6Mg==','Yzo4X3Q6Mw==','Yzo4X3Q6NA==','Yzo4X3Q6Ng==','Yzo4X3Q6NQ==','Yzo4X3Q6Nw==','Yzo5X3Q6Mg==','Yzo5X3Q6MQ==','Yzo5X3Q6Mw==','Yzo5X3Q6NQ==','YzoxMF90OjM=','YzoxMV90OjM=','YzoxX3Q6MTI=','YzoxX3Q6Ng==','YzoxX3Q6NQ==','YzoxX3Q6Nw==','YzoyX3Q6MTA=','YzoyX3Q6Ng==','YzozX3Q6MTA=','YzozX3Q6NQ==','YzozX3Q6Nw==','YzozX3Q6OA==','YzozX3Q6OQ==']
     df = pd.DataFrame(columns=['name', 'c', 't'])
     for c in range (0,17):

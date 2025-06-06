@@ -20,6 +20,7 @@ tmp_files = []
 
 
 def get_video_resolution(video):
+    """Return the (width, height) of a video file."""
     # find out the resolution of sample video
     vid = cv2.VideoCapture(video)
     height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -29,6 +30,7 @@ def get_video_resolution(video):
 
 
 def create_image(width, height, clip_id, des_folder):
+    """Create a simple image containing the clip id as text."""
     # find a proper font size
     expected_text_width = width * 0.8
     percentage = 0
@@ -60,6 +62,7 @@ def create_image(width, height, clip_id, des_folder):
 
 
 def create_video(width, height, clip_id, des_folder):
+    """Create a short video showing the clip id."""
     img_path = create_image(width, height, clip_id, des_folder)
     frame = cv2.imread(img_path)
     height, width, layers = frame.shape
@@ -73,6 +76,7 @@ def create_video(width, height, clip_id, des_folder):
 
 
 def create_split_screen(width, height, des_a, des_b):
+    """Placeholder for creating a split screen clip."""
     # Clip A
     return
 

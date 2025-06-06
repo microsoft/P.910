@@ -21,6 +21,7 @@ def parse_args():
     return args
 
 def main():
+    """Run the configuration helper."""
     args = parse_args()
     with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
