@@ -777,12 +777,12 @@ def data_cleaning(filename, method, wrong_vcodes):
 
 def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
     """
-    Evaluate the workers performance based on the following criteria in cofnig file:
+    Evaluate the workers performance based on the following criteria in config file:
         rater_min_acceptance_rate_current_test
         rater_min_accepted_hits_current_test
     :param data:
     :param use_sessions:
-    :param reject_on_failure: if True, check the criteria on [acceptance_criteria] otehrwise check it in the
+    :param reject_on_failure: if True, check the criteria on [acceptance_criteria] otherwise check it in the
     [accept_and_use] section of config file.
     :return:
     """
