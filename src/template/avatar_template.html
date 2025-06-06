@@ -552,7 +552,7 @@ $(function() {
 				activate_training_section(true);
 				activate_rating_section(true);
 		}
-		// make sure to pase all video playbacks when tab is switched
+		// make sure to pause all video playbacks when tab is switched
 		$('.nav-tabs a').on('shown.bs.tab', function(event){
 			console.log("tab changed");
   			pauseAll();
@@ -896,7 +896,7 @@ function maximum_extra_playing_time_reached(id){
 	console.error("Playing time of the video {0} took more than what we expected.".f(id));
 	recordError("VIDEO_PLAY_ISSUE","Playing time of the video {0} took more than what we expected.".f(id), false);
 	if (maximum_extra_playing_time_reached_counter==0){
-		alert('Playback of this video took significantly longer than its duration.\n Please make sure that your system is not slowed down by other programs or not using Remote Desktop (it is forbiden for this task).');
+		alert('Playback of this video took significantly longer than its duration.\n Please make sure that your system is not slowed down by other programs or not using Remote Desktop (it is forbidden for this task).');
 	}
 	maximum_extra_playing_time_reached_counter = maximum_extra_playing_time_reached_counter+1;
 	if (maximum_extra_playing_time_reached_counter>3){
@@ -1876,7 +1876,7 @@ function get_a_tp(){
 		{'id':'tp', 'tp_id':'olderthan5', 'text': 'I am older than five <b>years</b> old.'},
 		{'id':'tp', 'tp_id':'canreadenglish', 'text': 'I can read text in <b>English</b>.'},
 	];
-	// select a random items from tps and retun it
+	// select a random items from tps and return it
 	return tps[Math.floor(Math.random() * tps.length)];
 }
 
@@ -2026,7 +2026,7 @@ function getTelepScaleProblemToken(is_training){
 //----------------------- training with response
 
 /**
- * Check is the givebn url belongs to a trapping questionin training section, If so returns its info, otherwise null-
+ * Check if the given URL belongs to a trapping question in the training section. If so, return its info; otherwise null.
  * @param {*} element
  **/
 function getGoldQuestionInTrainingInfo(url){
@@ -2058,7 +2058,7 @@ function isGoldQuestionInTraining(id) {
 
 function checkGoldQCorrect(given_ans, accepted_var, correct_hash, url) {
 	console.log('checkGoldQCorrect');
-	// return true if correct_hash is null or its lenght after trim is 0
+	// return true if correct_hash is null or its length after trim is 0
 	if (!correct_hash || correct_hash.trim().length == 0)
 		return true;
 	
@@ -2768,7 +2768,7 @@ function end_video(id, is_first_video){
 		if (extra_duration>max_accepted_extra_playing_time_sec ){
 			maximum_extra_playing_time_reached(id);
 		}
-		// set object-fit for video_element to cover with withd and heigh = 100%
+		// set object-fit for video_element to cover with width and height = 100%
 		let parent = $('#video1_'+id).closest('span');		
 		console.log(parent);
 		let w = video_element.videoWidth;
@@ -3011,8 +3011,8 @@ function avoidAnsweringBeforeWatchingThrough(){
 <div id="meter" style="width:10cm"></div>
 <div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
 	<div class="col-md-4"></div>
-	<div class="col-md-2" sytle="float: right"><div class="loader" width="30%"></div></div>
-	<div class="col-md-3" sytle="text-align: left;"> <h1>Loading</h1>
+	<div class="col-md-2" style="float: right"><div class="loader" width="30%"></div></div>
+	<div class="col-md-3" style="text-align: left;"> <h1>Loading</h1>
 		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
 		<p><span id ="remaining_videos">0</span> remains.</p>
@@ -3454,12 +3454,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<p>Almost ready to start.</p> <p>Thank you for participating in this task! You will be watching videos about different representations in online work meetings and giving your opinion about how well the person is represented. In each video, <b>on the left, there is an avatar</b>, which is a representation of the <b>person on the right</b> side. After watching the video, you should rate how much you agree with the provided statements. You will give your answers on a scale from <b>"Strongly agree (++)"</b> to <b>"Strongly disagree (--)"</b>. Please make sure to <b>use the entire range of scale and do NOT only focus on both ends</b>. The following are the statements:</p> <p> <ul> <li>The <b>avatar (left)</b> looks like the <b>person (right)</b>.</li> <li>The <b>avatar’s facial expressions</b> (left) are accurate with the video (right).</li> <li>The <b>avatar’s gestures (body and hands)</b> (left) accurately match the person's gestures in the video (right)</li> </ul> </p>
 		</div>
 		<div id="template_a_instructions" hidden>
-			<p>Almost ready to start.<p>Thanks for joining this task! You will be watching videos about different representations in online work meetings and giving your opinion. For each video, you will say how much you agree or disagree with following statements. Remember, we are thinking about <b>online meetings for work</b> and you should rate the entire video clip. You wll give your answers on a scale from <b>"Strongly agree (++)"</b> to <b>"Strongly disagree (-–)"</b>. Please read everything carefully. Followings are the statements: <ul> <li> I would <b>trust</b> a person who chose to be represented like that for work related online meeting. </li> <li> This representation is <b>realistic</b>.</li> <li> I would be comfortable <b>representing myself</b> like that for work related online meeting.  </li> <li> I would be comfortable <b>interacting with</b> someone who chose to be represented like that in a work related online meeting with me.  </li> <li> This representation is <b>appropriate</b>, for a work-related online meeting. </li> <li> This representation looks <b>formal</b>, for a work-related online meeting. </li> <li> I <b>like</b> this representation for work related online meeting. </li> <li> This representation is <b>creepy</b>. </li> </ul>
+			<p>Almost ready to start.<p>Thanks for joining this task! You will be watching videos about different representations in online work meetings and giving your opinion. For each video, you will say how much you agree or disagree with following statements. Remember, we are thinking about <b>online meetings for work</b> and you should rate the entire video clip. You will give your answers on a scale from <b>"Strongly agree (++)"</b> to <b>"Strongly disagree (-–)"</b>. Please read everything carefully. Following are the statements: <ul> <li> I would <b>trust</b> a person who chose to be represented like that for work related online meeting. </li> <li> This representation is <b>realistic</b>.</li> <li> I would be comfortable <b>representing myself</b> like that for work related online meeting.  </li> <li> I would be comfortable <b>interacting with</b> someone who chose to be represented like that in a work related online meeting with me.  </li> <li> This representation is <b>appropriate</b>, for a work-related online meeting. </li> <li> This representation looks <b>formal</b>, for a work-related online meeting. </li> <li> I <b>like</b> this representation for work related online meeting. </li> <li> This representation is <b>creepy</b>. </li> </ul>
 
 		</div>
 
 		<div id="template_problem_token_instructions" hidden>
-			<p>Almost ready to start.</p> <p>Thank you for participating in this task! You will be watching videos about different representations in online work meetings and giving your opinion about how realistic the person is represented. After watching each video, you should rate how much you agree with the provided statement. Also what are the problems/issues that should be solve to have completely realistic representation. If the issue you observe is not provided in list, please use the free text input and type it in. Follwoing problems / issues are provided. Please read them carefully and familirise yourself with them.</p>
+			<p>Almost ready to start.</p> <p>Thank you for participating in this task! You will be watching videos about different representations in online work meetings and giving your opinion about how realistic the person is represented. After watching each video, you should rate how much you agree with the provided statement. Also what are the problems/issues that should be solve to have completely realistic representation. If the issue you observe is not provided in list, please use the free text input and type it in. Following problems / issues are provided. Please read them carefully and familirise yourself with them.</p>
 			<ul>
 				<li> <b>Avatar Lifelikeness –</b> A general category encompassing how lifelike the avatar appears in terms of naturalness,  and believability.</li>
 				<li> <b>Facial Expressions & Emotions –</b> Refers to how well the avatar conveys emotions through facial expressions, including smiling, frowning, eyebrow movements, and overall expressiveness.</li>

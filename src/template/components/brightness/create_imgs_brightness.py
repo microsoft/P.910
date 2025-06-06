@@ -28,7 +28,7 @@ def generate_rand_num(n):
 
 def level_to_rgb(level, background):
     """
-    Converts internal consept of level to a gray color for text in RGB
+    Converts internal concept of level to a gray color for text in RGB
     :param level: range from 1 to 15
     :return: tuple referring to (R, G, B)
     """

@@ -138,7 +138,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     n_gold = int(create_input_cfg['number_of_gold_clips_per_session']) if 'number_of_gold_clips_per_session' in \
                                                                           create_input_cfg else 0
 
-    # 'dummy':'dummy' is added becuase of current bug in AMT for replacing variable names. See issue #6
+    # 'dummy':'dummy' is added because of current bug in AMT for replacing variable names. See issue #6
     for i in range(0, n_clips):
         rating_urls.append({"ref": f"${{Q{i}_R}}", "processed": f"${{Q{i}_P}}", 'dummy': 'dummy'})
 

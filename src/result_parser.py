@@ -178,7 +178,7 @@ def check_video_played(row, method):
     """
     check if all videos for questions played until the end
     :param row:
-    :param method: acr,dcr, ot ccr
+    :param method: acr, dcr, or ccr
     :return:
     """
     question_played = 0
@@ -203,7 +203,7 @@ def check_tps_avatar_b(row, method):
     tp_url = row[config['trapping']['url_found_in']]
     tp_correct_ans = [int(float(row[config['trapping']['ans_found_in']]))]
     given_ans = []
-    # only conside problem_tokens that does not contain _pt_
+    # only consider problem_tokens that does not contain _pt_
     problem_tokens_consider = [pt for pt in problem_tokens if 'pt_' not in pt]
     try:
         for q_name in question_names:
@@ -316,7 +316,7 @@ def check_variance_avatar(row, method):
                 order = 1 if row[f'answer.{q_name}{question_name_suffix}_order'] == 'pr' else -1
                 r.append(int(row[f'answer.{q_name}{question_name_suffix}']) * order)
             else:
-                # only use problem tokens tha have been reqired
+                # only use problem tokens that have been required
                 problem_tokens_consider = [pt for pt in problem_tokens if 'pt_' not in pt]
                 for pt in problem_tokens_consider:
                     r_pt.append(int(float(row[f'answer.{q_name}{question_name_suffix}_{pt}'])))
@@ -376,7 +376,7 @@ def check_gold_question_avatarb(row):
             raise Exception('gold_ans_format is not defined in config file')
         format = config['gold_question']['gold_ans_format']
         
-        # formated as "(lookslike,facialexpression)", _ means whatever is correct  
+        # formatted as "(lookslike,facialexpression)", _ means whatever is correct  
         correct_ans_text =  row[config['gold_question']['ans_found_in']]
         correct_ans_text= correct_ans_text.replace('(', '').replace(')', '').replace(' ', '')
         correct_anses =  correct_ans_text.split(',')
@@ -535,7 +535,7 @@ def check_ishihara_plates(row):
     """
     correct_plates = 0
     #x = 
-    # final nam with 14 char=  firt 4 character from random_base64 + x + last 4 character from random_base64 + XX.png
+    # final name with 14 char=  first 4 character from random_base64 + x + last 4 character from random_base64 + XX.png
     if 'input.cv_plate_3_url' not in row or row['answer.7_plate3'] is None or row['answer.7_plate3']=="":
         # old version without color vision inside or qualification was not shown
         return None    
@@ -586,14 +586,14 @@ def check_play_duration(row):
 
 def check_all_answered(row, method):
     """
-    only relevant for avatar_tp where participants should select one out of the reasons. Theoritically this should be checked in front-end before submission, here is to do a double check.
+    only relevant for avatar_tp where participants should select one out of the reasons. Theoretically this should be checked in front-end before submission, here is to do a double check.
 
     """
     if method != 'avatar_pt':
         return 1
     
     problem_token_consider =  [pt for pt in problem_tokens if 'pt_' in pt]    
-    # for each question at least one of the problem tokens should be included in answers (with a value lenght >0)
+    # for each question at least one of the problem tokens should be included in answers (with a value length >0)
     for q_name in question_names:
         found = False
         for pt in problem_token_consider:
@@ -1065,8 +1065,8 @@ def calc_quantity_bonuses(answer_list, conf, path):
     eligible_all = list(grouped['worker_id'])
     new_eligible = list(set(eligible_all)-set(old_eligible))
 
-    # the bonus should be given to the tasks that are either automatically accepted or submited. The one with status
-    # accepted should have been already payed.
+    # the bonus should be given to the tasks that are either automatically accepted or submitted. The one with status
+    # accepted should have been already paid.
     filtered_answers = filter_answer_by_status_and_workers(df, eligible_all, new_eligible, conf)
     # could be also accept_and_use
     grouped = filtered_answers.groupby(['worker_id'], as_index=False)['accept'].sum()
@@ -1536,7 +1536,7 @@ def calc_correlation(cs, lab):
 
 def number_of_unique_workers(answers, used):
     """
-    return numbe rof unique workers
+    return number of unique workers
     :param answers:
     :return:
     """
@@ -1584,7 +1584,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     # print the size
     logger.info(f"** {len(unique_assignments)} submissions are not completed by the workers.")
 
-    # remove stript vcodes entered by workers
+    # remove stripped vcodes entered by workers
     amt_ans['Answer.v_code'] = amt_ans['Answer.v_code'].str.strip()
     # number of rows in amt
     submissiones = len(amt_ans)
@@ -1601,7 +1601,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     # check if there are submission without conuter part key in hitapp servers
     not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
-    # print the lenght
+    # print the length
     logger.info(f"** {len(not_in_hitapp)} submissions are not found in the HITAPP server.")
     recover_submission_withoiut_matching_vcode(hitapp_ans, amt_ans, not_in_hitapp)
 
@@ -1675,7 +1675,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
 
     n_workers, n_workers_used = number_of_unique_workers(full_data, accepted_sessions)
     logger.info(f"{n_workers} workers participated in this batch, answers of {n_workers_used} are used.")
-    # disabled becuase of the HITAPP_server
+    # disabled because of the HITAPP_server
     calc_stats(answer_path)
     # votes_per_file, votes_per_condition = transform(accepted_sessions)
     if len(accepted_sessions) > 1:
@@ -1779,7 +1779,7 @@ if __name__ == '__main__':
     answer_path = args.answers
 
     if args.amt_answers is None:
-        warnings.warn("No AMT answer is provided with --amt_answers. That means the WorkerId, HITIds, ect. are internal "
+        warnings.warn("No AMT answer is provided with --amt_answers. That means the WorkerId, HITIds, etc. are internal "
                       "HIT APP server ids. Therefore bonus reports cannot be used. ")
         amt_ans_path = None
     else:
