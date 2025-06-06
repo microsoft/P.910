@@ -752,7 +752,9 @@ function loadTextPlaceHolders(){
 		$('.training_time').html(config['forceRetrainingInHours']+" hours" );
 	$('.question_number_training').html(config['trainingUrls'].length);
 	$('.question_number').html(config['questionUrls'].length);
-	$('.instruction_device').html(config['device_accepted_device'].join());
+        $('.instruction_device').html(config['device_accepted_device'].join());
+        $('.min_resolution').html(config.min_resolution.w + 'x' + config.min_resolution.h);
+        $('.min_speed').html(config['internet_speed_Mbps']);
 	if (config['template']=="avatar_b"){
 		place_holder_task = "Imagine you want to participate in <b>an online meeting related to your work</b>. You or your counterpart will be represented by an avatar. For each question, please watch the provided video. On <b>left</b> there is an avatar representation whereas <b>on right there is the real video</b>. Provide your opinion on <b>how well the provided avatar represents the facial expression of person in the video</b>.";
 		place_holder_question = "Watch the video with <b>avatar on left</b> and <b>real video on right</b>. How well does the avatar represent the person and their facial expression in the video?";
@@ -1169,12 +1171,16 @@ function hardware_test(){
 
 		record_screen_size();
 		record_os();
-		if (refresh_rate_passed && resolution_check && device_accepted){
-			activate_hit();
-		}else{
-			//alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
-			disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
-		}
+                if (refresh_rate_passed && resolution_check && device_accepted){
+                        activate_hit();
+                }else{
+                        if(!resolution_check){
+                                alert('Your screen resolution is below the required ' +
+                                      config.min_resolution.w + 'x' + config.min_resolution.h + '.');
+                        }
+                        //alert("Unfortunately your hardware did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.");
+                        disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+                }
     }
 }
 //just tmp for test
@@ -1185,12 +1191,12 @@ var page_loading_timer =null;
 	Called when downloading of all videos took too long, show a message and block the hit.
 **/
 function show_message_too_long_loading(){
-	if(page_loading_timer){
-		clearTimeout(page_loading_timer);
-		page_loading_timer= null;
-	}
-	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try again later with a better network connection. Thanks');
-	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+        if(page_loading_timer){
+                clearTimeout(page_loading_timer);
+                page_loading_timer= null;
+        }
+        alert('It looks like that your Internet connection is below the required ' + config['internet_speed_Mbps'] + ' Mbps. Please return this hit and try again later with a better network connection. Thanks');
+        disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
 /**
@@ -3049,10 +3055,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<li>You must use a <b class="instruction_device">XX</b>, otherwise your response will be rejected</li>
 					<li>You <b>must NOT use a Remote Desktop application like (like Microsoft Remote Desktop, AnyDesk, or Chrome Remote Desktop) or VPN connect</b> to visit this page.</li>
 					<li>You must perform the task in good lighting conditions without <b>glare on your screen</b> </li>
-					<li>Do not change the brightness of your screen or your distance to the screen after the Setup section</li>
-					<li>If you finish a section and the following sections do not unlock automatically, please verify that you have answered all of the previous 
-						checkboxes, text fields, etc. correctly
-					</li>
+                                        <li>Do not change the brightness of your screen or your distance to the screen after the Setup section</li>
+                                        <li>Your monitor resolution must be at least <b class="min_resolution"></b></li>
+                                        <li>Your internet connection must be at least <b class="min_speed"></b> Mbps</li>
+                                        <li>If you finish a section and the following sections do not unlock automatically, please verify that you have answered all of the previous
+                                                checkboxes, text fields, etc. correctly
+                                        </li>
 				</ul>
 
 				<p><b>Payment:</b></p>
@@ -3597,7 +3605,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <section class="container" id="automatic_test_failed" hidden>
-	<p>Unfortunately your hardware or internet connection did not pass the minimum requirements. You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
+        <p>Unfortunately your hardware or internet connection did not meet the minimum requirements (resolution <b class="min_resolution"></b>, download speed <b class="min_speed"></b> Mbps). You may refresh this page once, if you see this message for the second time, please return this HIT.</p>
 
 	<div class="alert alert-danger" role="alert">
 		<img src="https://audiosamplesp808.blob.core.windows.net/p808-assets/img/attention.png" alt="attention">
