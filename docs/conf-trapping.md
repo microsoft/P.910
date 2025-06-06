@@ -20,7 +20,9 @@
  * `include_from_source_stimuli_in_second = 2`: use first 2 seconds from the `source` clips to generate the trapping clips.
  It may lead to a clip duration that is different from the rest of clips which should be rated. 
  
- * `keep_original_duration = true`: As a result each generated clips will be as long as the corresponding original clip.
- It is the recommended setting.    
+* `keep_original_duration = true`: As a result each generated clips will be as long as the corresponding original clip.
+It is the recommended setting.
+
+If the default font `arial.ttf` is not available on your system, provide the path to a TrueType font file using the `--font` argument when running `create_trapping_clips.py`.
  
   

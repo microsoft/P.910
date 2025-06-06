@@ -14,6 +14,18 @@ import cv2
 from PIL import Image, ImageFont, ImageDraw
 from moviepy.editor import *
 
+DEFAULT_FONT = "arial.ttf"
+font_file = DEFAULT_FONT
+
+def load_font(size):
+    try:
+        return ImageFont.truetype(font_file, size)
+    except OSError:
+        try:
+            return ImageFont.truetype("DejaVuSans-Bold.ttf", size)
+        except OSError:
+            return ImageFont.load_default()
+
 video_extension = '.mp4'
 trapping_videos = []
 tmp_files = []
@@ -40,14 +52,14 @@ def create_image(width, height, clip_id, des_folder):
             font_size += 5
         else:
             font_size -= 1
-        font = ImageFont.truetype("arial.ttf", font_size)
+        font = load_font(font_size)
         text_width = font.getsize(msg)[0]
         percentage = text_width / expected_text_width
 
     # create the image
     img = Image.new('RGB', (width, height), color=(127, 127, 127))
     d = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", font_size)
+    font = load_font(font_size)
 
     text_width = font.getsize(msg)[0]
     text_height = font.getsize(msg)[1]
@@ -158,8 +170,11 @@ if __name__ == '__main__':
 
     parser.add_argument("--source", help="source directory containing all video clips", required=True)
     parser.add_argument("--des", help="destination directory where the screens to be stored", required=True)
+    parser.add_argument("--font", help="path to a TrueType font file", default=DEFAULT_FONT)
 
     args = parser.parse_args()
+
+    font_file = args.font
 
     assert os.path.exists(args.source), f"Invalid source directory {args.source}]"
 
