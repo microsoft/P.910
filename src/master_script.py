@@ -682,20 +682,20 @@ if __name__ == '__main__':
     elif cfg.has_option('RatingClips', 'RatingClipsConfigurations'):
         assert len(cfg['RatingClips']['RatingClipsConfigurations']) > 0, f"No cloud store for clips specified in config"
     else:
-        assert True, "Neither clips file not cloud store provided for rating clips"
+        raise ValueError("Neither clips file nor cloud store provided for rating clips")
 
     if args.gold_clips:
         assert os.path.exists(args.gold_clips), f"No csv file containing gold clips in {args.gold_clips}"
     elif cfg.has_option('GoldenSample', 'Path'):
         assert len(cfg['GoldenSample']['Path']) > 0, "No golden clips store found"
     else:
-        assert True, "Neither gold clips file nor store configuration provided"
+        raise ValueError("Neither gold clips file nor store configuration provided")
 
     if args.trapping_clips:
         assert os.path.exists(args.trapping_clips), f"No csv file containing trapping  clips in {args.trapping_clips}"
     elif cfg.has_option('TrappingQuestions', 'Path'):
         assert len(cfg['TrappingQuestions']['Path']) > 0, "No golden clips store found"
     else:
-        assert True, "Neither Trapping clips file nor store configuration provided"
+        raise ValueError("Neither trapping clips file nor store configuration provided")
 
     asyncio.run(main(cfg, test_method, args))
