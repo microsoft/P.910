@@ -1072,12 +1072,24 @@ var page_loading_timer =null;
 	Called when downloading of all videos took too long, show a message and block the hit.
 **/
 function show_message_too_long_loading(){
-	if(page_loading_timer){
-		clearTimeout(page_loading_timer);
-		page_loading_timer= null;
-	}
-	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
-	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+        if(page_loading_timer){
+                clearTimeout(page_loading_timer);
+                page_loading_timer= null;
+        }
+        alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try it later with a better network connection. Thanks');
+        disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
+}
+
+/**
+        Called when a video element cannot be loaded
+**/
+function show_message_video_load_error(url){
+        if(page_loading_timer){
+                clearTimeout(page_loading_timer);
+                page_loading_timer= null;
+        }
+        alert('Failed to load video: '+url+'. Please ensure the file is publicly accessible and that CORS is enabled.');
+        disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
 /**
@@ -2582,26 +2594,29 @@ function load_videos_to_storage(video_id){
 	req.open('GET', src, true);
 	req.responseType = 'blob';
 
-	req.onload = function(){
-		if (this.status === 200) {
-			loading_duration  = Date.now()- download_start.get(id);
-			download_duration.set(id, loading_duration);
-			console.log("Loading duration for "+id+":"+loading_duration);
-			let size = this.getResponseHeader('content-length');
-			let tmp = ((size /1024)/1024)
-			console.log(tmp_src+': '+tmp);
-			video_size_MB = video_size_MB + tmp;
-			var videoBlob = this.response;
-			var vurl = URL.createObjectURL(videoBlob);
-			document.getElementById(id).src = vurl;
-	   }else{
-			console.log(this.status + ' ERROR: '+id+ ', src:'+tmp_src);
-			load_videos_to_storage(id);
-	   }
-	};
-	req.onerror = function() {
-	   console.log('Error on loading '+id);
-	}
+       req.onload = function(){
+               if (this.status === 200) {
+                       loading_duration  = Date.now()- download_start.get(id);
+                       download_duration.set(id, loading_duration);
+                       console.log("Loading duration for "+id+":"+loading_duration);
+                       let size = this.getResponseHeader('content-length');
+                       let tmp = ((size /1024)/1024)
+                       console.log(tmp_src+': '+tmp);
+                       video_size_MB = video_size_MB + tmp;
+                       var videoBlob = this.response;
+                       var vurl = URL.createObjectURL(videoBlob);
+                       document.getElementById(id).src = vurl;
+               }else{
+                       console.log(this.status + ' ERROR: '+id+ ', src:'+tmp_src);
+                       recordError('VIDEO_LOAD_STATUS_'+this.status, tmp_src);
+                       show_message_video_load_error(tmp_src);
+               }
+       };
+       req.onerror = function() {
+           console.log('Error on loading '+id);
+           recordError('VIDEO_LOAD_ERROR', tmp_src);
+           show_message_video_load_error(tmp_src);
+       }
 
 	download_start.set(id, Date.now());
 	if (start_page_load==null){
