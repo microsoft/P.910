@@ -13,7 +13,7 @@ import csv
 import json
 import cv2
 from PIL import Image, ImageFont, ImageDraw
-from moviepy import VideoFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 import base64
 import os
 import uuid
@@ -79,7 +79,7 @@ def create_msg_img(cfg, score, des, v_width, v_height):
 
     score_text = str(score)
     if args.avatar and 'avatar_rating_answers' in cfg:
-        score_text = {json.loads(cfg['avatar_rating_answers'])[str(score)]
+        score_text = json.loads(cfg['avatar_rating_answers'])[str(score)]
 
     if len(cfg['message_line1'].format(score_text)) > len(cfg['message_line2'].format(score_text)):
         text = cfg['message_line1'].format(score_text)
@@ -183,11 +183,11 @@ def create_trap_stimulus(source, message, output, cfg):
         prefix_duration = source_duration - msg_duration -post_fix_duration_sec
         if prefix_duration < 3:
             prefix_duration = 3
-        prefix_video = source_video.subclipped(0, prefix_duration)
+        prefix_video = source_video.subclip(0, prefix_duration)
     else:
-        prefix_video = source_video.subclipped(0, min(int(cfg["include_from_source_stimuli_in_second"]), src_duration))
+        prefix_video = source_video.subclip(0, min(int(cfg["include_from_source_stimuli_in_second"]), src_duration))
 
-    postfix_clip = source_video.subclipped(source_duration-post_fix_duration_sec, source_duration)
+    postfix_clip = source_video.subclip(source_duration-post_fix_duration_sec, source_duration)
     # concat the clips
     final_clip = concatenate_videoclips([prefix_video, msg_video, postfix_clip])
         
