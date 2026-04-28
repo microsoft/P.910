@@ -675,6 +675,11 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['correct_gold_question'], details  = check_gold_question(row, method)
         details['worker_id'] = d['worker_id']
         details['is_correct'] = d['correct_gold_question']
+        if 'answer.rdp_exist' in row:
+            details['rdp'] = row['answer.rdp_exist']
+        else:
+            # does not exist - same value will be assigned if the script is not working
+            details['rdp'] = -1
         gold_question_details.append(details)
 
         # step6. check variance in a session rating
@@ -744,6 +749,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     worker_list, use_sessions, num_not_used_sub_perform, _ = evaluate_rater_performance(worker_list, use_sessions)
     #num_rej_perform = 0
 
+    # check for remote desktop usage
+    worker_list, use_sessions = check_remote_desktop_usage(worker_list, use_sessions, filename)
+
     #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
     not_using_further_reasons = []
@@ -772,6 +780,63 @@ def data_cleaning(filename, method, wrong_vcodes):
     tmp_path = os.path.splitext(filename)[0] + '_not_used_reasons.csv'
     with open(tmp_path, 'w') as fp:
         fp.write('\n'.join('%s, %s' % x for x in not_used_reasons_list))
+    return worker_list, use_sessions
+
+
+def check_remote_desktop_usage(worker_list, use_sessions, filename):
+    """
+    Check for remote desktop usage based on the rdp_exist hidden input.
+    rdp_exist values: 1 = RDP detected, 0 = no RDP, -1 = JS detection did not run.
+    Only rdp_exist == '1' triggers rejection. Sessions with '-1' are noted but not rejected.
+    If any session from a worker has rdp_exist == '1', mark ALL submissions
+    from that worker as accept_and_use=0 (accepted but not used).
+    Export a CSV with worker IDs and assignment IDs where RDP was detected.
+    """
+    rdp_sessions = []
+    rdp_workers = set()
+    js_failed_count = 0
+    for session in use_sessions:
+        rdp_val = str(session.get('answer.rdp_exist', '-1')).strip()
+        if rdp_val == '1':
+            rdp_workers.add(session['workerid'])
+            rdp_sessions.append({
+                'worker_id': session['workerid'],
+                'assignment_id': session['assignmentid'],
+                'rdp_exist': rdp_val
+            })
+        elif rdp_val == '-1':
+            js_failed_count += 1
+
+    if js_failed_count > 0:
+        logger.info(f"   Note: RDP detection JS did not execute for {js_failed_count} session(s) "
+                    f"(rdp_exist=-1). These sessions are not rejected.")
+
+    if not rdp_workers:
+        logger.info("   No remote desktop usage detected.")
+        return worker_list, use_sessions
+
+    logger.info(f"   Remote desktop detected for {len(rdp_workers)} worker(s) "
+                f"across {len(rdp_sessions)} session(s). "
+                f"Marking all their submissions as not used.")
+
+    # Mark all submissions from RDP workers as not used
+    for d in worker_list:
+        if d['worker_id'] in rdp_workers:
+            d['accept_and_use'] = 0
+            if 'failures' not in d or not isinstance(d['failures'], list):
+                d['failures'] = []
+            if 'remote_desktop' not in d['failures']:
+                d['failures'].append('remote_desktop')
+
+    # Remove all sessions from RDP workers from use_sessions
+    use_sessions = [s for s in use_sessions if s['workerid'] not in rdp_workers]
+
+    # Export RDP detection report
+    rdp_report_file = os.path.splitext(filename)[0] + '_rdp_detected.csv'
+    rdp_df = pd.DataFrame(rdp_sessions)
+    rdp_df.to_csv(rdp_report_file, index=False)
+    logger.info(f"   RDP detection report saved to: {rdp_report_file}")
+
     return worker_list, use_sessions
 
 
