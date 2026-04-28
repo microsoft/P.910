@@ -36,7 +36,7 @@ column named `training_pvs` and URLs to corresponding reference clips in column 
     1. Create a CSV file with a column `gold_src` that contains the path to the selected source clips.
     1. Run the script `create_gold_clips.py`.
     ``` bash
-    cd src\gold_clips    
+    cd src\utilities    
     python create_gold_clips.py ^
         --input_csv YOUR_INPUT.csv ^
         --test_method ccr ^
@@ -71,7 +71,7 @@ column named `training_pvs` and URLs to corresponding reference clips in column 
     
     4. Run `create_trapping_clips.py`
     ``` bash
-    cd src\trapping_clips
+    cd src\utilities
     pip install -r requirements.txt
     python create_trapping_clips.py ^
         --source tp_src ^

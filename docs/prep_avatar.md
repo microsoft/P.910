@@ -51,7 +51,7 @@ For details about the different test methods for Photorealistic Avatars, please 
       - Includes a range of quality levels (good, fair, and bad).
    3. Run the `create_trapping_clips.py` script:
       ```bash
-      cd src\trapping_clips
+      cd src\utilities
       pip install -r requirements.txt
       python create_trapping_clips.py ^
           --source tp_src ^
