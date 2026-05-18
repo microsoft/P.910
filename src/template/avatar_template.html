@@ -1849,9 +1849,18 @@ function on_setup_performed(status){
 	}
 	$("#alert-setup-complete").show();
 	createCookie(config['cookieName']+"_setup","un_important",config['showSetupEveryMinutes']);
-	activate_training_section(true);
-	activate_rating_section(true);
+	$("#rdps-section").removeClass("disabled_section");
+	$("input[name='rdps_pair1'], input[name='rdps_pair2']").on('change', function(){
+		if($("input[name='rdps_pair1']").is(':checked') && $("input[name='rdps_pair2']").is(':checked')){
+			activate_training_section(true);
+			activate_rating_section(true);
+		}
+	});
 
+}
+
+function playedVideoRDPS(id){
+	$('#rdps_radios_' + id).removeClass('disabled_section');
 }
 
 function getRatingSection(questionType, questionName, question, answers){
@@ -2819,9 +2828,9 @@ $(function() {
 		title='';
 		//one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
 
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>';
-		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>'+
-			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden></video>';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}" disablepictureinpicture></video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}" disablepictureinpicture></video>'+
+			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden disablepictureinpicture></video>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -3009,16 +3018,16 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <div id="meter" style="width:10cm"></div>
-<div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
-	<div class="col-md-4"></div>
-	<div class="col-md-2" style="float: right"><div class="loader" width="30%"></div></div>
-	<div class="col-md-3" style="text-align: left;"> <h1>Loading</h1>
+<div id ="hardware-spinner" class ="container" style="margin: 100px auto"><div class="row">
+	<div class="col-md-3"></div>
+	<div class="col-md-2" style="text-align: right;"><div class="loader" width="30%"></div></div>
+	<div class="col-md-4" style="text-align: left;"> <h1>Loading</h1>
 		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
 		<p><span id ="remaining_videos">0</span> remains.</p>
 		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
 	<div class="col-md-3"></div>
-</div>
+</div></div>
 
 <!-- Instructions -->
 <section class="container disabled_section" id="Survey">
@@ -3425,6 +3434,52 @@ function avoidAnsweringBeforeWatchingThrough(){
 			  		Please make sure you are at a proper distance from your screen. For this HIT it is <b>1.5 to 3 times the height of your screen</b>.
 				</div>
 				<div id="distance_test_cmps"></div>
+
+				</div><!-- end setup-rest -->
+
+				<!-- RDPS quality comparison -->
+				<div id="rdps-section" class="disabled_section">
+				<h4>Video quality comparison</h4>
+				<p>Watch each pair of video clips and select which one has better quality.</p>
+
+				<fieldset class="setupFieldset">
+				<h5>Pair 1</h5>
+				<div class="row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+						<div class="row"><p align="center">
+							<span class="velmnt dcr" id="rdps_p1" data-src-ref="${rdps1_pair1}" data-src-clip="${rdps2_pair1}" data-onfinished="playedVideoRDPS" data-scale="full_screen">&nbsp;</span>
+						</p></div>
+					</div>
+					<div class="col-sm-2"></div>
+				</div>
+				<div id="rdps_radios_rdps_p1" class="disabled_section" style="text-align:center; margin-bottom:20px;">
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="1" required> Clip A has better quality</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="0"> Quality is the same</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="2"> Clip B has better quality</label></div>
+				</div>
+				</fieldset>
+
+				<fieldset class="setupFieldset">
+				<h5>Pair 2</h5>
+				<div class="row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+						<div class="row"><p align="center">
+							<span class="velmnt dcr" id="rdps_p2" data-src-ref="${rdps1_pair2}" data-src-clip="${rdps2_pair2}" data-onfinished="playedVideoRDPS" data-scale="full_screen">&nbsp;</span>
+						</p></div>
+					</div>
+					<div class="col-sm-2"></div>
+				</div>
+				<div id="rdps_radios_rdps_p2" class="disabled_section" style="text-align:center; margin-bottom:20px;">
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="1" required> Clip A has better quality</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="0"> Quality is the same</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="2"> Clip B has better quality</label></div>
+				</div>
+				</fieldset>
+
+				</div><!-- end rdps-section -->
+
 				</div>
 			</div>
 			</div>

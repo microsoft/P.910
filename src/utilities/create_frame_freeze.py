@@ -17,7 +17,7 @@ import pandas as pd
 from tempfile import mkstemp
 
 FREEZE_PROBABILITY = 0.5
-FREEZE_DURATION_MAX = 5
+FREEZE_DURATION = 5
 GOOD_QUALITY_CRF = 17
 DEFAULT_GOP = 30
 
@@ -106,11 +106,11 @@ def _inflate_to_target_bitrate(src, dst, target_size_bytes, *, gop=DEFAULT_GOP):
                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
 
-def generate_freeze_mask(n_frames, probability, duration_max, rng):
+def generate_freeze_mask(n_frames, probability, freeze_duration, rng):
     """
     Generate a per-frame freeze mask (0 = keep, 1 = freeze/repeat last frame).
-    Frame 0 is never frozen. Freeze events last 1..duration_max frames.
-    Total frozen fraction is capped at *probability*.
+    Frame 0 is never frozen. Each freeze event freezes exactly *freeze_duration*
+    consecutive frames. Total frozen fraction is capped at *probability*.
     """
     mask = [0] * n_frames
     remaining_freeze = 0
@@ -122,8 +122,7 @@ def generate_freeze_mask(n_frames, probability, duration_max, rng):
             mask[i] = 1
             remaining_freeze -= 1
         elif current_fraction < probability and rng.random() < probability:
-            duration = rng.randint(1, duration_max)
-            duration = min(duration, n_frames - i)
+            duration = min(freeze_duration, n_frames - i)
             mask[i] = 1
             remaining_freeze = duration - 1
         else:
@@ -148,7 +147,7 @@ def apply_frame_freeze(input_mp4, output_mp4, seed=None):
     if n_frames <= 0:
         raise RuntimeError(f"Cannot determine frame count: {input_mp4}")
 
-    mask = generate_freeze_mask(n_frames, FREEZE_PROBABILITY, FREEZE_DURATION_MAX, rng)
+    mask = generate_freeze_mask(n_frames, FREEZE_PROBABILITY, FREEZE_DURATION, rng)
 
     out = None
     last_good_frame = None

@@ -83,6 +83,10 @@ For details about the different test methods for Photorealistic Avatars, please 
           --trapping_clips trapping_clips.csv
       ```
       **Note**: File paths should be relative to the current working directory.
+
+      **Optional flags:**
+      - `--check_urls`: Validates that all URLs in the clip, training, gold, and trapping CSV files are accessible.
+      - `--create_local_test`: Generates a local preview HTML file after the project is created, useful for testing before deployment.
    3. Verify the script's output. A folder named `YOUR_PROJECT_NAME` will be created in the current working directory, containing:
       - `YOUR_PROJECT_NAME_acr.html`: Customized HIT app for Amazon Mechanical Turk (AMT).
       - `YOUR_PROJECT_NAME_publish_batch.csv`: List of dynamic content for publishing the batch in AMT.

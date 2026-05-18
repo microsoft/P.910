@@ -104,6 +104,10 @@ column named `trapping_ans` (see [trapping_clips.csv](../sample_inputs/trapping_
             --trapping_clips trapping_clips.csv              
         ```
         Note: file paths are expected to be relative to the current working directory.
+
+        **Optional flags:**
+        - `--check_urls`: Validates that all URLs in the clip, training, gold, and trapping CSV files are accessible.
+        - `--create_local_test`: Generates a local preview HTML file after the project is created, useful for testing before deployment.
     
     1. Double check the outcome of the script. A folder should be created with YOUR_PROJECT_NAME in current working 
     directory which contains: 
