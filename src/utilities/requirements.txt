@@ -1,5 +1,5 @@
 opencv-python
 numpy
 pandas
-pillow>=8.4
-moviepy>=1.0.3
+pillow
+moviepy
