@@ -619,6 +619,26 @@ def extend_row_with_pt(row):
                     row[f'answer.{q_name}_{pt}'] = 0
     return row
 
+def check_video_dropped_frame_percent(row):
+    """
+    Check the ratio of dropped frames to total frames
+    :param row:
+    :return: ratio of dropped frames to total frames
+    """
+    # get all field start by answer.video_total_frames and get average and median of them
+    # add try catch
+    try:
+        list_items = [item for item in row.keys() if item.startswith('answer.video_dropped_frame_percent') and float(row[item]) != -1]
+        if len(list_items) == 0:
+            return float('inf'), float('inf')
+        # get the average value of items in the list
+        avg_video_dropped_frame_percent = sum(float(row[item]) for item in list_items) / len(list_items)
+        max_video_dropped_frame_percent  = max([float(row[item]) for item in list_items])
+        return avg_video_dropped_frame_percent, max_video_dropped_frame_percent
+    except  Exception as e:
+        #print(row)
+        return float('inf'), float('inf')
+    
 def data_cleaning(filename, method, wrong_vcodes):
    """
    Data screening process
@@ -675,10 +695,26 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['correct_gold_question'], details  = check_gold_question(row, method)
         details['worker_id'] = d['worker_id']
         details['is_correct'] = d['correct_gold_question']
+        if 'answer.rdp_exist' in row:
+            details['rdp'] = row['answer.rdp_exist']
+        else:
+            # does not exist - same value will be assigned if the script is not working
+            details['rdp'] = -1
         gold_question_details.append(details)
+
+        # RDPS pair answers
+        # Answer values: 1 = Clip A (ref) has better quality, 0 = same, 2 = Clip B (pvs/clip) has better quality
+        # rdps1_pair*_is_src indicates which position (1 or 2) holds the unimpaired source
+        for pair in ['pair1', 'pair2']:
+            ans_key = f'answer.rdps_{pair}'
+            src_key = f'rdps1_{pair}_is_src'
+            if ans_key in row and row[ans_key]:
+                d[f'rdps_{pair}_ans'] = row[ans_key]
+                d[f'rdps_{pair}_src_pos'] = row.get(src_key, '')
 
         # step6. check variance in a session rating
         d['variance_in_ratings'] = check_variance(row, method)
+        d['video_dropped_frame_percent_avg'], d['max_dropped_frame_percent'] = check_video_dropped_frame_percent(row)
 
         d['percent_over_play_duration'] = check_play_duration(row)
 
@@ -744,6 +780,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     worker_list, use_sessions, num_not_used_sub_perform, _ = evaluate_rater_performance(worker_list, use_sessions)
     #num_rej_perform = 0
 
+    # check for remote desktop usage
+    worker_list, use_sessions = check_remote_desktop_usage(worker_list, use_sessions, filename)
+
     #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
     not_using_further_reasons = []
@@ -772,6 +811,118 @@ def data_cleaning(filename, method, wrong_vcodes):
     tmp_path = os.path.splitext(filename)[0] + '_not_used_reasons.csv'
     with open(tmp_path, 'w') as fp:
         fp.write('\n'.join('%s, %s' % x for x in not_used_reasons_list))
+    return worker_list, use_sessions
+
+
+def _evaluate_rdps_session(session, worker_entry):
+    """
+    Evaluate RDPS answers for a single session.
+    Returns (rdps_correct, rdps_detail_dict).
+    A session passes RDPS if both pairs are answered correctly.
+    Correct answer: the source clip should be rated as better quality.
+    """
+    detail = {
+        'worker_id': session.get('workerid', ''),
+        'assignment_id': session.get('assignmentid', ''),
+    }
+    correct_count = 0
+    for pair in ['pair1', 'pair2']:
+        ans_key = f'answer.rdps_{pair}'
+        src_key = f'rdps1_{pair}_is_src'
+        ans = str(session.get(ans_key, '')).strip()
+        src_pos = str(session.get(src_key, '')).strip()
+        detail[f'rdps_{pair}_ans'] = ans
+        detail[f'rdps_{pair}_src_pos'] = src_pos
+        if ans and src_pos and ans == src_pos:
+            correct_count += 1
+        detail[f'rdps_{pair}_correct'] = 1 if (ans and src_pos and ans == src_pos) else 0
+
+    detail['rdps_both_correct'] = 1 if correct_count == 2 else 0
+    dropped = worker_entry.get('video_dropped_frame_percent_avg', float('inf'))
+    detail['video_dropped_frame_percent_avg'] = dropped
+
+    return correct_count == 2, detail
+
+
+def check_remote_desktop_usage(worker_list, use_sessions, filename):
+    """
+    Check for remote desktop usage using two methods:
+    1. rdp_exist (JS-based): rdp_exist=1 means RDP detected. Workers with any
+       rdp_exist=1 session are marked as not used and removed from use_sessions.
+    2. RDPS (video-pair probe): a session is flagged as potential RDP if either
+       RDPS pair answer is wrong OR video_dropped_frame_percent_avg >= 0.5.
+       RDPS-flagged sessions are reported but NOT removed from use_sessions.
+    Export a CSV report with all detections.
+    """
+    rdp_sessions = []
+    rdp_workers = set()
+    js_failed_count = 0
+
+    # Build a lookup from assignment -> worker_entry for dropped frame data
+    worker_entry_map = {d['assignment']: d for d in worker_list}
+
+    for session in use_sessions:
+        rdp_val = str(session.get('answer.rdp_exist', '-1')).strip()
+        if rdp_val == '1':
+            rdp_workers.add(session['workerid'])
+            rdp_sessions.append({
+                'worker_id': session['workerid'],
+                'assignment_id': session['assignmentid'],
+                'rdp_exist': rdp_val,
+                'detection_method': 'js_rdp_exist'
+            })
+        elif rdp_val == '-1':
+            js_failed_count += 1
+
+    if js_failed_count > 0:
+        logger.info(f"   Note: RDP detection JS did not execute for {js_failed_count} session(s) "
+                    f"(rdp_exist=-1). These sessions are not rejected.")
+
+    # RDPS evaluation
+    rdps_flagged = []
+    rdps_total = 0
+    for session in use_sessions:
+        ans_key = 'answer.rdps_pair1'
+        if ans_key not in session or not session[ans_key]:
+            continue
+        rdps_total += 1
+        w_entry = worker_entry_map.get(session.get('assignmentid', ''), {})
+        rdps_correct, detail = _evaluate_rdps_session(session, w_entry)
+        dropped = w_entry.get('video_dropped_frame_percent_avg', float('inf'))
+        is_rdps_clean = rdps_correct and dropped < 0.5
+        detail['rdps_clean'] = 1 if is_rdps_clean else 0
+        detail['detection_method'] = 'rdps'
+        if not is_rdps_clean:
+            rdps_flagged.append(detail)
+
+    if rdps_total > 0:
+        logger.info(f"   RDPS evaluated: {rdps_total} session(s), "
+                    f"{len(rdps_flagged)} flagged as potential RDP (report only, not removed).")
+
+    # Handle JS-detected RDP workers (mark as not used)
+    if rdp_workers:
+        logger.info(f"   Remote desktop detected (JS) for {len(rdp_workers)} worker(s) "
+                    f"across {len(rdp_sessions)} session(s). "
+                    f"Marking all their submissions as not used.")
+        for d in worker_list:
+            if d['worker_id'] in rdp_workers:
+                d['accept_and_use'] = 0
+                if 'failures' not in d or not isinstance(d['failures'], list):
+                    d['failures'] = []
+                if 'remote_desktop' not in d['failures']:
+                    d['failures'].append('remote_desktop')
+        use_sessions = [s for s in use_sessions if s['workerid'] not in rdp_workers]
+    else:
+        logger.info("   No remote desktop usage detected (JS).")
+
+    # Export combined RDP detection report
+    all_detections = rdp_sessions + rdps_flagged
+    if all_detections:
+        rdp_report_file = os.path.splitext(filename)[0] + '_rdp_detected.csv'
+        rdp_df = pd.DataFrame(all_detections)
+        rdp_df.to_csv(rdp_report_file, index=False)
+        logger.info(f"   RDP detection report saved to: {rdp_report_file}")
+
     return worker_list, use_sessions
 
 

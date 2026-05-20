@@ -4,7 +4,7 @@
  
  This describes the configuration for the `create_trapping_clips` script. A sample configuration file can be found in
   `configurations\trapping.cfg`.
- The `create_trapping_clips` script creates the trapping clips using a subset of videos in the original dataset. 
+ The `create_trapping_clips` script creates the trapping clips using a subset of videos in the original dataset.
  For each video, it will use the video parts from beginning and end, and add a text message in between asking participant 
  to select a specific answer to show their attention. 
   

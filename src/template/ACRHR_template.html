@@ -255,6 +255,20 @@ function isAnyParallelSession(){
 }
 
 
+document.addEventListener('DOMContentLoaded', function() {
+	const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+	function updateResult() {
+		if (mediaQuery.matches) {
+			$('#rdp_exist').val(1);
+		} else {
+			$('#rdp_exist').val(0);
+		}
+	}
+	mediaQuery.addEventListener('change', updateResult);
+	updateResult();
+});
+
+
 /**
  central method to record errors
 **/
@@ -1418,7 +1432,7 @@ var setup_section_remaining_tries = 3;
 function on_setup_performed(success){
 	if (!success){
 		if (setup_section_remaining_tries> 1){
-			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that you\n - already calibrated your screen,\n - are within good lighting conditions, and \n - are a proper distance from screen.".f(setup_section_remaining_tries));
+			alert("Unfortunately, you did not pass the setup test. You can try it {0} more time. Please make sure that you\n - have already calibrated your screen,\n - are in good lighting conditions, and \n - are at a proper distance from the screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
 			 $('#setup-rest :radio').prop('checked', false);
 
@@ -1431,8 +1445,17 @@ function on_setup_performed(success){
 	}
 	$("#alert-setup-complete").show();
 	createCookie(config['cookieName']+"_setup","un_important",config['showSetupEveryMinutes']);
-	activate_training_section(true);
-	activate_rating_section(true);
+	$("#rdps-section").removeClass("disabled_section");
+	$("input[name='rdps_pair1'], input[name='rdps_pair2']").on('change', function(){
+		if($("input[name='rdps_pair1']").is(':checked') && $("input[name='rdps_pair2']").is(':checked')){
+			activate_training_section(true);
+			activate_rating_section(true);
+		}
+	});
+}
+
+function playedVideoRDPS(id){
+	$('#rdps_radios_' + id).removeClass('disabled_section');
 }
 
 
@@ -1971,9 +1994,9 @@ $(function() {
 		titleTextTemplate='<tr><td>{1}</td></tr>';
 		insert='';
 		title='';
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
-		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
-		'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" hidden><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" disablepictureinpicture><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" disablepictureinpicture><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>'+
+		'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" hidden disablepictureinpicture><source src="{2}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -2098,15 +2121,16 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <div id="meter" style="width:10cm"></div>
-<div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
-	<div class="col-md-4"></div>
-	<div class="col-md-2" style="float: right"><div class="loader" width="30%"></div></div>
-	<div class="col-md-3" style="text-align: left;"> <h1>Loading</h1>
+<div id ="hardware-spinner" class ="container" style="margin: 100px auto"><div class="row">
+	<div class="col-md-3"></div>
+	<div class="col-md-2" style="text-align: right;"><div class="loader" width="30%"></div></div>
+	<div class="col-md-4" style="text-align: left;"> <h1>Loading</h1>
+		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
 		<p><span id ="remaining_videos">0</span> remains.</p>
 		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
 	<div class="col-md-3"></div>
-</div>
+</div></div>
 
 <!-- Instructions -->
 <section class="container disabled_section" id="Survey">
@@ -2125,7 +2149,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has one main section + three (just every now and then) sections:</p>
 				<ul>
 					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
-					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
+					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these types of tasks</li>
 					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
 					<li><b>Training (every <b class="training_time"> 0 </b>):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
 					<li><b>Rating (main task):</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
@@ -2155,7 +2179,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
 
 				<h3>Attention: </h3>
-				<p>This hit includes one or more Control clips (gold clips). Control clips are ones that we know that answer for and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention and their environment hasn't changed.
+				<p>This HIT includes one or more control clips (gold clips). Control clips are ones for which we know the answer and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention and that their environment hasn't changed.
 					A wrong answer to control clip(s) will result in rejection of the HIT.</p>
 
 				</p>
@@ -2206,13 +2230,13 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 			  <fieldset class="qualificationFieldset">
 				  <div class="form-group">
-					  <label for="sel2">4.	When was the last time you participated in an <u>video quality test</u>?</label>
+					  <label for="sel2">4.	When was the last time you participated in a <u>video quality test</u>?</label>
 					  <select class="form-control" id="sel2" name="4_video_test" required="">
 							<option value="">Please select</option>
 							<option value="0d">Today</option>
-							<option value="3d">In last 3 days</option>
-							<option value="7d">In last week</option>
-							<option value="30d">In last month</option>
+							<option value="3d">In the last 3 days</option>
+							<option value="7d">In the last week</option>
+							<option value="30d">In the last month</option>
 							<option value="nn">Later than last month or never</option>
 					  </select>
 				  </div>
@@ -2227,12 +2251,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>6.&nbsp;Please measure the height and width of you screen:</label>
+			  <fieldset class="qualificationFieldset"><label>6.&nbsp;Please measure the height and width of your screen:</label>
 				  <div>
 					  <label>Height: <input type="text" class="nospace" name="6_device_size_h" size="4" required></label>
 					  <label>Width: <input type="text" class="nospace" name="6_device_size_w" size="4" required></label>
 					  <span style="margin:0px 30px"></span>
-					  <span> What is the unite of your measurement?</span>
+					  <span> What is the unit of your measurement?</span>
 					  <span> <label><input type="radio" name="6_1_unit" value="IN" required="">inch</label></span>
 					  <span> <label><input type="radio" name="6_1_unit" value="CM">cm</label></span>
 				  </div>
@@ -2283,7 +2307,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 						</div>
 					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
 							<p><b>Step 2:</b></p>
-							<p>We will show you couple of broken rings with gaps which makes them look similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
+							<p>We will show you a couple of broken rings with gaps, which make them look similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
 							<div class="row" style="margin: 30px ">
 										<div class="col-md-3" style=""></div>
 										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
@@ -2454,9 +2478,55 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<!-- Distance check-->
 				<h4>Distance from screen</h4>
 				<div class="alert alert-info" role="alert">
-			  		Please make sure you are a proper distance from your screen. For this HIT it is <b>1.5 to 3 times of the height of you screen</b>.
+			  		Please make sure you are at a proper distance from your screen. For this HIT it is <b>1.5 to 3 times the height of your screen</b>.
 				</div>
 				<div id="distance_test_cmps"></div>
+
+				</div><!-- end setup-rest -->
+
+				<!-- RDPS quality comparison -->
+				<div id="rdps-section" class="disabled_section">
+				<h4>Video quality comparison</h4>
+				<p>Watch each pair of video clips and select which one has better quality.</p>
+
+				<fieldset class="setupFieldset">
+				<h5>Pair 1</h5>
+				<div class="row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+						<div class="row"><p align="center">
+							<span class="velmnt dcr" id="rdps_p1" data-src-ref="${rdps1_pair1}" data-src-clip="${rdps2_pair1}" data-onfinished="playedVideoRDPS" data-scale="full_screen">&nbsp;</span>
+						</p></div>
+					</div>
+					<div class="col-sm-2"></div>
+				</div>
+				<div id="rdps_radios_rdps_p1" class="disabled_section" style="text-align:center; margin-bottom:20px;">
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="1" required> Clip A has better quality</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="0"> Quality is the same</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="2"> Clip B has better quality</label></div>
+				</div>
+				</fieldset>
+
+				<fieldset class="setupFieldset">
+				<h5>Pair 2</h5>
+				<div class="row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+						<div class="row"><p align="center">
+							<span class="velmnt dcr" id="rdps_p2" data-src-ref="${rdps1_pair2}" data-src-clip="${rdps2_pair2}" data-onfinished="playedVideoRDPS" data-scale="full_screen">&nbsp;</span>
+						</p></div>
+					</div>
+					<div class="col-sm-2"></div>
+				</div>
+				<div id="rdps_radios_rdps_p2" class="disabled_section" style="text-align:center; margin-bottom:20px;">
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="1" required> Clip A has better quality</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="0"> Quality is the same</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="2"> Clip B has better quality</label></div>
+				</div>
+				</fieldset>
+
+				</div><!-- end rdps-section -->
+
 				</div>
 			</div>
 			</div>
@@ -2498,7 +2568,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 
 
-			<li> The video (or portions of it) could be <b>unsmooth</b> appearing <b>jerky</b>, <b>wobbly</b>, or <b>stuttering</b>. In other words, partly <b>discountinous</b>. </li>
+			<li> The video (or portions of it) could be <b>unsmooth</b>, appearing <b>jerky</b>, <b>wobbly</b>, or <b>stuttering</b>. In other words, partly <b>discontinuous</b>. </li>
 			<div class="row">
 				<p>Here is an example:</p>
 				<p align="center">
@@ -2579,6 +2649,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="tp_check" name="tp_check" type="hidden" value="-1" />
 <input id="gq_check" name="gq_check" type="hidden" value="0" />
 <input id="errors" name="errors" type="hidden" value="" />
+<input id="rdp_exist" name="rdp_exist" type="hidden" value="-1" />
 
 <input id="browser_info" name="browser_info" type="hidden" value="-1" maxlength="2000"/>
 

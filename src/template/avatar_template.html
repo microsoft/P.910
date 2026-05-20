@@ -568,14 +568,14 @@ $(function() {
 function fill_template_questions(){
 	console.log("fill_template_questions");
 	template_a_questions ={
-		"1": {"id": "trust", "text": "I would <b>trust</b> a person who chose to be represented like that for work related online meeting."},
+		"1": {"id": "trust", "text": "I would <b>trust</b> a person who chose to be represented like that for a work-related online meeting."},
     	"2": {"id": "realistic", "text": "This representation is <b>realistic</b>."},
-    	"3": {"id": "comfortableusing", "text": "I would be comfortable <b>representing myself</b> like that for work related online meeting."},
-    	"4": {"id": "comfortableinteracting", "text": "I would be comfortable <b>interacting with</b> someone who chose to be represented like that in a work related online meeting with me."},
+    	"3": {"id": "comfortableusing", "text": "I would be comfortable <b>representing myself</b> like that for a work-related online meeting."},
+    	"4": {"id": "comfortableinteracting", "text": "I would be comfortable <b>interacting with</b> someone who chose to be represented like that in a work-related online meeting with me."},
     	"5": {"id": "appropriate", "text": "This representation is <b>appropriate</b>, for a work-related online meeting."},
     	"6": {"id": "creepy", "text": "This representation is <b>creepy</b>."},
     	"7": {"id": "formal", "text": "This representation looks <b>formal</b>, for a work-related online meeting."},
-    	"8": {"id": "like", "text": "I <b>like</b> this representation for work related online meeting."}};
+    	"8": {"id": "like", "text": "I <b>like</b> this representation for a work-related online meeting."}};
 
 	template_b_questions ={"1": {"id": "lookslike", "text": "The avatar (left) <b>looks like</b> the person (right) in the video."},
 				"2": {"id": "facialexpressions", "text": "The <b>avatar’s facial expressions</b> (left) are accurate with the video (right)"},
@@ -754,13 +754,13 @@ function loadTextPlaceHolders(){
 	$('.question_number').html(config['questionUrls'].length);
 	$('.instruction_device').html(config['device_accepted_device'].join());
 	if (config['template']=="avatar_b"){
-		place_holder_task = "Imagine you want to participate in <b>an online meeting related to your work</b>. You or your counterpart will be represented by an avatar. For each question, please watch the provided video. On <b>left</b> there is an avatar representation whereas <b>on right there is the real video</b>. Provide your opinion on <b>how well the provided avatar represents the facial expression of person in the video</b>.";
-		place_holder_question = "Watch the video with <b>avatar on left</b> and <b>real video on right</b>. How well does the avatar represent the person and their facial expression in the video?";
+		place_holder_task = "Imagine you want to participate in <b>an online meeting related to your work</b>. You or your counterpart will be represented by an avatar. For each question, please watch the provided video. On <b>the left</b> there is an avatar representation whereas <b>on the right there is the real video</b>. Provide your opinion on <b>how well the provided avatar represents the facial expressions of the person in the video</b>.";
+		place_holder_question = "Watch the video with <b>the avatar on the left</b> and <b>the real video on the right</b>. How well does the avatar represent the person and their facial expression in the video?";
 		$('.task_description').html(place_holder_task);
 		$('.rating_question_text').html(place_holder_question);
 	}
 	if (config['template']=="avatar_problem_token"){
-		place_holder_task = "Imagine you want to participate in <b>an online meeting related to your work</b>. You or your counterpart will be represented by an avatar. For each question, please watch the provided video. On <b>left</b> there is an avatar representation whereas <b>on right there is the real video</b>. Provide your opinion on <b>how realistic the avatar represents the person in the video</b>, and <b>what issues should be addressed to make it more realistic</b>.";
+		place_holder_task = "Imagine you want to participate in <b>an online meeting related to your work</b>. You or your counterpart will be represented by an avatar. For each question, please watch the provided video. On <b>the left</b> there is an avatar representation whereas <b>on the right there is the real video</b>. Provide your opinion on <b>how realistically the avatar represents the person in the video</b>, and <b>what issues should be addressed to make it more realistic</b>.";
 		$('.task_description').html(place_holder_task);
 		
 	}
@@ -896,7 +896,7 @@ function maximum_extra_playing_time_reached(id){
 	console.error("Playing time of the video {0} took more than what we expected.".f(id));
 	recordError("VIDEO_PLAY_ISSUE","Playing time of the video {0} took more than what we expected.".f(id), false);
 	if (maximum_extra_playing_time_reached_counter==0){
-		alert('Playback of this video took significantly longer than its duration.\n Please make sure that your system is not slowed down by other programs or not using Remote Desktop (it is forbidden for this task).');
+		alert('Playback of this video took significantly longer than its duration.\n Please make sure that your system is not slowed down by other programs and that you are not using Remote Desktop (it is forbidden for this task).');
 	}
 	maximum_extra_playing_time_reached_counter = maximum_extra_playing_time_reached_counter+1;
 	if (maximum_extra_playing_time_reached_counter>3){
@@ -1189,7 +1189,7 @@ function show_message_too_long_loading(){
 		clearTimeout(page_loading_timer);
 		page_loading_timer= null;
 	}
-	alert('It looks like that your Internet connection is too slow for this task. Please return this hit and try again later with a better network connection. Thanks');
+	alert('It looks like your Internet connection is too slow for this task. Please return this HIT and try again later with a better network connection. Thanks');
 	disableTheHIT(Hide_HIT_REASON.AUTO_TEST_FAILED);
 }
 
@@ -1823,10 +1823,10 @@ var setup_section_remaining_tries = 3;
 **/
 function on_setup_performed(status){
 	if (status == VIEWING_DISTANCE.TOO_CLOSE){
-		alert('You might be too close to your screen. Please make sure to keep a distance of 1.5 to 3 times of your screen height fromy our device.')
+		alert('You might be too close to your screen. Please make sure to keep a distance of 1.5 to 3 times your screen height from your device.')
 	}else if (status == VIEWING_DISTANCE.TOO_FAR){
 		if (setup_section_remaining_tries> 1){
-			alert("Unfortunately you did not pass the setup test, you can try it {0} more times. You might need to get closer to your screen and keep a your distance equal to 1.5 to 3 times of the height of your screen.".f(setup_section_remaining_tries));
+			alert("Unfortunately, you did not pass the setup test. You can try it {0} more times. You might need to get closer to your screen and keep your distance equal to 1.5 to 3 times the height of your screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
 			$('#setup-rest :radio').prop('checked', false);
 		}else{
@@ -1836,7 +1836,7 @@ function on_setup_performed(status){
 		return;
 	}else if (status==VIEWING_DISTANCE.UNKNOWN){
 		if (setup_section_remaining_tries> 1){
-			alert("Unfortunately you did not pass the setup test, you can try it {0} more time. Please make sure that you\n - already calibrated your screen,\n - are within good lighting conditions, and \n - are a proper distance from the screen.".f(setup_section_remaining_tries));
+			alert("Unfortunately, you did not pass the setup test. You can try it {0} more time. Please make sure that you\n - have already calibrated your screen,\n - are in good lighting conditions, and \n - are at a proper distance from the screen.".f(setup_section_remaining_tries));
 			setup_section_remaining_tries--;
 			 $('#setup-rest :radio').prop('checked', false);
 
@@ -1849,9 +1849,18 @@ function on_setup_performed(status){
 	}
 	$("#alert-setup-complete").show();
 	createCookie(config['cookieName']+"_setup","un_important",config['showSetupEveryMinutes']);
-	activate_training_section(true);
-	activate_rating_section(true);
+	$("#rdps-section").removeClass("disabled_section");
+	$("input[name='rdps_pair1'], input[name='rdps_pair2']").on('change', function(){
+		if($("input[name='rdps_pair1']").is(':checked') && $("input[name='rdps_pair2']").is(':checked')){
+			activate_training_section(true);
+			activate_rating_section(true);
+		}
+	});
 
+}
+
+function playedVideoRDPS(id){
+	$('#rdps_radios_' + id).removeClass('disabled_section');
 }
 
 function getRatingSection(questionType, questionName, question, answers){
@@ -1964,7 +1973,7 @@ function getTelepScaleProblemToken(is_training){
 	
     var overhead = '<div class="tab-pane fade {2}" id="'+p+'{0}-panel" role="tabpanel" aria-labelledby="'+p+'{0}-tab"><p></p>'+
 	'<div class="row">	<div class="col-sm-2"></div>	<div class="col-sm-8">'+
-	'<p style="margin-top:10px;" class="rating_question_text">{0}.1. Imagine you want to participate in <b>an online meeting related to your work</b>. In that meeting, <b>you or your colleague</b> (right) will be represented by an avatar (left) as shown in the video below. </br>Watch the video and rate how much you agree with following statement: The <b>avatar</b> (left) is realistic .</p> <div class="row"> <p align="center"> '+
+	'<p style="margin-top:10px;" class="rating_question_text">{0}.1. Imagine you want to participate in <b>an online meeting related to your work</b>. In that meeting, <b>you or your colleague</b> (right) will be represented by an avatar (left) as shown in the video below. </br>Watch the video and rate how much you agree with the following statement: The <b>avatar</b> (left) is realistic.</p> <div class="row"> <p align="center"> '+
 	'<span class="velmnt" id="'+p+'{0}" data-src-clip="{1}" data-onfinished="playedVideoTraining" data-scale="{{cfg.video_player}}"></span> </p> '+	
 	' </div> </div> <div class="col-sm-2"></div> </div> ' +
 	//'<div class="row">	<div class="col-sm-3"></div>	<div class="col-sm-6">'+'<fieldset id="fieldset_Q{0}" class="trainingFieldset" title="">'+
@@ -1975,7 +1984,7 @@ function getTelepScaleProblemToken(is_training){
 	var postfix = ' </tbody> </table> </fieldset> </div> <div class="col-sm-4"></div> </div>';
 
 	var problem_toke_prefix ='<div class="row">	<div class="col-sm-3"></div>	<div class="col-sm-6">'+
-	'<p style="margin-top:10px;" >{0}.2. Specify the issues (or no problem):?</p>  '+
+	'<p style="margin-top:10px;" >{0}.2. Specify the issues (or no problem):</p>  '+
 	'<div class="row">'+
 	'<fieldset id="fieldset_t{0}.2" class="trainingFieldset" title=""><table  cellspacing="0" cellpadding="0"><tbody>';
 
@@ -2299,7 +2308,7 @@ function help_which_questions_remain(){
 		}		
 		
 	}else{
-		msg = "All questions in the Rating section are answered, in case the Submit button is still deactivate, please check other sections."
+		msg = "All questions in the Rating section are answered. In case the Submit button is still deactivated, please check other sections."
 	}
 	alert(msg);
 }
@@ -2819,9 +2828,9 @@ $(function() {
 		title='';
 		//one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png"><source src="{1}" type="video/mp4"> Sorry, your browser does not support embedded videos. </video>';
 
-		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>';
-		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}"></video>'+
-			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden></video>';
+		one_video_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}" disablepictureinpicture></video>';
+		two_videos_template = '<video id="video1_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{1}" disablepictureinpicture></video>'+
+			'<video id="video2_{0}" preload="true"  width="1" poster="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/poster.png" data-src= "{2}" hidden disablepictureinpicture></video>';
 
 		video_tag = one_video_template;
 		is_two_video = $(this).hasClass('dcr');
@@ -3009,16 +3018,16 @@ function avoidAnsweringBeforeWatchingThrough(){
 
 
 <div id="meter" style="width:10cm"></div>
-<div id ="hardware-spinner" class ="row" style="margin: 100px 0px">
-	<div class="col-md-4"></div>
-	<div class="col-md-2" style="float: right"><div class="loader" width="30%"></div></div>
-	<div class="col-md-3" style="text-align: left;"> <h1>Loading</h1>
+<div id ="hardware-spinner" class ="container" style="margin: 100px auto"><div class="row">
+	<div class="col-md-3"></div>
+	<div class="col-md-2" style="text-align: right;"><div class="loader" width="30%"></div></div>
+	<div class="col-md-4" style="text-align: left;"> <h1>Loading</h1>
 		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
 		<p><span id ="remaining_videos">0</span> remains.</p>
 		<p><small>It might take up to a minute. In case it takes longer, refresh the page.</small></p></div>
 	<div class="col-md-3"></div>
-</div>
+</div></div>
 
 <!-- Instructions -->
 <section class="container disabled_section" id="Survey">
@@ -3037,7 +3046,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  <p>Welcome! You are about to participate in our video quality assessment experiment! This HIT has one + three (just every now and then) sections:</p>
 				<ul>
 					<li><b>Qualification (just once):</b> Check if you are eligible to perform these HITs</li>
-					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these type of tasks</li>
+					<li><b>Calibration (every <b class="setup_time"> 0</b> minutes):</b> Calibrate your screen to be able to perform these types of tasks</li>
 					<li><b>Setup (every <b class="setup_time"> 0</b> minutes):</b> Configure your system and validate it by answering 5 questions</li>
 					<li><b>Training (every <b class="training_time"> 0 </b>):</b> <b class="question_number_training"> 0 </b> questions, same as "Ratings" but appears just once a day</li>
 					<li><b>Rating:</b> Watch <b class="question_number"> 0 </b> video clips and give <b>your opinion about the quality of the video</b> you watched.</li>
@@ -3047,7 +3056,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<p><b>Rules:</b></p>
 				<ul>
 					<li>You must use a <b class="instruction_device">XX</b>, otherwise your response will be rejected</li>
-					<li>You <b>must NOT use a Remote Desktop application like (like Microsoft Remote Desktop, AnyDesk, or Chrome Remote Desktop) or VPN connect</b> to visit this page.</li>
+					<li>You <b>must NOT use a Remote Desktop application (like Microsoft Remote Desktop, AnyDesk, or Chrome Remote Desktop) or a VPN connection</b> to visit this page.</li>
 					<li>You must perform the task in good lighting conditions without <b>glare on your screen</b> </li>
 					<li>Do not change the brightness of your screen or your distance to the screen after the Setup section</li>
 					<li>If you finish a section and the following sections do not unlock automatically, please verify that you have answered all of the previous 
@@ -3056,7 +3065,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				</ul>
 
 				<p><b>Payment:</b></p>
-				<p>The result of this experiment is <b>very important for us and other scientist</b> working in this area. We have methods that analyse the consistency of your answers. We will use these methods to rank the submitted assignments according to quality.</p>
+				<p>The result of this experiment is <b>very important for us and other scientists</b> working in this area. We have methods that analyse the consistency of your answers. We will use these methods to rank the submitted assignments according to quality.</p>
 				<p>For this experiment, we will pay a base reward of <b>${{cfg.hit_base_payment}}/HIT</b> for every accepted HIT. We have made available a set of <b class="max_allowed_hits">0 </b> different HITs. You will receive a bonus of:</p>
 
 				<ul>
@@ -3068,7 +3077,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<b>Please perform up to <b class="max_allowed_hits"> 0 </b> HITs from this group. If you do more than that, the <u>rest will be rejected.</u></b>
 
 				<h3>Attention: </h3>
-				  <p>This hit includes one or more Control clips (gold clips). Control clips are ones that we know that answer for and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention and their environment hasn't changed.
+				  <p>This HIT includes one or more control clips (gold clips). Control clips are ones for which we know the answer and should be very easy to rate (they are clearly very good or very poor). We include control clips in the HIT to ensure raters are paying attention and that their environment hasn't changed.
 					  A wrong answer to control clip(s) will result in rejection of the HIT.</p>
   
 				  </p>
@@ -3125,9 +3134,9 @@ function avoidAnsweringBeforeWatchingThrough(){
 					  <select class="form-control" id="sel2" name="4_video_test" required="">
 							<option value="">Please select</option>
 							<option value="0d">Today</option>
-							<option value="3d">In last 3 days</option>
-							<option value="7d">In last week</option>
-							<option value="30d">In last month</option>
+							<option value="3d">In the last 3 days</option>
+							<option value="7d">In the last week</option>
+							<option value="30d">In the last month</option>
 							<option value="nn">Later than last month or never</option>
 					  </select>
 				  </div>
@@ -3142,12 +3151,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 				  </div>
 			  </fieldset>
 
-			  <fieldset class="qualificationFieldset"><label>6.&nbsp;Please measure the height and width of you screen:</label>
+			  <fieldset class="qualificationFieldset"><label>6.&nbsp;Please measure the height and width of your screen:</label>
 				  <div>
 					  <label>Height: <input type="text" class="nospace" name="6_device_size_h" size="4" required></label>
 					  <label>Width: <input type="text" class="nospace" name="6_device_size_w" size="4" required></label>
 					  <span style="margin:0px 30px"></span>
-					  <span> What is the unite of your measurement?</span>
+					  <span> What is the unit of your measurement?</span>
 					  <span> <label><input type="radio" name="6_1_unit" value="IN" required="">inch</label></span>
 					  <span> <label><input type="radio" name="6_1_unit" value="CM">cm</label></span>
 				  </div>
@@ -3207,7 +3216,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 						</div>
 					  	<div class="row" id ="test_visual_acity" style="display:none; margin:30px;">
 							<p><b>Step 2:</b></p>
-							<p>We will show you couple of broken rings with gaps which makes them look similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
+							<p>We will show you a couple of broken rings with gaps, which make them look similar to the letter "C".  The rings may appear in different sizes and orientations.</p>
 							<div class="row" style="margin: 30px ">
 										<div class="col-md-3" style=""></div>
 										<div class="col-md-2" ><img class="center-img"  src="https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/landoltc_cropped.png" alt="lc" style="width:30%;" ></div>
@@ -3422,9 +3431,55 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<!-- Distance check-->
 				<h4>Distance from screen</h4>
 				<div class="alert alert-info" role="alert">
-			  		Please make sure you are a  proper distance from your screen. For this HIT it is <b>1.5 to 3 times of the height of you screen</b>.
+			  		Please make sure you are at a proper distance from your screen. For this HIT it is <b>1.5 to 3 times the height of your screen</b>.
 				</div>
 				<div id="distance_test_cmps"></div>
+
+				</div><!-- end setup-rest -->
+
+				<!-- RDPS quality comparison -->
+				<div id="rdps-section" class="disabled_section">
+				<h4>Video quality comparison</h4>
+				<p>Watch each pair of video clips and select which one has better quality.</p>
+
+				<fieldset class="setupFieldset">
+				<h5>Pair 1</h5>
+				<div class="row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+						<div class="row"><p align="center">
+							<span class="velmnt dcr" id="rdps_p1" data-src-ref="${rdps1_pair1}" data-src-clip="${rdps2_pair1}" data-onfinished="playedVideoRDPS" data-scale="full_screen">&nbsp;</span>
+						</p></div>
+					</div>
+					<div class="col-sm-2"></div>
+				</div>
+				<div id="rdps_radios_rdps_p1" class="disabled_section" style="text-align:center; margin-bottom:20px;">
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="1" required> Clip A has better quality</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="0"> Quality is the same</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair1" value="2"> Clip B has better quality</label></div>
+				</div>
+				</fieldset>
+
+				<fieldset class="setupFieldset">
+				<h5>Pair 2</h5>
+				<div class="row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-8">
+						<div class="row"><p align="center">
+							<span class="velmnt dcr" id="rdps_p2" data-src-ref="${rdps1_pair2}" data-src-clip="${rdps2_pair2}" data-onfinished="playedVideoRDPS" data-scale="full_screen">&nbsp;</span>
+						</p></div>
+					</div>
+					<div class="col-sm-2"></div>
+				</div>
+				<div id="rdps_radios_rdps_p2" class="disabled_section" style="text-align:center; margin-bottom:20px;">
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="1" required> Clip A has better quality</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="0"> Quality is the same</label></div>
+					<div class="radio" style="display:inline-block; margin:0 15px;"><label><input type="radio" name="rdps_pair2" value="2"> Clip B has better quality</label></div>
+				</div>
+				</fieldset>
+
+				</div><!-- end rdps-section -->
+
 				</div>
 			</div>
 			</div>
@@ -3454,12 +3509,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 			<p>Almost ready to start.</p> <p>Thank you for participating in this task! You will be watching videos about different representations in online work meetings and giving your opinion about how well the person is represented. In each video, <b>on the left, there is an avatar</b>, which is a representation of the <b>person on the right</b> side. After watching the video, you should rate how much you agree with the provided statements. You will give your answers on a scale from <b>"Strongly agree (++)"</b> to <b>"Strongly disagree (--)"</b>. Please make sure to <b>use the entire range of scale and do NOT only focus on both ends</b>. The following are the statements:</p> <p> <ul> <li>The <b>avatar (left)</b> looks like the <b>person (right)</b>.</li> <li>The <b>avatar’s facial expressions</b> (left) are accurate with the video (right).</li> <li>The <b>avatar’s gestures (body and hands)</b> (left) accurately match the person's gestures in the video (right)</li> </ul> </p>
 		</div>
 		<div id="template_a_instructions" hidden>
-			<p>Almost ready to start.<p>Thanks for joining this task! You will be watching videos about different representations in online work meetings and giving your opinion. For each video, you will say how much you agree or disagree with following statements. Remember, we are thinking about <b>online meetings for work</b> and you should rate the entire video clip. You will give your answers on a scale from <b>"Strongly agree (++)"</b> to <b>"Strongly disagree (-–)"</b>. Please read everything carefully. Following are the statements: <ul> <li> I would <b>trust</b> a person who chose to be represented like that for work related online meeting. </li> <li> This representation is <b>realistic</b>.</li> <li> I would be comfortable <b>representing myself</b> like that for work related online meeting.  </li> <li> I would be comfortable <b>interacting with</b> someone who chose to be represented like that in a work related online meeting with me.  </li> <li> This representation is <b>appropriate</b>, for a work-related online meeting. </li> <li> This representation looks <b>formal</b>, for a work-related online meeting. </li> <li> I <b>like</b> this representation for work related online meeting. </li> <li> This representation is <b>creepy</b>. </li> </ul>
+			<p>Almost ready to start.<p>Thanks for joining this task! You will be watching videos about different representations in online work meetings and giving your opinion. For each video, you will say how much you agree or disagree with the following statements. Remember, we are thinking about <b>online meetings for work</b> and you should rate the entire video clip. You will give your answers on a scale from <b>"Strongly agree (++)"</b> to <b>"Strongly disagree (-–)"</b>. Please read everything carefully. The following are the statements: <ul> <li> I would <b>trust</b> a person who chose to be represented like that for a work-related online meeting. </li> <li> This representation is <b>realistic</b>.</li> <li> I would be comfortable <b>representing myself</b> like that for a work-related online meeting.  </li> <li> I would be comfortable <b>interacting with</b> someone who chose to be represented like that in a work-related online meeting with me.  </li> <li> This representation is <b>appropriate</b>, for a work-related online meeting. </li> <li> This representation looks <b>formal</b>, for a work-related online meeting. </li> <li> I <b>like</b> this representation for a work-related online meeting. </li> <li> This representation is <b>creepy</b>. </li> </ul>
 
 		</div>
 
 		<div id="template_problem_token_instructions" hidden>
-			<p>Almost ready to start.</p> <p>Thank you for participating in this task! You will be watching videos about different representations in online work meetings and giving your opinion about how realistic the person is represented. After watching each video, you should rate how much you agree with the provided statement. Also what are the problems/issues that should be solve to have completely realistic representation. If the issue you observe is not provided in list, please use the free text input and type it in. Following problems / issues are provided. Please read them carefully and familirise yourself with them.</p>
+			<p>Almost ready to start.</p> <p>Thank you for participating in this task! You will be watching videos about different representations in online work meetings and giving your opinion about how realistically the person is represented. After watching each video, you should rate how much you agree with the provided statement. Also, what are the problems/issues that should be solved to have a completely realistic representation. If the issue you observe is not provided in the list, please use the free text input and type it in. The following problems / issues are provided. Please read them carefully and familiarize yourself with them.</p>
 			<ul>
 				<li> <b>Avatar Lifelikeness –</b> A general category encompassing how lifelike the avatar appears in terms of naturalness,  and believability.</li>
 				<li> <b>Facial Expressions & Emotions –</b> Refers to how well the avatar conveys emotions through facial expressions, including smiling, frowning, eyebrow movements, and overall expressiveness.</li>
