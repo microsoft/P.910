@@ -16,6 +16,8 @@ import string
 
 import configparser as CP
 import pandas as pd
+import requests
+from multiprocessing import Pool
 
 import create_input as ca
 
@@ -138,7 +140,7 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     n_gold = int(create_input_cfg['number_of_gold_clips_per_session']) if 'number_of_gold_clips_per_session' in \
                                                                           create_input_cfg else 0
 
-    # 'dummy':'dummy' is added becuase of current bug in AMT for replacing variable names. See issue #6
+    # 'dummy':'dummy' is added because of current bug in AMT for replacing variable names. See issue #6
     for i in range(0, n_clips):
         rating_urls.append({"ref": f"${{Q{i}_R}}", "processed": f"${{Q{i}_P}}", 'dummy': 'dummy'})
 
@@ -445,7 +447,7 @@ async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_pat
 
 
 # checked
-async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, general, color_vision_res_path):
+async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, general, color_vision_res_path, rdps_path=None):
     """
     Merge different input files into one dataframe
     :param test_method
@@ -496,6 +498,18 @@ async def prepare_csv_for_create_input(cfg, test_method, clips, gold, trapping, 
         df_trap = await trapclipsstore.get_dataframe()
         print('total trapping clips from store [{0}]'.format(len(await trapclipsstore.clip_names)))
     result = pd.concat([df_clips, df_gold, df_trap, df_general, df_color_vision], axis=1, sort=False)
+
+    # load RDPS sample clips
+    if rdps_path and os.path.exists(rdps_path):
+        df_rdps = pd.read_csv(rdps_path)
+        df_rdps = df_rdps.rename(columns={
+            'src_key': 'rdps_src_key',
+            'src_file': 'rdps_src_file',
+            'freeze_file': 'rdps_freeze_file'
+        })
+        df_rdps = df_rdps.sample(frac=1).reset_index(drop=True)
+        result = pd.concat([result, df_rdps], axis=1, sort=False)
+
     return result
 
 
@@ -555,6 +569,66 @@ def get_path(test_method):
     return template_path, cfg_path
 
 
+def check_url_exist(url):
+    try:
+        response = requests.head(url)
+        if response.status_code == 200:
+            if int(response.headers.get('content-length', 0)) > 1000:
+                return None
+        print('Clip does not exist, try it on your browser: ' + url)
+        return url
+    except:
+        print('Clip does not exist, try it on your browser: ' + url)
+        return url
+
+
+expected_columns_acr = {
+    'clips': ['pvs'],
+    'training': ['training_pvs'],
+    'gold': ['gold_clips_pvs'],
+    'trapping': ['trapping_pvs'],
+}
+
+expected_columns_dcr_ccr = {
+    'clips': ['pvs', 'src'],
+    'training': ['training_pvs', 'training_src'],
+    'gold': ['gold_clips_pvs', 'gold_clips_src'],
+    'trapping': ['trapping_pvs', 'trapping_src'],
+}
+
+
+def check_urls_in_files_exist(csv_file_path, columns):
+    """
+    Check if all URLs in the specified columns of a CSV file are accessible.
+    """
+    df = pd.read_csv(csv_file_path)
+    urls = []
+    for column in columns:
+        urls.extend(df[column].tolist())
+    urls = list(set(urls))
+    errors = []
+    print("  Checking URLs in:", csv_file_path, ', total links:', len(urls))
+    n_cores = os.cpu_count()
+    pool_size = int(0.8 * n_cores) if n_cores > 2 else n_cores
+    with Pool(pool_size) as p:
+        file_processed = 0
+        for result in p.imap_unordered(check_url_exist, urls, chunksize=10):
+            if result is None:
+                file_processed += 1
+                if (file_processed % 100) == 0:
+                    print('      Checked: ' + str(file_processed) + ' links')
+            else:
+                errors.append(result)
+
+    if len(errors) > 0:
+        print('\033[91m' + f'  Total links evaluated: {len(urls)} ({len(errors)} links are invalid)' + '\033[0m')
+        print('   Errors: ')
+        for error in errors:
+            print('   ', error)
+    else:
+        print(f'  Total links evaluated: {len(urls)} ({len(errors)} links are invalid)')
+
+
 # checked
 async def main(cfg, test_method, args):
 
@@ -569,6 +643,9 @@ async def main(cfg, test_method, args):
     if os.path.exists(internal_color_vision_res_path):
         color_vision_res_path = internal_color_vision_res_path
     assert os.path.exists(color_vision_res_path), f"No csv file containing color vision plates infos in {color_vision_res_path}"
+    rdps_path = os.path.join(os.path.dirname(__file__), 'assets_master_script/rdps_sample_clips.csv')
+    if not os.path.exists(rdps_path):
+        rdps_path = None
     template_path, cfg_path = get_path(test_method)
 
     cfg_hit_app = cfg["hit_app_html"]
@@ -593,8 +670,24 @@ async def main(cfg, test_method, args):
     output_dir = args.project
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
+
+    if args.check_urls:
+        print("Checking if all links in the csv files are valid ...")
+        if test_method in ['acr', 'acr-hr', 'avatar']:
+            check_urls_in_files_exist(args.clips, expected_columns_acr['clips'])
+            if args.training_clips:
+                check_urls_in_files_exist(args.training_clips, expected_columns_acr['training'])
+            check_urls_in_files_exist(args.gold_clips, expected_columns_acr['gold'])
+            check_urls_in_files_exist(args.trapping_clips, expected_columns_acr['trapping'])
+        elif test_method in ['dcr', 'ccr']:
+            check_urls_in_files_exist(args.clips, expected_columns_dcr_ccr['clips'])
+            if args.training_clips:
+                check_urls_in_files_exist(args.training_clips, expected_columns_dcr_ccr['training'])
+            check_urls_in_files_exist(args.gold_clips, expected_columns_dcr_ccr['gold'])
+            check_urls_in_files_exist(args.trapping_clips, expected_columns_dcr_ccr['trapping'])
+
     # prepare format
-    df = await prepare_csv_for_create_input(cfg, test_method, args.clips, args.gold_clips, args.trapping_clips, general_path, color_vision_res_path)
+    df = await prepare_csv_for_create_input(cfg, test_method, args.clips, args.gold_clips, args.trapping_clips, general_path, color_vision_res_path, rdps_path)
 
     # create inputs
     print('Start validating inputs')
@@ -653,6 +746,10 @@ if __name__ == '__main__':
                         required=False)
     parser.add_argument("--trapping_clips", help="A csv containing urls of all trapping clips. Columns 'trapping_pvc'"
                                                  "and 'trapping_ans'. In case of DCR also 'trapping_src'")
+    parser.add_argument("--check_urls", action='store_true',
+                        help="Check if all links in the csv files are valid. Default is False")
+    parser.add_argument("--create_local_test", action='store_true',
+                        help="Generate a local preview HTML file after the project is created.")
     parser.add_argument(
         "--training_gold_clips", default=None, help="A csv containing urls and details of gold training questions ",
         required=False)
@@ -682,20 +779,25 @@ if __name__ == '__main__':
     elif cfg.has_option('RatingClips', 'RatingClipsConfigurations'):
         assert len(cfg['RatingClips']['RatingClipsConfigurations']) > 0, f"No cloud store for clips specified in config"
     else:
-        assert True, "Neither clips file not cloud store provided for rating clips"
+        raise ValueError("Neither clips file nor cloud store provided for rating clips")
 
     if args.gold_clips:
         assert os.path.exists(args.gold_clips), f"No csv file containing gold clips in {args.gold_clips}"
     elif cfg.has_option('GoldenSample', 'Path'):
         assert len(cfg['GoldenSample']['Path']) > 0, "No golden clips store found"
     else:
-        assert True, "Neither gold clips file nor store configuration provided"
+        raise ValueError("Neither gold clips file nor store configuration provided")
 
     if args.trapping_clips:
         assert os.path.exists(args.trapping_clips), f"No csv file containing trapping  clips in {args.trapping_clips}"
     elif cfg.has_option('TrappingQuestions', 'Path'):
         assert len(cfg['TrappingQuestions']['Path']) > 0, "No golden clips store found"
     else:
-        assert True, "Neither Trapping clips file nor store configuration provided"
+        raise ValueError("Neither trapping clips file nor store configuration provided")
 
     asyncio.run(main(cfg, test_method, args))
+
+    if args.create_local_test:
+        from utilities.preview_html import generate_previews
+        print("Generating local test preview...")
+        generate_previews(args.project, samples=1)

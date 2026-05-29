@@ -178,7 +178,7 @@ def check_video_played(row, method):
     """
     check if all videos for questions played until the end
     :param row:
-    :param method: acr,dcr, ot ccr
+    :param method: acr, dcr, or ccr
     :return:
     """
     question_played = 0
@@ -203,7 +203,7 @@ def check_tps_avatar_b(row, method):
     tp_url = row[config['trapping']['url_found_in']]
     tp_correct_ans = [int(float(row[config['trapping']['ans_found_in']]))]
     given_ans = []
-    # only conside problem_tokens that does not contain _pt_
+    # only consider problem_tokens that does not contain _pt_
     problem_tokens_consider = [pt for pt in problem_tokens if 'pt_' not in pt]
     try:
         for q_name in question_names:
@@ -316,7 +316,7 @@ def check_variance_avatar(row, method):
                 order = 1 if row[f'answer.{q_name}{question_name_suffix}_order'] == 'pr' else -1
                 r.append(int(row[f'answer.{q_name}{question_name_suffix}']) * order)
             else:
-                # only use problem tokens tha have been reqired
+                # only use problem tokens that have been required
                 problem_tokens_consider = [pt for pt in problem_tokens if 'pt_' not in pt]
                 for pt in problem_tokens_consider:
                     r_pt.append(int(float(row[f'answer.{q_name}{question_name_suffix}_{pt}'])))
@@ -376,7 +376,7 @@ def check_gold_question_avatarb(row):
             raise Exception('gold_ans_format is not defined in config file')
         format = config['gold_question']['gold_ans_format']
         
-        # formated as "(lookslike,facialexpression)", _ means whatever is correct  
+        # formatted as "(lookslike,facialexpression)", _ means whatever is correct  
         correct_ans_text =  row[config['gold_question']['ans_found_in']]
         correct_ans_text= correct_ans_text.replace('(', '').replace(')', '').replace(' ', '')
         correct_anses =  correct_ans_text.split(',')
@@ -535,7 +535,7 @@ def check_ishihara_plates(row):
     """
     correct_plates = 0
     #x = 
-    # final nam with 14 char=  firt 4 character from random_base64 + x + last 4 character from random_base64 + XX.png
+    # final name with 14 char=  first 4 character from random_base64 + x + last 4 character from random_base64 + XX.png
     if 'input.cv_plate_3_url' not in row or row['answer.7_plate3'] is None or row['answer.7_plate3']=="":
         # old version without color vision inside or qualification was not shown
         return None    
@@ -586,14 +586,14 @@ def check_play_duration(row):
 
 def check_all_answered(row, method):
     """
-    only relevant for avatar_tp where participants should select one out of the reasons. Theoritically this should be checked in front-end before submission, here is to do a double check.
+    only relevant for avatar_tp where participants should select one out of the reasons. Theoretically this should be checked in front-end before submission, here is to do a double check.
 
     """
     if method != 'avatar_pt':
         return 1
     
     problem_token_consider =  [pt for pt in problem_tokens if 'pt_' in pt]    
-    # for each question at least one of the problem tokens should be included in answers (with a value lenght >0)
+    # for each question at least one of the problem tokens should be included in answers (with a value length >0)
     for q_name in question_names:
         found = False
         for pt in problem_token_consider:
@@ -619,6 +619,26 @@ def extend_row_with_pt(row):
                     row[f'answer.{q_name}_{pt}'] = 0
     return row
 
+def check_video_dropped_frame_percent(row):
+    """
+    Check the ratio of dropped frames to total frames
+    :param row:
+    :return: ratio of dropped frames to total frames
+    """
+    # get all field start by answer.video_total_frames and get average and median of them
+    # add try catch
+    try:
+        list_items = [item for item in row.keys() if item.startswith('answer.video_dropped_frame_percent') and float(row[item]) != -1]
+        if len(list_items) == 0:
+            return float('inf'), float('inf')
+        # get the average value of items in the list
+        avg_video_dropped_frame_percent = sum(float(row[item]) for item in list_items) / len(list_items)
+        max_video_dropped_frame_percent  = max([float(row[item]) for item in list_items])
+        return avg_video_dropped_frame_percent, max_video_dropped_frame_percent
+    except  Exception as e:
+        #print(row)
+        return float('inf'), float('inf')
+    
 def data_cleaning(filename, method, wrong_vcodes):
    """
    Data screening process
@@ -675,10 +695,26 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['correct_gold_question'], details  = check_gold_question(row, method)
         details['worker_id'] = d['worker_id']
         details['is_correct'] = d['correct_gold_question']
+        if 'answer.rdp_exist' in row:
+            details['rdp'] = row['answer.rdp_exist']
+        else:
+            # does not exist - same value will be assigned if the script is not working
+            details['rdp'] = -1
         gold_question_details.append(details)
+
+        # RDPS pair answers
+        # Answer values: 1 = Clip A (ref) has better quality, 0 = same, 2 = Clip B (pvs/clip) has better quality
+        # rdps1_pair*_is_src indicates which position (1 or 2) holds the unimpaired source
+        for pair in ['pair1', 'pair2']:
+            ans_key = f'answer.rdps_{pair}'
+            src_key = f'rdps1_{pair}_is_src'
+            if ans_key in row and row[ans_key]:
+                d[f'rdps_{pair}_ans'] = row[ans_key]
+                d[f'rdps_{pair}_src_pos'] = row.get(src_key, '')
 
         # step6. check variance in a session rating
         d['variance_in_ratings'] = check_variance(row, method)
+        d['video_dropped_frame_percent_avg'], d['max_dropped_frame_percent'] = check_video_dropped_frame_percent(row)
 
         d['percent_over_play_duration'] = check_play_duration(row)
 
@@ -744,6 +780,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     worker_list, use_sessions, num_not_used_sub_perform, _ = evaluate_rater_performance(worker_list, use_sessions)
     #num_rej_perform = 0
 
+    # check for remote desktop usage
+    worker_list, use_sessions = check_remote_desktop_usage(worker_list, use_sessions, filename)
+
     #worker_list = add_wrong_vcodes(worker_list, wrong_vcodes)
     accept_and_use_sessions = [d for d in worker_list if d['accept_and_use'] == 1]
     not_using_further_reasons = []
@@ -775,14 +814,126 @@ def data_cleaning(filename, method, wrong_vcodes):
     return worker_list, use_sessions
 
 
+def _evaluate_rdps_session(session, worker_entry):
+    """
+    Evaluate RDPS answers for a single session.
+    Returns (rdps_correct, rdps_detail_dict).
+    A session passes RDPS if both pairs are answered correctly.
+    Correct answer: the source clip should be rated as better quality.
+    """
+    detail = {
+        'worker_id': session.get('workerid', ''),
+        'assignment_id': session.get('assignmentid', ''),
+    }
+    correct_count = 0
+    for pair in ['pair1', 'pair2']:
+        ans_key = f'answer.rdps_{pair}'
+        src_key = f'rdps1_{pair}_is_src'
+        ans = str(session.get(ans_key, '')).strip()
+        src_pos = str(session.get(src_key, '')).strip()
+        detail[f'rdps_{pair}_ans'] = ans
+        detail[f'rdps_{pair}_src_pos'] = src_pos
+        if ans and src_pos and ans == src_pos:
+            correct_count += 1
+        detail[f'rdps_{pair}_correct'] = 1 if (ans and src_pos and ans == src_pos) else 0
+
+    detail['rdps_both_correct'] = 1 if correct_count == 2 else 0
+    dropped = worker_entry.get('video_dropped_frame_percent_avg', float('inf'))
+    detail['video_dropped_frame_percent_avg'] = dropped
+
+    return correct_count == 2, detail
+
+
+def check_remote_desktop_usage(worker_list, use_sessions, filename):
+    """
+    Check for remote desktop usage using two methods:
+    1. rdp_exist (JS-based): rdp_exist=1 means RDP detected. Workers with any
+       rdp_exist=1 session are marked as not used and removed from use_sessions.
+    2. RDPS (video-pair probe): a session is flagged as potential RDP if either
+       RDPS pair answer is wrong OR video_dropped_frame_percent_avg >= 0.5.
+       RDPS-flagged sessions are reported but NOT removed from use_sessions.
+    Export a CSV report with all detections.
+    """
+    rdp_sessions = []
+    rdp_workers = set()
+    js_failed_count = 0
+
+    # Build a lookup from assignment -> worker_entry for dropped frame data
+    worker_entry_map = {d['assignment']: d for d in worker_list}
+
+    for session in use_sessions:
+        rdp_val = str(session.get('answer.rdp_exist', '-1')).strip()
+        if rdp_val == '1':
+            rdp_workers.add(session['workerid'])
+            rdp_sessions.append({
+                'worker_id': session['workerid'],
+                'assignment_id': session['assignmentid'],
+                'rdp_exist': rdp_val,
+                'detection_method': 'js_rdp_exist'
+            })
+        elif rdp_val == '-1':
+            js_failed_count += 1
+
+    if js_failed_count > 0:
+        logger.info(f"   Note: RDP detection JS did not execute for {js_failed_count} session(s) "
+                    f"(rdp_exist=-1). These sessions are not rejected.")
+
+    # RDPS evaluation
+    rdps_flagged = []
+    rdps_total = 0
+    for session in use_sessions:
+        ans_key = 'answer.rdps_pair1'
+        if ans_key not in session or not session[ans_key]:
+            continue
+        rdps_total += 1
+        w_entry = worker_entry_map.get(session.get('assignmentid', ''), {})
+        rdps_correct, detail = _evaluate_rdps_session(session, w_entry)
+        dropped = w_entry.get('video_dropped_frame_percent_avg', float('inf'))
+        is_rdps_clean = rdps_correct and dropped < 0.5
+        detail['rdps_clean'] = 1 if is_rdps_clean else 0
+        detail['detection_method'] = 'rdps'
+        if not is_rdps_clean:
+            rdps_flagged.append(detail)
+
+    if rdps_total > 0:
+        logger.info(f"   RDPS evaluated: {rdps_total} session(s), "
+                    f"{len(rdps_flagged)} flagged as potential RDP (report only, not removed).")
+
+    # Handle JS-detected RDP workers (mark as not used)
+    if rdp_workers:
+        logger.info(f"   Remote desktop detected (JS) for {len(rdp_workers)} worker(s) "
+                    f"across {len(rdp_sessions)} session(s). "
+                    f"Marking all their submissions as not used.")
+        for d in worker_list:
+            if d['worker_id'] in rdp_workers:
+                d['accept_and_use'] = 0
+                if 'failures' not in d or not isinstance(d['failures'], list):
+                    d['failures'] = []
+                if 'remote_desktop' not in d['failures']:
+                    d['failures'].append('remote_desktop')
+        use_sessions = [s for s in use_sessions if s['workerid'] not in rdp_workers]
+    else:
+        logger.info("   No remote desktop usage detected (JS).")
+
+    # Export combined RDP detection report
+    all_detections = rdp_sessions + rdps_flagged
+    if all_detections:
+        rdp_report_file = os.path.splitext(filename)[0] + '_rdp_detected.csv'
+        rdp_df = pd.DataFrame(all_detections)
+        rdp_df.to_csv(rdp_report_file, index=False)
+        logger.info(f"   RDP detection report saved to: {rdp_report_file}")
+
+    return worker_list, use_sessions
+
+
 def evaluate_rater_performance(data, use_sessions, reject_on_failure=False):
     """
-    Evaluate the workers performance based on the following criteria in cofnig file:
+    Evaluate the workers performance based on the following criteria in config file:
         rater_min_acceptance_rate_current_test
         rater_min_accepted_hits_current_test
     :param data:
     :param use_sessions:
-    :param reject_on_failure: if True, check the criteria on [acceptance_criteria] otehrwise check it in the
+    :param reject_on_failure: if True, check the criteria on [acceptance_criteria] otherwise check it in the
     [accept_and_use] section of config file.
     :return:
     """
@@ -1065,8 +1216,8 @@ def calc_quantity_bonuses(answer_list, conf, path):
     eligible_all = list(grouped['worker_id'])
     new_eligible = list(set(eligible_all)-set(old_eligible))
 
-    # the bonus should be given to the tasks that are either automatically accepted or submited. The one with status
-    # accepted should have been already payed.
+    # the bonus should be given to the tasks that are either automatically accepted or submitted. The one with status
+    # accepted should have been already paid.
     filtered_answers = filter_answer_by_status_and_workers(df, eligible_all, new_eligible, conf)
     # could be also accept_and_use
     grouped = filtered_answers.groupby(['worker_id'], as_index=False)['accept'].sum()
@@ -1536,7 +1687,7 @@ def calc_correlation(cs, lab):
 
 def number_of_unique_workers(answers, used):
     """
-    return numbe rof unique workers
+    return number of unique workers
     :param answers:
     :return:
     """
@@ -1584,7 +1735,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
     # print the size
     logger.info(f"** {len(unique_assignments)} submissions are not completed by the workers.")
 
-    # remove stript vcodes entered by workers
+    # remove stripped vcodes entered by workers
     amt_ans['Answer.v_code'] = amt_ans['Answer.v_code'].str.strip()
     # number of rows in amt
     submissiones = len(amt_ans)
@@ -1601,7 +1752,7 @@ def combine_amt_hit_server(amt_ans_path, hitapp_ans_path):
 
     # check if there are submission without conuter part key in hitapp servers
     not_in_hitapp = amt_ans[~amt_ans['Answer.v_code'].isin(hitapp_ans.v_code)]
-    # print the lenght
+    # print the length
     logger.info(f"** {len(not_in_hitapp)} submissions are not found in the HITAPP server.")
     recover_submission_withoiut_matching_vcode(hitapp_ans, amt_ans, not_in_hitapp)
 
@@ -1675,7 +1826,7 @@ def analyze_results(config, test_method, answer_path, amt_ans_path,  list_of_req
 
     n_workers, n_workers_used = number_of_unique_workers(full_data, accepted_sessions)
     logger.info(f"{n_workers} workers participated in this batch, answers of {n_workers_used} are used.")
-    # disabled becuase of the HITAPP_server
+    # disabled because of the HITAPP_server
     calc_stats(answer_path)
     # votes_per_file, votes_per_condition = transform(accepted_sessions)
     if len(accepted_sessions) > 1:
@@ -1779,7 +1930,7 @@ if __name__ == '__main__':
     answer_path = args.answers
 
     if args.amt_answers is None:
-        warnings.warn("No AMT answer is provided with --amt_answers. That means the WorkerId, HITIds, ect. are internal "
+        warnings.warn("No AMT answer is provided with --amt_answers. That means the WorkerId, HITIds, etc. are internal "
                       "HIT APP server ids. Therefore bonus reports cannot be used. ")
         amt_ans_path = None
     else:

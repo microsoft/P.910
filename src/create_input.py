@@ -79,7 +79,9 @@ def add_clips_balanced_block(clips, condition_pattern, keys, n_clips_per_session
     block_keys = [x.strip() for x in keys.split(',')]
     if len(block_keys) > 2:
         raise SystemExit("Error: balanced_block design- only up to 2 keys in 'block_keys' are supported")
-    data = pd.DataFrame(columns=block_keys.copy().insert(0,' url'))
+
+    columns = ['url'] + block_keys.copy()
+    data = pd.DataFrame(columns=columns)
 
     for clip in clips:
         condition = conv_filename_to_condition(clip, condition_pattern)
@@ -288,6 +290,43 @@ def get_random_block_matrix(df, type, n_sessions):
     
     return df_cv
 
+def get_random_rdps_pairs(df, n_sessions):
+    """
+    Randomly select RDPS (Remote Desktop Probe Stimulus) pairs for each session.
+    For each session, pick 2 pairs (pair1 and pair2). Each pair uses one row
+    (same src), with src_file and freeze_file randomly assigned to position 1 or 2.
+    The two pairs use rows with different src_key.
+    Returns columns: rdps1_pair1, rdps2_pair1, rdps1_pair1_is_src,
+                     rdps1_pair2, rdps2_pair2, rdps1_pair2_is_src.
+    """
+    rdps_cols = ['rdps_src_key', 'rdps_src_file', 'rdps_freeze_file']
+    if not all(c in df.columns for c in rdps_cols):
+        return pd.DataFrame()
+
+    rdps_df = df[rdps_cols].dropna().reset_index(drop=True)
+    if rdps_df.empty or rdps_df['rdps_src_key'].nunique() < 2:
+        return pd.DataFrame()
+
+    src_keys = rdps_df['rdps_src_key'].unique().tolist()
+    results = []
+    for _ in range(n_sessions):
+        pair_keys = random.sample(src_keys, 2)
+        pair = {}
+        for i, pair_name in enumerate(['pair1', 'pair2']):
+            row = rdps_df[rdps_df['rdps_src_key'] == pair_keys[i]].sample(1).iloc[0]
+
+            if random.random() < 0.5:
+                pair[f'rdps1_{pair_name}'] = row['rdps_src_file']
+                pair[f'rdps2_{pair_name}'] = row['rdps_freeze_file']
+                pair[f'rdps1_{pair_name}_is_src'] = 1
+            else:
+                pair[f'rdps1_{pair_name}'] = row['rdps_freeze_file']
+                pair[f'rdps2_{pair_name}'] = row['rdps_src_file']
+                pair[f'rdps1_{pair_name}_is_src'] = 2
+        results.append(pair)
+    return pd.DataFrame(results)
+
+
 def create_input_for_acr(cfg, df, output_path):
     """
     create the input for the acr methods
@@ -365,6 +404,12 @@ def create_input_for_acr(cfg, df, output_path):
 
         output_df['GOLD_CLIP'] = tmp['gold_clips_pvs'].tolist()
         output_df['GOLD_ANS'] = tmp['gold_clips_ans'].tolist()
+
+    # RDPS pairs
+    rdps_pairs = get_random_rdps_pairs(df, n_sessions)
+    if not rdps_pairs.empty:
+        output_df = pd.concat([output_df, rdps_pairs.reset_index(drop=True)], axis=1)
+
     output_df.to_csv(output_path, index=False)
     return len(output_df)
 
@@ -470,6 +515,11 @@ def create_input_for_acrhr(cfg, df, output_path):
         output_df['GOLD_CLIP'] = full_gold_clips
         output_df['GOLD_ANS'] = full_gold_clips_answer
 
+    # RDPS pairs
+    rdps_pairs = get_random_rdps_pairs(df, n_sessions)
+    if not rdps_pairs.empty:
+        output_df = pd.concat([output_df, rdps_pairs.reset_index(drop=True)], axis=1)
+
     output_df.to_csv(output_path, index=False)
     return len(output_df)
 
@@ -562,6 +612,12 @@ def create_input_for_dcr(cfg, df, output_path):
         output_df['GOLD_REF'] = tmp['gold_clips_src'].tolist()
         output_df['GOLD_CLIP'] = tmp['gold_clips_pvs'].tolist()
         output_df['GOLD_ANS'] = tmp['gold_clips_ans'].tolist()
+
+    # RDPS pairs
+    rdps_pairs = get_random_rdps_pairs(df, n_sessions)
+    if not rdps_pairs.empty:
+        output_df = pd.concat([output_df, rdps_pairs.reset_index(drop=True)], axis=1)
+
     output_df.to_csv(output_path, index=False)
     return len(output_df)
 

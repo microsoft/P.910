@@ -191,7 +191,7 @@ def create_trap_stimulus(source, message, output, cfg):
     # concat the clips
     final_clip = concatenate_videoclips([prefix_video, msg_video, postfix_clip])
         
-    # print the lenght of each component
+    # print the length of each component
     print(prefix_video.duration, msg_video.duration, postfix_clip.duration, final_clip.duration)
     
     final_clip.write_videofile(output)

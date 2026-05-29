@@ -31,17 +31,33 @@ column named `training_pvs` and URLs to corresponding reference clips in column 
     **Hint**: Training clips are used for anchoring participants perception, and should represent the entire dataset. 
     They should approximately cover the range from worst to best quality to be expected in the test. It may contain 
     about 5 clips. 
-1. Upload your **gold standard clips** in a cloud server and create `gold_clips.csv` file which contains following columns:    
+1. Create gold clips for your test:
+    1. Select a set of clips from your source clips of your dataset.
+    1. Create a CSV file with a column `gold_src` that contains the path to the selected source clips.
+    1. Run the script `create_gold_clips.py`.
+    ``` bash
+    cd src\utilities    
+    python create_gold_clips.py ^
+        --input_csv YOUR_INPUT.csv ^
+        --test_method ccr ^
+        --output_dir YOUR_OUT_DIR
+    ``` 
+    The script requires [FFmpeg](https://www.ffmpeg.org/) to be installed and available in your PATH.
+    For each source clip, the script creates three gold clip pairs (equal, better, worse) with matched
+    file sizes. The output CSV (`ccr_gold_clips.csv`) is saved in the output directory. You can use the `--num_workers`
+    option to speed up processing with parallel workers.
+
+    1. Upload the gold clips to a cloud server and update the `gold_clips.csv` file with URLs, which should contain the following columns:
     - `gold_clips_pvs`: URL to the processed video clip
-    - `gold_clips_src`: URL to the corresponding reference  video clip
-    - `gold_clips_ans`: the correct answer, expected from worker. Note to adjust the number based on the scale you are
+    - `gold_clips_src`: URL to the corresponding reference video clip
+    - `gold_clips_ans`: the correct answer expected from the worker. Note that you should adjust the number based on the scale you are
     going to use (e.g. by 9-point-discrete scale, if the PVS has an excellent quality, the correct answer will be 9, 
     whereas by 5-point_discrete scale, it will be 5).
     
     see [gold_clips.csv](../sample_inputs/gold_clips_dcr.csv) as an example).
     
-    **Hint**: Gold standard clips are used as a hidden quality control item in each session. It is expected that their 
-    answers are so obvious for all participants that they all give the `gold_clips_ans` rating (+/- 1 deviation is 
+    **Hint**: Gold standard clips are used as a hidden quality control item in each session. It is expected that their
+    answers are so obvious that all participants give the `gold_clips_ans` rating (+/- 1 deviation is
     accepted). For this purpose, it is recommended to use clips with excellent (answer 5) or very bad (answer 1) quality.
         
 1. Create trapping stimuli set for your dataset.
@@ -55,7 +71,7 @@ column named `training_pvs` and URLs to corresponding reference clips in column 
     
     4. Run `create_trapping_clips.py`
     ``` bash
-    cd src\trapping_clips
+    cd src\utilities
     pip install -r requirements.txt
     python create_trapping_clips.py ^
         --source tp_src ^
@@ -88,6 +104,10 @@ column named `trapping_ans` (see [trapping_clips.csv](../sample_inputs/trapping_
             --trapping_clips trapping_clips.csv              
         ```
         Note: file paths are expected to be relative to the current working directory.
+
+        **Optional flags:**
+        - `--check_urls`: Validates that all URLs in the clip, training, gold, and trapping CSV files are accessible.
+        - `--create_local_test`: Generates a local preview HTML file after the project is created, useful for testing before deployment.
     
     1. Double check the outcome of the script. A folder should be created with YOUR_PROJECT_NAME in current working 
     directory which contains: 
