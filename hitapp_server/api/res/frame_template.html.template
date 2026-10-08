@@ -44,7 +44,7 @@ function getLocalWorkerID(){
 	c_name = "w_id";
 	local_worker_id = readCookie(c_name);	
 	if (!local_worker_id){		
-		let id = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
+		let id  = Math.random().toString(36).substring(3) + Math.random().toString(36).substring(3);
 		// for a month		
 		createCookie(c_name,"loc"+id,1440*7*4)
 		local_worker_id = readCookie(c_name);		
