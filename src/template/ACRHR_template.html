@@ -218,7 +218,7 @@ var sessionIdVariableName=null;
 
 **/
 function initializeActivePageMonitoring(){
-	sessionId = Math.random().toString(36).substr(2, 9);
+	sessionId = Array.from(crypto.getRandomValues(new Uint8Array(5)), byte => byte.toString(16).padStart(2, "0")).join("").slice(0, 9);
 	sessionIdVariableName = config.qualificationCookieName +"_sid";
 	createCookie(sessionIdVariableName,sessionId,70);
 
