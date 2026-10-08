@@ -222,7 +222,7 @@ function initializeActivePageMonitoring(){
 	// not more than 2min loading time is acceptable despite the internet speed test and file size
 	page_loading_timer = setTimeout(show_message_too_long_loading, 120*1000);
 
-	sessionId = Math.random().toString(36).substr(2, 9);
+	sessionId = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
 	sessionIdVariableName = config.qualificationCookieName +"_sid";
 	createCookie(sessionIdVariableName,sessionId,70);
 
