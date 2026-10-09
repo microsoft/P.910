@@ -12,6 +12,7 @@ import asyncio
 import base64
 import random
 import string
+import subprocess
 
 
 import configparser as CP
@@ -86,12 +87,158 @@ def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
     return ''.join(random.choice(chars) for _ in range(N))
 
 
-def get_expected_duration_minutes(hit_app_html_cfg, option):
-    """Return a positive configured duration in minutes, defaulting to five."""
+def get_duration_fallback_minutes(hit_app_html_cfg, option):
+    """Return a positive configured fallback duration in minutes."""
     duration = hit_app_html_cfg.getint(option, fallback=5)
     if duration <= 0:
         raise ValueError(f"'{option}' must be a positive integer")
     return duration
+
+
+def probe_video_duration(video_path):
+    """Return the duration of a local or remote video in seconds."""
+    command = [
+        'ffprobe', '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'format=duration',
+        '-of', 'csv=p=0',
+        str(video_path)
+    ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=True, timeout=30)
+        duration = float(result.stdout.strip())
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
+        detail = getattr(error, 'stderr', None) or str(error)
+        raise RuntimeError(f"could not read duration of '{video_path}': {detail.strip()}") from error
+
+    if not math.isfinite(duration) or duration <= 0:
+        raise RuntimeError(f"could not read duration of '{video_path}': invalid duration '{duration}'")
+    return duration
+
+
+def get_cached_video_duration(video_path, duration_cache):
+    """Probe a video once and reuse its duration for repeated questions."""
+    video_path = str(video_path).strip()
+    if video_path not in duration_cache:
+        duration_cache[video_path] = probe_video_duration(video_path)
+    return duration_cache[video_path]
+
+
+def get_training_duration_minutes(training_path, training_gold_path, trap_path, source_df, test_method,
+                                  create_input_cfg, duration_cache):
+    """Estimate training time from every video watched and 30 seconds per question."""
+    use_training_gold = training_gold_path if test_method in ['acr', 'avatar'] else None
+    training_file = use_training_gold or training_path
+    training_df = pd.read_csv(training_file)
+    clip_columns = ['training_pvs']
+    if test_method in ['dcr', 'ccr']:
+        clip_columns.insert(0, 'training_src')
+
+    total_seconds = 0
+    question_count = len(training_df.index)
+    for column in clip_columns:
+        for video_path in training_df[column].dropna():
+            total_seconds += get_cached_video_duration(video_path, duration_cache)
+
+    include_training_trap = not use_training_gold and (
+        test_method in ['acr', 'acr-hr', 'avatar'] or
+        int(create_input_cfg['number_of_trapping_per_session']) > 0)
+    if include_training_trap:
+        trap_df = pd.read_csv(trap_path, nrows=1) if trap_path and os.path.exists(trap_path) else source_df
+        trap_columns = ['trapping_pvs']
+        if test_method in ['dcr', 'ccr']:
+            trap_columns.insert(0, 'trapping_src')
+        for column in trap_columns:
+            trap_videos = trap_df[column].dropna()
+            if trap_videos.empty:
+                raise RuntimeError(f"could not estimate training duration: no '{column}' video is available")
+            total_seconds += get_cached_video_duration(trap_videos.iloc[0], duration_cache)
+        question_count += 1
+
+    return math.ceil((total_seconds + 30 * question_count) / 60)
+
+
+def get_rating_duration_minutes(publish_batch_path, test_method, duration_cache):
+    """Estimate a HIT from the slowest of up to five randomly sampled sessions."""
+    batch_df = pd.read_csv(publish_batch_path)
+    if batch_df.empty:
+        raise RuntimeError('could not estimate rating duration: the publish batch is empty')
+    sampled_sessions = batch_df.sample(n=min(5, len(batch_df.index)))
+
+    if test_method in ['dcr', 'ccr']:
+        regular_columns = [
+            column for column in batch_df.columns
+            if column.startswith('Q') and column.endswith(('_P', '_R')) and column[1:-2].isdigit()
+        ]
+        supplemental_columns = ['TP_REF', 'TP_CLIP', 'GOLD_REF', 'GOLD_CLIP']
+    else:
+        regular_columns = [
+            column for column in batch_df.columns
+            if column.startswith('Q') and column[1:].isdigit()
+        ]
+        if test_method == 'acr-hr':
+            regular_columns.extend([
+                column for column in batch_df.columns
+                if column.startswith('Q') and column.endswith('_P') and column[1:-2].isdigit()
+            ])
+        supplemental_columns = ['TP_CLIP', 'GOLD_CLIP']
+
+    session_durations = []
+    for _, session in sampled_sessions.iterrows():
+        total_seconds = 0
+        question_ids = set()
+        for column in regular_columns:
+            video_path = session.get(column)
+            if pd.notna(video_path) and str(video_path).strip():
+                total_seconds += get_cached_video_duration(video_path, duration_cache)
+                question_ids.add(column.split('_')[0])
+
+        for prefix in ['TP', 'GOLD']:
+            question_has_video = False
+            for column in supplemental_columns:
+                if not column.startswith(prefix):
+                    continue
+                video_path = session.get(column)
+                if pd.notna(video_path) and str(video_path).strip():
+                    total_seconds += get_cached_video_duration(video_path, duration_cache)
+                    question_has_video = True
+            if question_has_video:
+                question_ids.add(prefix)
+
+        session_durations.append(total_seconds + 30 * len(question_ids))
+
+    return math.ceil(max(session_durations) / 60)
+
+
+def estimate_task_duration_minutes(master_cfg, training_path, training_gold_path, trap_path, source_df,
+                                   publish_batch_path, test_method):
+    """Calculate automatic duration estimates, using configured values only when probing fails."""
+    hit_app_html_cfg = master_cfg['hit_app_html']
+    fallback_training = get_duration_fallback_minutes(
+        hit_app_html_cfg, 'expected_training_duration_minutes')
+    fallback_hit = get_duration_fallback_minutes(hit_app_html_cfg, 'expected_hit_duration_minutes')
+    duration_cache = {}
+
+    try:
+        training_minutes = get_training_duration_minutes(
+            training_path, training_gold_path, trap_path, source_df, test_method,
+            master_cfg['create_input'], duration_cache)
+    except RuntimeError as error:
+        training_minutes = fallback_training
+        print(f"WARNING: {error}. Using configured training fallback of {training_minutes} minutes.")
+
+    try:
+        hit_minutes = get_rating_duration_minutes(publish_batch_path, test_method, duration_cache)
+    except RuntimeError as error:
+        hit_minutes = fallback_hit
+        print(f"WARNING: {error}. Using configured HIT fallback of {hit_minutes} minutes.")
+
+    print(f"Estimated training time: {training_minutes} minutes")
+    print(f"Estimated time per HIT: {hit_minutes} minutes")
+    return {
+        'expected_training_duration_minutes': training_minutes,
+        'expected_hit_duration_minutes': hit_minutes
+    }
 
 
 async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs,
@@ -116,9 +263,9 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project'] if 'allowed_max_hit_in_project' in hit_app_html_cfg else  n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in cfg else "ic3ai@outlook.com"
     config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
-    config['expected_training_duration_minutes'] = get_expected_duration_minutes(
+    config['expected_training_duration_minutes'] = get_duration_fallback_minutes(
         hit_app_html_cfg, 'expected_training_duration_minutes')
-    config['expected_hit_duration_minutes'] = get_expected_duration_minutes(
+    config['expected_hit_duration_minutes'] = get_duration_fallback_minutes(
         hit_app_html_cfg, 'expected_hit_duration_minutes')
 
 
@@ -248,9 +395,9 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
     config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
-    config['expected_training_duration_minutes'] = get_expected_duration_minutes(
+    config['expected_training_duration_minutes'] = get_duration_fallback_minutes(
         hit_app_html_cfg, 'expected_training_duration_minutes')
-    config['expected_hit_duration_minutes'] = get_expected_duration_minutes(
+    config['expected_hit_duration_minutes'] = get_duration_fallback_minutes(
         hit_app_html_cfg, 'expected_hit_duration_minutes')
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
@@ -379,9 +526,9 @@ async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_pat
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
     config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
-    config['expected_training_duration_minutes'] = get_expected_duration_minutes(
+    config['expected_training_duration_minutes'] = get_duration_fallback_minutes(
         hit_app_html_cfg, 'expected_training_duration_minutes')
-    config['expected_hit_duration_minutes'] = get_expected_duration_minutes(
+    config['expected_hit_duration_minutes'] = get_duration_fallback_minutes(
         hit_app_html_cfg, 'expected_hit_duration_minutes')
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
@@ -726,6 +873,10 @@ async def main(cfg, test_method, args):
 
     # Create general config for variables in the HTML template
     general_cfg = prepare_basic_cfg(df)
+    duration_cfg = estimate_task_duration_minutes(
+        cfg, args.training_clips, args.training_gold_clips, args.trapping_clips, df,
+        output_csv_file, test_method)
+    general_cfg = {**general_cfg, **duration_cfg}
 
     # create hit_app
     output_file_name = f"{args.project}_{test_method}.html"

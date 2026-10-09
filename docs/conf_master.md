@@ -43,12 +43,19 @@ If not specified the maximum possible number will be used automatically.
 * `quality_top_percentage: 20`: Defines when quality bonus should be applied (in addition, participant should be 
 eligible for quantity bonus).
 * `quality_bonus: 0.15`: the amount of the quality bonus per accepted assignment.
-* (optional) `expected_training_duration_minutes: 5`: Estimated training duration shown to participants. It must be a
-positive integer and defaults to 5 minutes.
-* (optional) `expected_hit_duration_minutes: 5`: Estimated duration of each rating HIT shown to participants. It must
-be a positive integer and defaults to 5 minutes.
+The expected training and HIT durations shown to participants are calculated automatically. The training estimate
+includes every training video and 30 seconds to answer each question. The HIT estimate randomly samples up to five
+generated HITs, includes all rating, gold, and trapping videos plus 30 seconds per question, and uses the longest
+sampled duration. Both estimates are rounded up to whole minutes. Paired-video methods include both videos in each
+question.
 
-Validate these estimates against the median `work_duration_sec` in collected results and adjust them for future batches.
+* (optional) `expected_training_duration_minutes: 5`: Positive-integer fallback used only when a training video
+duration cannot be read. It defaults to 5 minutes.
+* (optional) `expected_hit_duration_minutes: 5`: Positive-integer fallback used only when a rating video duration
+cannot be read. It defaults to 5 minutes.
+
+Validate the automatic HIT estimate against the median `work_duration_sec` in collected results when planning future
+batches.
 
 ### Settings specific to Avatar
  
