@@ -86,6 +86,14 @@ def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
     return ''.join(random.choice(chars) for _ in range(N))
 
 
+def get_expected_duration_minutes(hit_app_html_cfg, option):
+    """Return a positive configured duration in minutes, defaulting to five."""
+    duration = hit_app_html_cfg.getint(option, fallback=5)
+    if duration <= 0:
+        raise ValueError(f"'{option}' must be a positive integer")
+    return duration
+
+
 async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs,
                              is_ccr):
     """
@@ -108,6 +116,10 @@ async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path,
     config['allowed_max_hit_in_project'] = hit_app_html_cfg['allowed_max_hit_in_project'] if 'allowed_max_hit_in_project' in hit_app_html_cfg else  n_HITs
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in cfg else "ic3ai@outlook.com"
     config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
+    config['expected_training_duration_minutes'] = get_expected_duration_minutes(
+        hit_app_html_cfg, 'expected_training_duration_minutes')
+    config['expected_hit_duration_minutes'] = get_expected_duration_minutes(
+        hit_app_html_cfg, 'expected_hit_duration_minutes')
 
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
@@ -236,6 +248,10 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
     config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
+    config['expected_training_duration_minutes'] = get_expected_duration_minutes(
+        hit_app_html_cfg, 'expected_training_duration_minutes')
+    config['expected_hit_duration_minutes'] = get_expected_duration_minutes(
+        hit_app_html_cfg, 'expected_hit_duration_minutes')
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
     config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']
@@ -363,6 +379,10 @@ async def create_hit_app_acrhr(master_cfg, template_path, out_path, training_pat
     config['contact_email'] = hit_app_html_cfg["contact_email"] if "contact_email" in hit_app_html_cfg else\
         "ic3ai@outlook.com"
     config['internet_speed_Mbps'] = hit_app_html_cfg["internet_speed_Mbps"] if "internet_speed_Mbps" in hit_app_html_cfg else 80
+    config['expected_training_duration_minutes'] = get_expected_duration_minutes(
+        hit_app_html_cfg, 'expected_training_duration_minutes')
+    config['expected_hit_duration_minutes'] = get_expected_duration_minutes(
+        hit_app_html_cfg, 'expected_hit_duration_minutes')
 
     config['hit_base_payment'] = hit_app_html_cfg['hit_base_payment']
     config['quantity_hits_more_than'] = hit_app_html_cfg['quantity_hits_more_than']

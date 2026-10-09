@@ -43,6 +43,12 @@ If not specified the maximum possible number will be used automatically.
 * `quality_top_percentage: 20`: Defines when quality bonus should be applied (in addition, participant should be 
 eligible for quantity bonus).
 * `quality_bonus: 0.15`: the amount of the quality bonus per accepted assignment.
+* (optional) `expected_training_duration_minutes: 5`: Estimated training duration shown to participants. It must be a
+positive integer and defaults to 5 minutes.
+* (optional) `expected_hit_duration_minutes: 5`: Estimated duration of each rating HIT shown to participants. It must
+be a positive integer and defaults to 5 minutes.
+
+Validate these estimates against the median `work_duration_sec` in collected results and adjust them for future batches.
 
 ### Settings specific to Avatar
  
@@ -62,4 +68,3 @@ Measurements will be done automatically and could be subject to some deviation f
 
 * `accepted_device:["PC"]`: List of accepted devices (e.g. "PC", "MOBILE"). 
 Measurements will be done automatically and could be subject to some deviation from the real screen refresh rate.
-
