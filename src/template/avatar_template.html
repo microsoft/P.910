@@ -208,6 +208,124 @@ function shuffle(a) {
 	return a;
 }
 
+function getCurrentRatingVideoUrls() {
+	var videoUrls = [];
+	var currentVideo = $('#nav-tabContent-rating .tab-pane.active .velmnt').first();
+	var referenceUrl = currentVideo.attr('data-src-ref');
+	var processedUrl = currentVideo.attr('data-src-clip');
+	if (referenceUrl) {
+		videoUrls.push(referenceUrl);
+	}
+	if (processedUrl) {
+		videoUrls.push(processedUrl);
+	}
+	return videoUrls;
+}
+
+function getCurrentRatingQuestionId() {
+	return $('#nav-tabContent-rating .tab-pane.active').attr('id').replace('-panel', '').toLowerCase();
+}
+
+function getProblemReports() {
+	return JSON.parse($('#problem_reports').val());
+}
+
+function formatProblemReportEmail(reports) {
+	var lines = [
+		'To: ' + config.emailAddress,
+		'Subject: Problem with video-rating study',
+		'',
+		'Study page: ' + window.location.href.split('#')[0],
+		'Browser: ' + navigator.userAgent,
+		''
+	];
+	reports.forEach(function(report, index) {
+		lines.push('Problem ' + (index + 1) + ' (' + report.question_id + ')');
+		lines.push('Description: ' + report.description);
+		report.video_urls.forEach(function(videoUrl, videoIndex) {
+			lines.push('Video ' + (videoIndex + 1) + ': ' + videoUrl);
+		});
+		lines.push('Reported at: ' + report.reported_at);
+		lines.push('');
+	});
+	return lines.join('\n');
+}
+
+function updateProblemReportState(reports) {
+	$('#problem_reports').val(JSON.stringify(reports));
+	$('#problem_report_status').text(
+		reports.length + ' problem question' + (reports.length === 1 ? '' : 's') + ' reported.');
+	$('#problem_report_email').val(formatProblemReportEmail(reports));
+	$('#problem_report_email_section').show();
+	if (reports.length > 1) {
+		$('#multiple_problem_warning').show();
+		$('#submitButton').prop('disabled', true);
+	}
+}
+
+function openProblemReport() {
+	var questionId = getCurrentRatingQuestionId();
+	var reports = getProblemReports();
+	var existingReport = reports.find(function(report) {
+		return report.question_id === questionId;
+	});
+	var videoUrls = getCurrentRatingVideoUrls();
+	$('#problem_report_description').val(existingReport ? existingReport.description : '');
+	$('#problem_report_error').hide();
+	$('#problem_report_video_urls').text(videoUrls.join('\n'));
+	if (reports.length > 0) {
+		$('#problem_report_email').val(formatProblemReportEmail(reports));
+		$('#problem_report_email_section').show();
+	}
+	$('#problemReportModal').modal('show');
+}
+
+function saveProblemReport() {
+	var description = $('#problem_report_description').val().trim();
+	if (!description) {
+		$('#problem_report_error').show();
+		return;
+	}
+
+	var questionId = getCurrentRatingQuestionId();
+	var reports = getProblemReports();
+	var report = {
+		question_id: questionId,
+		description: description,
+		video_urls: getCurrentRatingVideoUrls(),
+		browser_info: navigator.userAgent,
+		reported_at: new Date().toISOString()
+	};
+	var existingIndex = reports.findIndex(function(existingReport) {
+		return existingReport.question_id === questionId;
+	});
+	if (existingIndex === -1) {
+		reports.push(report);
+	} else {
+		reports[existingIndex] = report;
+	}
+
+	$('#nav-tabContent-rating .tab-pane.active :input').removeAttr('required');
+	updateProblemReportState(reports);
+}
+
+function copyProblemReportEmail() {
+	var emailText = $('#problem_report_email');
+	emailText.focus();
+	emailText.select();
+	document.execCommand('copy');
+}
+
+$(function() {
+	document.addEventListener('submit', function(event) {
+		if (getProblemReports().length > 1) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			alert('More than one rating question has a reported problem. Copy the email report and return this HIT without submitting it.');
+		}
+	}, true);
+});
+
 
 var overAllHiddenTime = 0;
 var startHiddenDate = null;
@@ -3588,6 +3706,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 <input id="rdp_exist" name="rdp_exist" type="hidden" value="-1" />
 <input id="bit_depth" name="bit_depth" type="hidden" value="-1" />
 <input id="browser_info" name="browser_info" type="hidden" value="-1" maxlength="2000"/>
+<input id="problem_reports" name="problem_reports" type="hidden" value="[]" />
 <input id="log_script" name="log_script" type="hidden" value="" />
 <input id="hash_s_js_all" name="hash_s_js_all" type="hidden" value="#hash_s_js_all#" />
 <input id="hash_local_js_all" name="hash_local_js_all" type="hidden" value="" />
@@ -3617,11 +3736,47 @@ function avoidAnsweringBeforeWatchingThrough(){
 					<li class="next" id= "next-rating" ><a href="#navNextPre" class="page-link"  role="button">Next <span aria-hidden="true">&rarr;</span></a></li>
 				  </ul>
 				</nav>
+				<div class="text-right">
+					<button type="button" class="btn btn-link" onclick="openProblemReport()">Report a problem</button>
+					<span id="problem_report_status" class="text-success" aria-live="polite"></span>
+				</div>
 
 			</div>
 		</div>
 </section>
 
+<div class="modal fade" id="problemReportModal" tabindex="-1" role="dialog" aria-labelledby="problemReportModalLabel">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="problemReportModalLabel">Report a problem</h4>
+			</div>
+			<div class="modal-body">
+				<div id="multiple_problem_warning" class="alert alert-danger" role="alert" hidden>
+					More than one rating question has a problem. Copy the email report below, send it to the researcher, and return this HIT without submitting it.
+				</div>
+				<div class="form-group">
+					<label for="problem_report_description">Describe the problem with this question</label>
+					<textarea id="problem_report_description" class="form-control" rows="4" maxlength="1000"></textarea>
+				</div>
+				<div id="problem_report_error" class="alert alert-danger" role="alert" hidden>Please describe the problem.</div>
+				<p><b>Video URL(s) included automatically:</b></p>
+				<pre id="problem_report_video_urls"></pre>
+				<p>Your browser version will also be included.</p>
+				<div id="problem_report_email_section" hidden>
+					<p>Optionally copy the message below and email it to <b>{{cfg.contact_email}}</b>.</p>
+					<textarea id="problem_report_email" class="form-control" rows="10" readonly></textarea>
+					<button type="button" class="btn btn-default" onclick="copyProblemReportEmail()">Copy email text</button>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Done</button>
+				<button type="button" class="btn btn-primary" onclick="saveProblemReport()">Save report and skip question</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 
 <section class="container" id="thanks">
