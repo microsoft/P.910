@@ -12,6 +12,8 @@ import asyncio
 import base64
 import random
 import string
+import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 import configparser as CP
@@ -84,6 +86,231 @@ def get_rand_id(chars=string.ascii_uppercase + string.digits, N=10):
     :return:
     """
     return ''.join(random.choice(chars) for _ in range(N))
+
+
+def get_average_video_duration_seconds(hit_app_html_cfg):
+    """Return the positive fallback duration for a video whose metadata cannot be read."""
+    option = 'average_video_duration_seconds'
+    duration = hit_app_html_cfg.getfloat(option, fallback=10)
+    if not math.isfinite(duration) or duration <= 0:
+        raise ValueError(f"'{option}' must be a positive finite number")
+    return duration
+
+
+def is_video_duration_probing_enabled(hit_app_html_cfg):
+    """Return whether video metadata should be probed for automatic duration estimates."""
+    return hit_app_html_cfg.getboolean('enable_video_duration_probing', fallback=True)
+
+
+def probe_video_duration(video_path):
+    """Return the duration of a local or remote video in seconds."""
+    command = [
+        'ffprobe', '-v', 'error',
+        '-rw_timeout', '10000000',
+        '-select_streams', 'v:0',
+        '-show_entries', 'format=duration',
+        '-of', 'csv=p=0',
+        str(video_path)
+    ]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=True, timeout=12)
+        duration = float(result.stdout.strip())
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError) as error:
+        detail = getattr(error, 'stderr', None) or str(error)
+        raise RuntimeError(f"could not read duration of '{video_path}': {detail.strip()}") from error
+
+    if not math.isfinite(duration) or duration <= 0:
+        raise RuntimeError(f"could not read duration of '{video_path}': invalid duration '{duration}'")
+    return duration
+
+
+def get_cached_video_duration(video_path, duration_cache, fallback_duration_seconds):
+    """Probe a video once and reuse its duration or configured fallback."""
+    video_path = str(video_path).strip()
+    if video_path not in duration_cache:
+        try:
+            duration_cache[video_path] = probe_video_duration(video_path)
+        except RuntimeError as error:
+            duration_cache[video_path] = fallback_duration_seconds
+            print(f"WARNING: {error}. Using {fallback_duration_seconds:g} seconds for this clip.")
+    return duration_cache[video_path]
+
+
+def preload_video_durations(video_paths, duration_cache, fallback_duration_seconds, probing_enabled=True):
+    """Read uncached video metadata concurrently after one connectivity check."""
+    pending_paths = list(dict.fromkeys(
+        str(video_path).strip() for video_path in video_paths
+        if pd.notna(video_path) and str(video_path).strip() and str(video_path).strip() not in duration_cache
+    ))
+    if not pending_paths:
+        return
+
+    if not probing_enabled:
+        print(
+            f"Video duration probing is disabled; using {fallback_duration_seconds:g} seconds "
+            f"for {len(pending_paths)} video(s).",
+            flush=True)
+        duration_cache.update({
+            video_path: fallback_duration_seconds
+            for video_path in pending_paths
+        })
+        return
+
+    print(f"Probing duration metadata for {len(pending_paths)} video(s)...", flush=True)
+    first_path = pending_paths.pop(0)
+    try:
+        duration_cache[first_path] = probe_video_duration(first_path)
+    except RuntimeError as error:
+        duration_cache[first_path] = fallback_duration_seconds
+        print(f"WARNING: {error}. Using {fallback_duration_seconds:g} seconds for this clip.")
+
+    if not pending_paths:
+        return
+
+    with ThreadPoolExecutor(max_workers=min(16, len(pending_paths))) as executor:
+        future_paths = {
+            executor.submit(probe_video_duration, video_path): video_path
+            for video_path in pending_paths
+        }
+        for future in as_completed(future_paths):
+            video_path = future_paths[future]
+            try:
+                duration_cache[video_path] = future.result()
+            except RuntimeError as error:
+                duration_cache[video_path] = fallback_duration_seconds
+                print(f"WARNING: {error}. Using {fallback_duration_seconds:g} seconds for this clip.")
+
+
+def get_training_duration_minutes(training_path, training_gold_path, trap_path, source_df, test_method,
+                                  create_input_cfg, duration_cache, fallback_duration_seconds,
+                                  probing_enabled=True):
+    """Estimate training time from every video watched and 30 seconds per question."""
+    use_training_gold = training_gold_path if test_method in ['acr', 'avatar'] else None
+    training_file = use_training_gold or training_path
+    training_df = pd.read_csv(training_file)
+    clip_columns = ['training_pvs']
+    if test_method in ['dcr', 'ccr']:
+        clip_columns.insert(0, 'training_src')
+
+    video_paths = []
+    question_count = len(training_df.index)
+    for column in clip_columns:
+        video_paths.extend(training_df[column].dropna().tolist())
+
+    include_training_trap = not use_training_gold and (
+        test_method in ['acr', 'acr-hr', 'avatar'] or
+        int(create_input_cfg['number_of_trapping_per_session']) > 0)
+    if include_training_trap:
+        trap_df = pd.read_csv(trap_path, nrows=1) if trap_path and os.path.exists(trap_path) else source_df
+        trap_columns = ['trapping_pvs']
+        if test_method in ['dcr', 'ccr']:
+            trap_columns.insert(0, 'trapping_src')
+        for column in trap_columns:
+            trap_videos = trap_df[column].dropna()
+            if trap_videos.empty:
+                raise RuntimeError(f"could not estimate training duration: no '{column}' video is available")
+            video_paths.append(trap_videos.iloc[0])
+        question_count += 1
+
+    preload_video_durations(
+        video_paths, duration_cache, fallback_duration_seconds, probing_enabled)
+    total_seconds = sum(
+        get_cached_video_duration(video_path, duration_cache, fallback_duration_seconds)
+        for video_path in video_paths
+    )
+    return math.ceil((total_seconds + 30 * question_count) / 60)
+
+
+def get_rating_duration_minutes(publish_batch_path, test_method, duration_cache, fallback_duration_seconds,
+                                probing_enabled=True):
+    """Estimate a HIT from the slowest of up to five randomly sampled sessions."""
+    batch_df = pd.read_csv(publish_batch_path)
+    if batch_df.empty:
+        raise RuntimeError('could not estimate rating duration: the publish batch is empty')
+    sampled_sessions = batch_df.sample(n=min(5, len(batch_df.index)))
+
+    if test_method in ['dcr', 'ccr']:
+        regular_columns = [
+            column for column in batch_df.columns
+            if column.startswith('Q') and column.endswith(('_P', '_R')) and column[1:-2].isdigit()
+        ]
+        supplemental_columns = ['TP_REF', 'TP_CLIP', 'GOLD_REF', 'GOLD_CLIP']
+    else:
+        regular_columns = [
+            column for column in batch_df.columns
+            if column.startswith('Q') and column[1:].isdigit()
+        ]
+        if test_method == 'acr-hr':
+            regular_columns.extend([
+                column for column in batch_df.columns
+                if column.startswith('Q') and column.endswith('_P') and column[1:-2].isdigit()
+            ])
+        supplemental_columns = ['TP_CLIP', 'GOLD_CLIP']
+
+    video_paths = []
+    for _, session in sampled_sessions.iterrows():
+        for column in regular_columns + supplemental_columns:
+            video_path = session.get(column)
+            if pd.notna(video_path) and str(video_path).strip():
+                video_paths.append(video_path)
+    preload_video_durations(
+        video_paths, duration_cache, fallback_duration_seconds, probing_enabled)
+
+    session_durations = []
+    for _, session in sampled_sessions.iterrows():
+        total_seconds = 0
+        question_ids = set()
+        for column in regular_columns:
+            video_path = session.get(column)
+            if pd.notna(video_path) and str(video_path).strip():
+                total_seconds += get_cached_video_duration(
+                    video_path, duration_cache, fallback_duration_seconds)
+                question_ids.add(column.split('_')[0])
+
+        for prefix in ['TP', 'GOLD']:
+            question_has_video = False
+            for column in supplemental_columns:
+                if not column.startswith(prefix):
+                    continue
+                video_path = session.get(column)
+                if pd.notna(video_path) and str(video_path).strip():
+                    total_seconds += get_cached_video_duration(
+                        video_path, duration_cache, fallback_duration_seconds)
+                    question_has_video = True
+            if question_has_video:
+                question_ids.add(prefix)
+
+        session_durations.append(total_seconds + 30 * len(question_ids))
+
+    return math.ceil(max(session_durations) / 60)
+
+
+def estimate_task_duration_minutes(master_cfg, training_path, training_gold_path, trap_path, source_df,
+                                   publish_batch_path, test_method):
+    """Calculate automatic duration estimates, using an average duration for unreadable videos."""
+    hit_app_html_cfg = master_cfg['hit_app_html']
+    fallback_duration_seconds = get_average_video_duration_seconds(hit_app_html_cfg)
+    probing_enabled = is_video_duration_probing_enabled(hit_app_html_cfg)
+    duration_cache = {}
+
+    duration_source = 'video metadata' if probing_enabled else 'the configured average clip duration'
+    print(f"Estimating training duration from {duration_source}...", flush=True)
+    training_minutes = get_training_duration_minutes(
+        training_path, training_gold_path, trap_path, source_df, test_method,
+        master_cfg['create_input'], duration_cache, fallback_duration_seconds, probing_enabled)
+
+    print(
+        f"Estimating rating duration from up to five generated HITs using {duration_source}...",
+        flush=True)
+    hit_minutes = get_rating_duration_minutes(
+        publish_batch_path, test_method, duration_cache, fallback_duration_seconds, probing_enabled)
+
+    print(f"Estimated training time: {training_minutes} minutes")
+    print(f"Estimated time per HIT: {hit_minutes} minutes")
+    return {
+        'expected_training_duration_minutes': training_minutes,
+        'expected_hit_duration_minutes': hit_minutes
+    }
 
 
 async def create_hit_app_dcr(master_cfg, template_path, out_path, training_path, trap_path, general_cfg, n_HITs,
@@ -215,7 +442,8 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
 
     config = dict()
     config['debug'] = hit_app_html_cfg['debug'] if 'debug' in hit_app_html_cfg else 'false'
-    config['use_trapping_question'] = hit_app_html_cfg['use_trapping_question'] if 'use_trapping_question' in hit_app_html_cfg else ('1' if test_method == 'avatar' and hit_app_html_cfg.get('template', '').lower().strip() == 'avatar_a' else '0')
+    config['use_trapping_question'] = hit_app_html_cfg['use_trapping_question'] if 'use_trapping_question' in hit_app_html_cfg else ('1' if test_method == 'avatar' and hit_app_html_cfg.get('template', '').lower().strip() == 'avatar_a' else '0')
+
     config['use_repeated_question'] = hit_app_html_cfg['use_repeated_question'] if 'use_repeated_question' in hit_app_html_cfg else '0'
     #config['instruction_html'] = hit_app_html_cfg['instruction_html']
     #config['rating_questions'] = hit_app_html_cfg['rating_questions']
@@ -706,6 +934,10 @@ async def main(cfg, test_method, args):
 
     # Create general config for variables in the HTML template
     general_cfg = prepare_basic_cfg(df)
+    duration_cfg = estimate_task_duration_minutes(
+        cfg, args.training_clips, args.training_gold_clips, args.trapping_clips, df,
+        output_csv_file, test_method)
+    general_cfg = {**general_cfg, **duration_cfg}
 
     # create hit_app
     output_file_name = f"{args.project}_{test_method}.html"

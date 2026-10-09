@@ -43,6 +43,19 @@ If not specified the maximum possible number will be used automatically.
 * `quality_top_percentage: 20`: Defines when quality bonus should be applied (in addition, participant should be 
 eligible for quantity bonus).
 * `quality_bonus: 0.15`: the amount of the quality bonus per accepted assignment.
+The expected training and HIT durations shown to participants are calculated automatically. The training estimate
+includes every training video and 30 seconds to answer each question. The HIT estimate randomly samples up to five
+generated HITs, includes all rating, gold, and trapping videos plus 30 seconds per question, and uses the longest
+sampled duration. Both estimates are rounded up to whole minutes. Paired-video methods include both videos in each
+question.
+
+* (optional) `enable_video_duration_probing: true`: Read video metadata to calculate duration estimates. Set it to
+`false` to skip all duration probes and use `average_video_duration_seconds` for every clip. It defaults to `true`.
+* (optional) `average_video_duration_seconds: 10`: Positive duration used for each video whose duration cannot be read,
+or for every video when duration probing is disabled. It defaults to 10 seconds.
+
+Validate the automatic HIT estimate against the median `work_duration_sec` in collected results when planning future
+batches.
 
 ### Settings specific to Avatar
  
@@ -62,4 +75,3 @@ Measurements will be done automatically and could be subject to some deviation f
 
 * `accepted_device:["PC"]`: List of accepted devices (e.g. "PC", "MOBILE"). 
 Measurements will be done automatically and could be subject to some deviation from the real screen refresh rate.
-
