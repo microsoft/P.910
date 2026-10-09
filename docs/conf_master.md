@@ -49,10 +49,8 @@ generated HITs, includes all rating, gold, and trapping videos plus 30 seconds p
 sampled duration. Both estimates are rounded up to whole minutes. Paired-video methods include both videos in each
 question.
 
-* (optional) `expected_training_duration_minutes: 5`: Positive-integer fallback used only when a training video
-duration cannot be read. It defaults to 5 minutes.
-* (optional) `expected_hit_duration_minutes: 5`: Positive-integer fallback used only when a rating video duration
-cannot be read. It defaults to 5 minutes.
+* (optional) `average_video_duration_seconds: 10`: Positive fallback duration used for each video whose duration
+cannot be read. It defaults to 10 seconds.
 
 Validate the automatic HIT estimate against the median `work_duration_sec` in collected results when planning future
 batches.
