@@ -215,7 +215,7 @@ async def create_hit_app_acr(master_cfg, template_path, out_path, training_path,
 
     config = dict()
     config['debug'] = hit_app_html_cfg['debug'] if 'debug' in hit_app_html_cfg else 'false'
-    config['use_trapping_question'] = hit_app_html_cfg['use_trapping_question'] if 'use_trapping_question' in hit_app_html_cfg else ('1' if trap_path else '0')
+    config['use_trapping_question'] = hit_app_html_cfg['use_trapping_question'] if 'use_trapping_question' in hit_app_html_cfg else ('1' if test_method == 'avatar' and hit_app_html_cfg.get('template', '').lower().strip() == 'avatar_a' else '0')
     config['use_repeated_question'] = hit_app_html_cfg['use_repeated_question'] if 'use_repeated_question' in hit_app_html_cfg else '0'
     #config['instruction_html'] = hit_app_html_cfg['instruction_html']
     #config['rating_questions'] = hit_app_html_cfg['rating_questions']
