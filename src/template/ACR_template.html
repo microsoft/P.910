@@ -82,18 +82,9 @@ border-bottom-left-radius: 5px;  border-bottom-right-radius: 5px;}
 .bg2 {background-image: url("https://audiosamplesp808.blob.core.windows.net/p910-assets/imgs/clips_b.png");}
 .bg { height: 100%; background-position: center; background-repeat: no-repeat;  background-size: cover;}
 /*--------- */
-.loader {
-  border: 16px solid #f3f3f3; /* Light grey */
-  border-top: 16px solid #3498db; /* Blue */
-  border-radius: 50%;
-  width: 120px;
-  height: 120px;
-  animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.loading-progress {
+    font-size: 36px;
+    font-weight: bold;
 }
 
 </style>
@@ -947,6 +938,17 @@ function add(accumulator, a) {
 
 //----------------Hardware test -------------------------------
 
+function update_video_loading_progress(){
+    var total_videos = videoElements.length;
+    var remaining_videos = videos_not_loaded_yet_set.size;
+    var loaded_percentage = total_videos === 0
+        ? 100
+        : Math.round((total_videos - remaining_videos) * 100 / total_videos);
+    $("#video_loading_progress").attr("aria-valuenow", loaded_percentage);
+    $("#loading_percentage").html(loaded_percentage);
+    $("#remaining_videos").html(remaining_videos);
+}
+
 /**
 	Run set of hardware test to make sure that the minimum requirements are satisfied
 	- the refresh_rate test are done asynchronously
@@ -957,6 +959,7 @@ function hardware_test(){
 		window.setTimeout(hardware_test, 200);
 		return;
 	}
+	update_video_loading_progress();
 	if (!startScreenRefreshRateMeasures){
 		if (videos_not_loaded_yet_set.size == 0){
 			record_video_loading_time();
@@ -965,7 +968,6 @@ function hardware_test(){
 
 		}else{
 
-			$("#remaining_videos").html(videos_not_loaded_yet_set.size);
 			window.setTimeout(hardware_test, 200);
 			return;
 		}
@@ -2478,7 +2480,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 <div id="meter" style="width:10cm"></div>
 <div id ="hardware-spinner" class ="container" style="margin: 100px auto"><div class="row">
 	<div class="col-md-3"></div>
-	<div class="col-md-2" style="text-align: right;"><div class="loader" width="30%"></div></div>
+	<div class="col-md-2" style="text-align: right;"><div id="video_loading_progress" class="loading-progress" role="progressbar" aria-label="Video loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="loading_percentage">0</span>%</div></div>
 	<div class="col-md-4" style="text-align: left;"> <h1>Loading</h1>
 		<p style="color:red">Do NOT open multiple pages of this task.</p>
 		<p>Loading the videos and checking your hardware. </p>
