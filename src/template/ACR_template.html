@@ -247,7 +247,6 @@ function updateProblemReportState(reports) {
 	$('#problem_report_email_section').show();
 	if (reports.length > 1) {
 		$('#multiple_problem_warning').show();
-		$('#submitButton').prop('disabled', true);
 	}
 }
 
@@ -261,6 +260,12 @@ function openProblemReport() {
 	$('#problem_report_description').val(existingReport ? existingReport.description : '');
 	$('#problem_report_error').hide();
 	$('#problem_report_video_urls').text(videoUrls.join('\n'));
+	if (reports.length > 0 && !existingReport) {
+		$('#multiple_problem_warning').show();
+		$('#save_problem_report_button').text('Save report');
+	} else {
+		$('#save_problem_report_button').text('Save report and skip question');
+	}
 	if (reports.length > 0) {
 		$('#problem_report_email').val(formatProblemReportEmail(reports));
 		$('#problem_report_email_section').show();
@@ -293,7 +298,9 @@ function saveProblemReport() {
 		reports[existingIndex] = report;
 	}
 
-	$('#nav-tabContent-rating .tab-pane.active :input').removeAttr('required');
+	if (reports[0].question_id === questionId) {
+		$('#nav-tabContent-rating .tab-pane.active :input').removeAttr('required');
+	}
 	updateProblemReportState(reports);
 }
 
@@ -303,16 +310,6 @@ function copyProblemReportEmail() {
 	emailText.select();
 	document.execCommand('copy');
 }
-
-$(function() {
-	document.addEventListener('submit', function(event) {
-		if (getProblemReports().length > 1) {
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			alert('More than one rating question has a reported problem. Copy the email report and return this HIT without submitting it.');
-		}
-	}, true);
-});
 
 
 var overAllHiddenTime = 0;
@@ -3176,7 +3173,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 			<div class="modal-body">
 				<div id="multiple_problem_warning" class="alert alert-danger" role="alert" hidden>
-					More than one rating question has a problem. Copy the email report below, send it to the researcher, and return this HIT without submitting it.
+					More than one rating question has a problem. This additional question cannot be skipped. Copy the email report below, report and return this HIT, and do not submit it.
 				</div>
 				<div class="form-group">
 					<label for="problem_report_description">Describe the problem with this question</label>
@@ -3194,7 +3191,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Done</button>
-				<button type="button" class="btn btn-primary" onclick="saveProblemReport()">Save report and skip question</button>
+				<button type="button" class="btn btn-primary" id="save_problem_report_button" onclick="saveProblemReport()">Save report and skip question</button>
 			</div>
 		</div>
 	</div>
