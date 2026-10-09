@@ -223,7 +223,7 @@ if __name__ == '__main__':
     cfgpath = args.cfg
     assert os.path.exists(cfgpath), f"No configuration file in {cfgpath}]"
     assert os.path.exists(args.source), f"Invalid source directory {args.source}]"
-    assert os.path.isfile(args.font), f"Invalid font file {args.font}]"
+    assert os.path.isfile(args.font), f"Invalid font file {args.font}"
 
     cfg = CP.ConfigParser()
     cfg._interpolation = CP.ExtendedInterpolation()
