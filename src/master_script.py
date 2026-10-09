@@ -97,6 +97,11 @@ def get_average_video_duration_seconds(hit_app_html_cfg):
     return duration
 
 
+def is_video_duration_probing_enabled(hit_app_html_cfg):
+    """Return whether video metadata should be probed for automatic duration estimates."""
+    return hit_app_html_cfg.getboolean('enable_video_duration_probing', fallback=True)
+
+
 def probe_video_duration(video_path):
     """Return the duration of a local or remote video in seconds."""
     command = [
@@ -131,13 +136,24 @@ def get_cached_video_duration(video_path, duration_cache, fallback_duration_seco
     return duration_cache[video_path]
 
 
-def preload_video_durations(video_paths, duration_cache, fallback_duration_seconds):
+def preload_video_durations(video_paths, duration_cache, fallback_duration_seconds, probing_enabled=True):
     """Read uncached video metadata concurrently after one connectivity check."""
     pending_paths = list(dict.fromkeys(
         str(video_path).strip() for video_path in video_paths
         if pd.notna(video_path) and str(video_path).strip() and str(video_path).strip() not in duration_cache
     ))
     if not pending_paths:
+        return
+
+    if not probing_enabled:
+        print(
+            f"Video duration probing is disabled; using {fallback_duration_seconds:g} seconds "
+            f"for {len(pending_paths)} video(s).",
+            flush=True)
+        duration_cache.update({
+            video_path: fallback_duration_seconds
+            for video_path in pending_paths
+        })
         return
 
     print(f"Probing duration metadata for {len(pending_paths)} video(s)...", flush=True)
@@ -166,7 +182,8 @@ def preload_video_durations(video_paths, duration_cache, fallback_duration_secon
 
 
 def get_training_duration_minutes(training_path, training_gold_path, trap_path, source_df, test_method,
-                                  create_input_cfg, duration_cache, fallback_duration_seconds):
+                                  create_input_cfg, duration_cache, fallback_duration_seconds,
+                                  probing_enabled=True):
     """Estimate training time from every video watched and 30 seconds per question."""
     use_training_gold = training_gold_path if test_method in ['acr', 'avatar'] else None
     training_file = use_training_gold or training_path
@@ -195,7 +212,8 @@ def get_training_duration_minutes(training_path, training_gold_path, trap_path, 
             video_paths.append(trap_videos.iloc[0])
         question_count += 1
 
-    preload_video_durations(video_paths, duration_cache, fallback_duration_seconds)
+    preload_video_durations(
+        video_paths, duration_cache, fallback_duration_seconds, probing_enabled)
     total_seconds = sum(
         get_cached_video_duration(video_path, duration_cache, fallback_duration_seconds)
         for video_path in video_paths
@@ -203,7 +221,8 @@ def get_training_duration_minutes(training_path, training_gold_path, trap_path, 
     return math.ceil((total_seconds + 30 * question_count) / 60)
 
 
-def get_rating_duration_minutes(publish_batch_path, test_method, duration_cache, fallback_duration_seconds):
+def get_rating_duration_minutes(publish_batch_path, test_method, duration_cache, fallback_duration_seconds,
+                                probing_enabled=True):
     """Estimate a HIT from the slowest of up to five randomly sampled sessions."""
     batch_df = pd.read_csv(publish_batch_path)
     if batch_df.empty:
@@ -234,7 +253,8 @@ def get_rating_duration_minutes(publish_batch_path, test_method, duration_cache,
             video_path = session.get(column)
             if pd.notna(video_path) and str(video_path).strip():
                 video_paths.append(video_path)
-    preload_video_durations(video_paths, duration_cache, fallback_duration_seconds)
+    preload_video_durations(
+        video_paths, duration_cache, fallback_duration_seconds, probing_enabled)
 
     session_durations = []
     for _, session in sampled_sessions.iterrows():
@@ -270,16 +290,20 @@ def estimate_task_duration_minutes(master_cfg, training_path, training_gold_path
     """Calculate automatic duration estimates, using an average duration for unreadable videos."""
     hit_app_html_cfg = master_cfg['hit_app_html']
     fallback_duration_seconds = get_average_video_duration_seconds(hit_app_html_cfg)
+    probing_enabled = is_video_duration_probing_enabled(hit_app_html_cfg)
     duration_cache = {}
 
-    print("Estimating training duration from video metadata...", flush=True)
+    duration_source = 'video metadata' if probing_enabled else 'the configured average clip duration'
+    print(f"Estimating training duration from {duration_source}...", flush=True)
     training_minutes = get_training_duration_minutes(
         training_path, training_gold_path, trap_path, source_df, test_method,
-        master_cfg['create_input'], duration_cache, fallback_duration_seconds)
+        master_cfg['create_input'], duration_cache, fallback_duration_seconds, probing_enabled)
 
-    print("Estimating rating duration from up to five generated HITs...", flush=True)
+    print(
+        f"Estimating rating duration from up to five generated HITs using {duration_source}...",
+        flush=True)
     hit_minutes = get_rating_duration_minutes(
-        publish_batch_path, test_method, duration_cache, fallback_duration_seconds)
+        publish_batch_path, test_method, duration_cache, fallback_duration_seconds, probing_enabled)
 
     print(f"Estimated training time: {training_minutes} minutes")
     print(f"Estimated time per HIT: {hit_minutes} minutes")
