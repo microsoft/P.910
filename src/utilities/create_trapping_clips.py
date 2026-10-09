@@ -21,9 +21,17 @@ import uuid
 video_extension = '.mp4'
 trapping_videos = []
 tmp_files = []
+default_font_path = os.path.abspath(join(
+    os.path.dirname(__file__),
+    '..',
+    'template',
+    'components',
+    'brightness',
+    'Roboto-Thin.ttf'
+))
 
 
-def create_msg_video(cfg, des, org):
+def create_msg_video(cfg, des, org, font_path=default_font_path):
     """
     Create a message video (duration 5 sec) to be added to the given original image
     :param cfg:
@@ -45,7 +53,7 @@ def create_msg_video(cfg, des, org):
             list_videos.append((score, video_name))
             continue
         image_file_name = join(des, f'tmp_{width}_{height}_{score}.png')
-        create_msg_img(cfg, score, des, width, height)
+        create_msg_img(cfg, score, des, width, height, font_path)
 
         frame = cv2.imread(image_file_name)
         height, width, layers = frame.shape
@@ -61,7 +69,7 @@ def create_msg_video(cfg, des, org):
     return list_videos
 
 
-def create_msg_img(cfg, score, des, v_width, v_height):
+def create_msg_img(cfg, score, des, v_width, v_height, font_path=default_font_path):
     """
     Create an image with the specified attention message from config file and the given size
     :param cfg:
@@ -79,7 +87,7 @@ def create_msg_img(cfg, score, des, v_width, v_height):
 
     score_text = str(score)
     if args.avatar and 'avatar_rating_answers' in cfg:
-        score_text = {json.loads(cfg['avatar_rating_answers'])[str(score)]
+        score_text = json.loads(cfg['avatar_rating_answers'])[str(score)]
 
     if len(cfg['message_line1'].format(score_text)) > len(cfg['message_line2'].format(score_text)):
         text = cfg['message_line1'].format(score_text)
@@ -90,14 +98,14 @@ def create_msg_img(cfg, score, des, v_width, v_height):
             font_size += 5
         else:
             font_size -= 1
-        font = ImageFont.truetype("arial.ttf", font_size)
+        font = ImageFont.truetype(font_path, font_size)
         text_width = font.getbbox(text)[2]
         percentage = text_width / expected_text_width
 
     # create the image
     img = Image.new('RGB', (v_width, v_height), color=(127, 127, 127))
     d = ImageDraw.Draw(img)
-    font = ImageFont.truetype("arial.ttf", font_size)
+    font = ImageFont.truetype(font_path, font_size)
 
     text = title
     text_bbox = font.getbbox(text)
@@ -118,7 +126,7 @@ def create_msg_img(cfg, score, des, v_width, v_height):
     return image_path
 
 
-def create_trap_db(cfg, source_folder, des):
+def create_trap_db(cfg, source_folder, des, font_path=default_font_path):
     """
     Creates the trapping clips dataset
     :param cfg: configuration file
@@ -135,7 +143,7 @@ def create_trap_db(cfg, source_folder, des):
     count = 0
     list_of_file = []
     for s_f in source_files:
-        msg_videos = create_msg_video(cfg, des, s_f)
+        msg_videos = create_msg_video(cfg, des, s_f, font_path)
         for (score, msg_f) in msg_videos:
             # create output filename format [source_filename]_tp_[suffix from
             output_f_name = f'{os.path.splitext(basename(s_f))[0]}_{score}.mp4'
@@ -205,6 +213,9 @@ if __name__ == '__main__':
     # Configuration: read it from trapping.cfg
     parser.add_argument("--cfg",
                         help="Check trapping.cfg for all the details", required=True)
+    parser.add_argument("--font",
+                        help="path to a TrueType font file (default: bundled Roboto-Thin.ttf)",
+                        default=default_font_path)
     # is avatar
     parser.add_argument("--avatar", help="Is avatar", action='store_true', default=False)
     args = parser.parse_args()
@@ -212,6 +223,7 @@ if __name__ == '__main__':
     cfgpath = args.cfg
     assert os.path.exists(cfgpath), f"No configuration file in {cfgpath}]"
     assert os.path.exists(args.source), f"Invalid source directory {args.source}]"
+    assert os.path.isfile(args.font), f"Invalid font file {args.font}]"
 
     cfg = CP.ConfigParser()
     cfg._interpolation = CP.ExtendedInterpolation()
@@ -220,7 +232,7 @@ if __name__ == '__main__':
     tp_cfg = cfg._sections['trappings']
 
     print('Start creating files')
-    n_created_files = create_trap_db(tp_cfg, args.source, args.des)
+    n_created_files = create_trap_db(tp_cfg, args.source, args.des, args.font)
     print(f'{n_created_files} files created.')
 
     # remove tmp files

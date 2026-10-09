@@ -7,6 +7,9 @@
  The `create_trapping_clips` script creates the trapping clips using a subset of videos in the original dataset.
  For each video, it will use the video parts from beginning and end, and add a text message in between asking participant 
  to select a specific answer to show their attention. 
+
+ The script uses the bundled `Roboto-Thin.ttf` font by default. To use another TrueType font, pass its path with
+ `--font path\to\font.ttf`.
   
  ## `[trappings]`
  * `messages_line1`, `messages_line2`: the message to be shown to the participant. `{0}` will be replaced with a number 
