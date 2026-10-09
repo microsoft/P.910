@@ -9,7 +9,7 @@
  to select a specific answer to show their attention. 
 
  The script uses the bundled `Roboto-Thin.ttf` font by default. To use another TrueType font, pass its path with
- `--font path\to\font.ttf`.
+`--font "/path/to/font.ttf"`.
   
  ## `[trappings]`
  * `messages_line1`, `messages_line2`: the message to be shown to the participant. `{0}` will be replaced with a number 
