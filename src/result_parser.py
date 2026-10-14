@@ -72,8 +72,9 @@ def get_problem_reports(row):
 
 
 def get_reported_question_names(row):
-    """Return normalized question names intentionally skipped due to reported video problems."""
-    return {report['question_id'].lower() for report in get_problem_reports(row)}
+    """Only the first reported question is eligible to be skipped."""
+    reports = get_problem_reports(row)
+    return {reports[0]['question_id'].lower()} if reports else set()
 
 
 def outliers_modified_z_score(votes):
@@ -150,10 +151,6 @@ def check_if_session_accepted(data):
         accept = False
         msg += "The problem report data was invalid; "
         failures.append('invalid_problem_report')
-    if data.get('problem_report_count', 0) > 1:
-        accept = False
-        msg += "More than one rating question was reported as problematic; "
-        failures.append('multiple_problem_reports')
     # two plates should be correct
     if data['correct_ishihara_plates'] is not None and data['correct_ishihara_plates'] < 2:
         accept = False
@@ -677,7 +674,7 @@ def check_all_answered(row, method):
 
     """
     reported_questions = get_reported_question_names(row)
-    if len(reported_questions) > 1 or not reported_questions.issubset(set(question_names)):
+    if not reported_questions.issubset(set(question_names)):
         return 0
 
     for q_name in question_names:
@@ -755,6 +752,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     not_using_further_reasons = []
     not_accepted_reasons = []
     gold_question_details = []
+    problem_report_rows = []
 
    #"""
     failed_workers = []
@@ -763,22 +761,42 @@ def data_cleaning(filename, method, wrong_vcodes):
     for row in reader:
         setup_was_hidden = 'answer.cmp1' not in row or  row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
+        raw_problem_reports = row.get('answer.problem_reports', '')
+        report_error = ''
         try:
             reports = get_problem_reports(row)
             reported_questions = {report['question_id'].lower() for report in reports}
             invalid_problem_report = not reported_questions.issubset(set(question_names))
+            if invalid_problem_report:
+                report_error = 'Reported question is not part of this HIT'
             for report in reports:
                 expected_url = row.get(f"answer.{report['question_id'].lower()}_url", '')
                 if not expected_url or expected_url not in report['video_urls']:
                     invalid_problem_report = True
+                    report_error = 'Reported video URLs do not contain the submitted question URL'
                     break
         except (json.JSONDecodeError, ValueError) as error:
             logger.info(f"Invalid problem report for assignment {row.get('assignmentid', '')}: {error}")
+            report_error = str(error)
             reports = []
             invalid_problem_report = True
             row['answer.problem_reports'] = ''
         d['problem_report_count'] = len(reports)
         d['invalid_problem_report'] = 1 if invalid_problem_report else 0
+        for report_index, report in enumerate(reports or ([{}] if invalid_problem_report else [])):
+            problem_report_rows.append({
+                'worker_id': row['workerid'],
+                'HITId': row['hitid'],
+                'assignment': row['assignmentid'],
+                'question_id': report.get('question_id', ''),
+                'description': report.get('description', ''),
+                'video_urls': json.dumps(report.get('video_urls', [])),
+                'browser_info': report.get('browser_info', ''),
+                'reported_at': report.get('reported_at', ''),
+                'excluded_question': int(report_index == 0 and not invalid_problem_report),
+                'validation_error': report_error,
+                'raw_problem_reports': raw_problem_reports,
+            })
 
         d['worker_id'] = row['workerid']
         d['HITId'] = row['hitid']
@@ -906,6 +924,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     wrong_v_code_freq = check_wrong_vcode_should_block(wrong_vcodes)
 
     write_dict_as_csv(worker_list, report_file)
+    problem_report_file = os.path.splitext(filename)[0] + '_problem_reports.csv'
+    save_problem_reports(problem_report_rows, worker_list, problem_report_file)
+    logger.info(f"   Reported problems for manual review are saved in: {problem_report_file}")
     save_approved_ones(worker_list, approved_file)
     save_rejected_ones(worker_list, rejected_file, wrong_vcodes, not_accepted_reasons, num_rej_perform)
     save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
@@ -925,6 +946,27 @@ def data_cleaning(filename, method, wrong_vcodes):
     with open(tmp_path, 'w') as fp:
         fp.write('\n'.join('%s, %s' % x for x in not_used_reasons_list))
     return worker_list, use_sessions
+
+
+def save_problem_reports(reports, worker_list, path):
+    headers = [
+        'worker_id', 'HITId', 'assignment', 'question_id', 'description',
+        'video_urls', 'browser_info', 'reported_at', 'excluded_question',
+        'validation_error', 'raw_problem_reports', 'accept', 'accept_and_use',
+        'Reject', 'failures',
+    ]
+    outcomes = {worker['assignment']: worker for worker in worker_list}
+    export_rows = []
+    for report in reports:
+        worker = outcomes[report['assignment']]
+        export_rows.append({
+            **report,
+            'accept': worker['accept'],
+            'accept_and_use': worker['accept_and_use'],
+            'Reject': worker['Reject'],
+            'failures': json.dumps(worker['failures']),
+        })
+    write_dict_as_csv(export_rows, path, headers=headers)
 
 
 def _evaluate_rdps_session(session, worker_entry):
