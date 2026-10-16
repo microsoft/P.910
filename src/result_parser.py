@@ -8,8 +8,10 @@
 
 import base64
 import csv
+import json
 import statistics
 from builtins import int
+from datetime import datetime
 
 import math
 import pandas as pd
@@ -28,6 +30,51 @@ import warnings
 import logging
 
 max_found_per_file = -1
+
+
+def get_problem_reports(row):
+    """Return validated problem reports attached to a submitted HIT."""
+    value = row.get('answer.problem_reports', '')
+    if value is None or (not isinstance(value, str) and pd.isna(value)):
+        return []
+    if not isinstance(value, str):
+        raise ValueError('answer.problem_reports must contain JSON text')
+    if not value.strip():
+        return []
+    reports = json.loads(value)
+    if not isinstance(reports, list):
+        raise ValueError('answer.problem_reports must contain a JSON array')
+    if not all(isinstance(report, dict) for report in reports):
+        raise ValueError('Each problem report must be a JSON object')
+    for report in reports:
+        question_id = report.get('question_id')
+        if not isinstance(question_id, str) or not re.fullmatch(r'q\d+', question_id.lower()):
+            raise ValueError(f"Invalid reported question ID: {question_id}")
+        description = report.get('description')
+        if not isinstance(description, str) or not description.strip() or len(description) > 1000:
+            raise ValueError('Each problem report must include a description of at most 1000 characters')
+        video_urls = report.get('video_urls')
+        if not isinstance(video_urls, list) or not 1 <= len(video_urls) <= 2 or \
+                any(not isinstance(url, str) or not url.strip() for url in video_urls):
+            raise ValueError('Each problem report must include one or two video URLs')
+        browser_info = report.get('browser_info')
+        if not isinstance(browser_info, str) or not browser_info.strip():
+            raise ValueError('Each problem report must include browser information')
+        reported_at = report.get('reported_at')
+        timestamp_pattern = r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z'
+        if not isinstance(reported_at, str) or not re.fullmatch(timestamp_pattern, reported_at):
+            raise ValueError('Each problem report must include a UTC timestamp')
+        try:
+            datetime.fromisoformat(reported_at.replace('Z', '+00:00'))
+        except ValueError as error:
+            raise ValueError(f"Invalid problem report timestamp: {reported_at}") from error
+    return reports
+
+
+def get_reported_question_names(row):
+    """Only the first reported question is eligible to be skipped."""
+    reports = get_problem_reports(row)
+    return {reports[0]['question_id'].lower()} if reports else set()
 
 
 def outliers_modified_z_score(votes):
@@ -100,6 +147,9 @@ def check_if_session_accepted(data):
     msg = "Make sure you follow the instruction:"
     accept = True
     failures = []
+    if data.get('invalid_problem_report', 0):
+        data['Reject'] = msg + "The problem report data was invalid; "
+        return False, ['invalid_problem_report']
     # two plates should be correct
     if data['correct_ishihara_plates'] is not None and data['correct_ishihara_plates'] < 2:
         accept = False
@@ -182,9 +232,13 @@ def check_video_played(row, method):
     :return:
     """
     question_played = 0
+    reported_questions = get_reported_question_names(row)
     try:
         if method in ['acr', 'acr-hr', 'dcr', 'ccr',  'avatar_a', 'avatar_b', 'avatar_pt']:
             for q_name in question_names:
+                if q_name in reported_questions:
+                    question_played += 1
+                    continue
                 if int(float(row[f'answer.video_n_finish_{q_name}'])) > 0:
                     question_played += 1
     except Exception as e:
@@ -205,9 +259,12 @@ def check_tps_avatar_b(row, method):
     given_ans = []
     # only consider problem_tokens that does not contain _pt_
     problem_tokens_consider = [pt for pt in problem_tokens if 'pt_' not in pt]
+    reported_questions = get_reported_question_names(row)
     try:
         for q_name in question_names:
             if tp_url in row[f'answer.{q_name}_url']:
+                if q_name in reported_questions:
+                    return 1
                 # found a trapping clips question
                 for tp in problem_tokens_consider:
                     print(tp)
@@ -238,9 +295,12 @@ def check_tps_avatar_a(row):
     tp_url = row[config['trapping']['url_found_in']]
     tp_correct_ans = [int(float(row[config['trapping']['ans_found_in']]))]
     tp_q_name_dict = {'lessthan5':1, 'cantreadenglish':1, 'hundred':1, 'speling':1, 'lesshundred':5, 'olderthan5':5, 'canreadenglish':5}
+    reported_questions = get_reported_question_names(row)
     try:
         suffix = ''
         for idx, q_name in enumerate(question_names):
+            if q_name in reported_questions:
+                continue
             if tp_url in row[f'answer.{q_name}_url']:
                 for pt in problem_tokens:
                     suffix = "_" + pt
@@ -281,10 +341,13 @@ def check_tps(row, method):
     incorrect_tps = 0
     tp_url = row[config['trapping']['url_found_in']]
     tp_correct_ans = [int(float(row[config['trapping']['ans_found_in']]))]
+    reported_questions = get_reported_question_names(row)
     try:
         suffix = ''
         for q_name in question_names:
             if tp_url in row[f'answer.{q_name}_url']:
+                if q_name in reported_questions:
+                    return 1
                 # found a trapping clips question
                 given_ans = int(float(row[f'answer.{q_name}{suffix}']))
                 
@@ -306,7 +369,10 @@ def check_variance_avatar(row, method):
     """
     r = []
     r_pt = []
+    reported_questions = get_reported_question_names(row)
     for q_name in question_names:
+        if q_name in reported_questions:
+            continue
         if 'gold_question' in config and row[config['gold_question']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
         if 'trapping' in config and row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
@@ -345,7 +411,10 @@ def check_variance(row, method):
     if method in ['avatar_b', 'avatar_pt', 'avatar_a']:
         return check_variance_avatar(row, method)
     r = []
+    reported_questions = get_reported_question_names(row)
     for q_name in question_names:
+        if q_name in reported_questions:
+            continue
         if 'gold_question' in config and row[config['gold_question']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
         if 'trapping' in config and row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
@@ -387,9 +456,13 @@ def check_gold_question_avatarb(row):
 
         gq_var = int(float(config['gold_question']['variance']))
         details ={'gq_url': gq_url, 'gq_correct_ans':correct_ans_text}
+        reported_questions = get_reported_question_names(row)
 
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
+                if q_name in reported_questions:
+                    details['reported_problem'] = True
+                    return 1, details
                 # found a gold standard question
                 correct_ans_count = 0
                 for pt in item_orders:
@@ -424,8 +497,12 @@ def check_gold_question_avatara(row, method):
         gq_correct_ans = int(float(row[config['gold_question']['ans_found_in']]))
         gq_var = int(float(config['gold_question']['variance']))
         details ={'gq_url': gq_url, 'gq_correct_ans':gq_correct_ans }
+        reported_questions = get_reported_question_names(row)
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
+                if q_name in reported_questions:
+                    details['reported_problem'] = True
+                    return 1, details
                 q_names_pt = [f'{q_name}_{pt}' for pt in problem_tokens]
                 # found a gold standard question
                 for q_name_pt in q_names_pt:
@@ -469,8 +546,12 @@ def check_gold_question(row, method):
         gq_correct_ans = int(float(row[config['gold_question']['ans_found_in']]))
         gq_var = int(float(config['gold_question']['variance']))
         details ={'gq_url': gq_url, 'gq_correct_ans':gq_correct_ans }
+        reported_questions = get_reported_question_names(row)
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
+                if q_name in reported_questions:
+                    details['reported_problem'] = True
+                    return 1, details
                 # found a gold standard question
                 details['given_ans'] = int(float(row[f'answer.{q_name}']))
                 if int(float(row[f'answer.{q_name}'])) in range(gq_correct_ans-gq_var, gq_correct_ans+gq_var+1):
@@ -573,9 +654,11 @@ def check_play_duration(row):
     :param row:
     :return: ration of play-back to clip
     """
+    reported_questions = get_reported_question_names(row)
+    included_questions = [q for q in question_names if q not in reported_questions]
     try:
-        total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
-        total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
+        total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in included_questions)
+        total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in included_questions)
         if total_duration == 0:
             return float('inf')
     except ValueError as exp:
@@ -589,18 +672,28 @@ def check_all_answered(row, method):
     only relevant for avatar_tp where participants should select one out of the reasons. Theoretically this should be checked in front-end before submission, here is to do a double check.
 
     """
-    if method != 'avatar_pt':
-        return 1
-    
-    problem_token_consider =  [pt for pt in problem_tokens if 'pt_' in pt]    
-    # for each question at least one of the problem tokens should be included in answers (with a value length >0)
+    reported_questions = get_reported_question_names(row)
+    if not reported_questions.issubset(set(question_names)):
+        return 0
+
     for q_name in question_names:
-        found = False
-        for pt in problem_token_consider:
-            if  f'answer.{q_name}_{pt}' in row and len(row[f'answer.{q_name}_{pt}'].strip()) > 0:
-                found = True
-                break
-        if not found:
+        if q_name in reported_questions:
+            continue
+
+        if method in ['avatar_a', 'avatar_b', 'avatar_pt']:
+            required_tokens = [pt for pt in problem_tokens if 'pt_' not in pt]
+            if any(not str(row.get(f'answer.{q_name}_{pt.lower()}', '')).strip() for pt in required_tokens):
+                return 0
+        else:
+            if not str(row.get(f'answer.{q_name}{question_name_suffix}', '')).strip():
+                return 0
+
+        if method == 'avatar_pt':
+            optional_problem_tokens = [pt for pt in problem_tokens if 'pt_' in pt]
+            if not any(str(row.get(f'answer.{q_name}_{pt.lower()}', '')).strip() for pt in optional_problem_tokens):
+                return 0
+
+        if f'answer.{q_name}_url' not in row or not str(row[f'answer.{q_name}_url']).strip():
             return 0
 
     return 1
@@ -658,6 +751,7 @@ def data_cleaning(filename, method, wrong_vcodes):
     not_using_further_reasons = []
     not_accepted_reasons = []
     gold_question_details = []
+    problem_report_rows = []
 
    #"""
     failed_workers = []
@@ -666,6 +760,41 @@ def data_cleaning(filename, method, wrong_vcodes):
     for row in reader:
         setup_was_hidden = 'answer.cmp1' not in row or  row['answer.cmp1'] is None or len(row['answer.cmp1'].strip()) == 0
         d = dict()
+        raw_problem_reports = row.get('answer.problem_reports', '')
+        report_error = ''
+        try:
+            reports = get_problem_reports(row)
+            reported_questions = {report['question_id'].lower() for report in reports}
+            invalid_problem_report = not reported_questions.issubset(set(question_names))
+            if invalid_problem_report:
+                report_error = 'Reported question is not part of this HIT'
+            for report in reports:
+                expected_url = row.get(f"answer.{report['question_id'].lower()}_url", '')
+                if not expected_url or expected_url not in report['video_urls']:
+                    invalid_problem_report = True
+                    report_error = 'Reported video URLs do not contain the submitted question URL'
+                    break
+        except (json.JSONDecodeError, ValueError) as error:
+            logger.info(f"Invalid problem report for assignment {row.get('assignmentid', '')}: {error}")
+            report_error = str(error)
+            reports = []
+            invalid_problem_report = True
+        d['problem_report_count'] = len(reports)
+        d['invalid_problem_report'] = 1 if invalid_problem_report else 0
+        for report_index, report in enumerate(reports or ([{}] if invalid_problem_report else [])):
+            problem_report_rows.append({
+                'worker_id': row['workerid'],
+                'HITId': row['hitid'],
+                'assignment': row['assignmentid'],
+                'question_id': report.get('question_id', ''),
+                'description': report.get('description', ''),
+                'video_urls': json.dumps(report.get('video_urls', [])),
+                'browser_info': report.get('browser_info', ''),
+                'reported_at': report.get('reported_at', ''),
+                'excluded_question': int(report_index == 0 and not invalid_problem_report),
+                'validation_error': report_error,
+                'raw_problem_reports': raw_problem_reports,
+            })
 
         d['worker_id'] = row['workerid']
         d['HITId'] = row['hitid']
@@ -673,7 +802,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['status'] = row['assignmentstatus']
 
         # step1. check if audio of all X questions are played at least once
-        d['all_videos_played'] = 1 if check_video_played(row, method) else 0
+        d['all_videos_played'] = 0 if invalid_problem_report else int(check_video_played(row, method))
         # check if qualification was shown
         if 'answer.7_plate3' in row:
             # step3. check color vision test
@@ -690,9 +819,12 @@ def data_cleaning(filename, method, wrong_vcodes):
             # step2. check math
             d['correct_matrix'] = check_matrix(row)
         # step 4. check tps
-        d['correct_tps'] = check_tps(row, method)
+        d['correct_tps'] = 0 if invalid_problem_report else check_tps(row, method)
         # step5. check gold_standard,
-        d['correct_gold_question'], details  = check_gold_question(row, method)
+        d['correct_gold_question'], details = (
+            (0, {'invalid_problem_report': True}) if invalid_problem_report
+            else check_gold_question(row, method)
+        )
         details['worker_id'] = d['worker_id']
         details['is_correct'] = d['correct_gold_question']
         if 'answer.rdp_exist' in row:
@@ -713,16 +845,19 @@ def data_cleaning(filename, method, wrong_vcodes):
                 d[f'rdps_{pair}_src_pos'] = row.get(src_key, '')
 
         # step6. check variance in a session rating
-        d['variance_in_ratings'] = check_variance(row, method)
-        d['video_dropped_frame_percent_avg'], d['max_dropped_frame_percent'] = check_video_dropped_frame_percent(row)
+        d['variance_in_ratings'] = 0 if invalid_problem_report else check_variance(row, method)
+        d['video_dropped_frame_percent_avg'], d['max_dropped_frame_percent'] = (
+            (float('inf'), float('inf')) if invalid_problem_report
+            else check_video_dropped_frame_percent(row)
+        )
 
-        d['percent_over_play_duration'] = check_play_duration(row)
+        d['percent_over_play_duration'] = float('inf') if invalid_problem_report else check_play_duration(row)
 
         if 'answer.video_loading_duration_ms' in row:
             d['video_loading_duration'] = row['answer.video_loading_duration_ms']
 
         # only for tlep_pt
-        d['complete_answered'] = 1 if method != 'avatar_pt' else check_all_answered(row, method)
+        d['complete_answered'] = 0 if invalid_problem_report else check_all_answered(row, method)
             
         should_be_accepted, accept_failures = check_if_session_accepted(d)
 
@@ -751,7 +886,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         # --------------------------
         """
         not_using_further_reasons.extend(failures)
-        if method == 'avatar_pt':
+        if method == 'avatar_pt' and not invalid_problem_report:
             row = extend_row_with_pt(row)
         if should_be_used:
             d['accept_and_use'] = 1
@@ -793,6 +928,9 @@ def data_cleaning(filename, method, wrong_vcodes):
     wrong_v_code_freq = check_wrong_vcode_should_block(wrong_vcodes)
 
     write_dict_as_csv(worker_list, report_file)
+    problem_report_file = os.path.splitext(filename)[0] + '_problem_reports.csv'
+    save_problem_reports(problem_report_rows, worker_list, problem_report_file)
+    logger.info(f"   Reported problems for manual review are saved in: {problem_report_file}")
     save_approved_ones(worker_list, approved_file)
     save_rejected_ones(worker_list, rejected_file, wrong_vcodes, not_accepted_reasons, num_rej_perform)
     save_approve_rejected_ones_for_gui(worker_list, accept_reject_gui_file, wrong_vcodes)
@@ -812,6 +950,35 @@ def data_cleaning(filename, method, wrong_vcodes):
     with open(tmp_path, 'w') as fp:
         fp.write('\n'.join('%s, %s' % x for x in not_used_reasons_list))
     return worker_list, use_sessions
+
+
+def save_problem_reports(reports, worker_list, path):
+    headers = [
+        'worker_id', 'HITId', 'assignment', 'question_id', 'description',
+        'video_urls', 'browser_info', 'reported_at', 'excluded_question',
+        'validation_error', 'raw_problem_reports', 'accept', 'accept_and_use',
+        'Reject', 'failures',
+    ]
+    outcomes = {worker['assignment']: worker for worker in worker_list}
+    export_rows = []
+    for report in reports:
+        worker = outcomes[report['assignment']]
+        export_row = {
+            **report,
+            'accept': worker['accept'],
+            'accept_and_use': worker['accept_and_use'],
+            'Reject': worker['Reject'],
+            'failures': json.dumps(worker['failures']),
+        }
+        # CSV quoting alone does not prevent spreadsheet formula evaluation.
+        for key, value in export_row.items():
+            if isinstance(value, str) and (
+                value.lstrip().startswith(('=', '+', '-', '@'))
+                or value.startswith(('\t', '\r', '\n'))
+            ):
+                export_row[key] = "'" + value
+        export_rows.append(export_row)
+    write_dict_as_csv(export_rows, path, headers=headers)
 
 
 def _evaluate_rdps_session(session, worker_entry):
@@ -1432,7 +1599,10 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
 
     for session in sessions:
         found_gold_question = False
+        reported_questions = get_reported_question_names(session)
         for question in question_names:
+            if question in reported_questions:
+                continue
             # is it a trapping clips question
             if 'trapping' in config and session[config['trapping']['url_found_in']] == session[f'answer.{question}_url']:
                 continue
