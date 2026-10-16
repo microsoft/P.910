@@ -148,9 +148,8 @@ def check_if_session_accepted(data):
     accept = True
     failures = []
     if data.get('invalid_problem_report', 0):
-        accept = False
-        msg += "The problem report data was invalid; "
-        failures.append('invalid_problem_report')
+        data['Reject'] = msg + "The problem report data was invalid; "
+        return False, ['invalid_problem_report']
     # two plates should be correct
     if data['correct_ishihara_plates'] is not None and data['correct_ishihara_plates'] < 2:
         accept = False
@@ -780,7 +779,6 @@ def data_cleaning(filename, method, wrong_vcodes):
             report_error = str(error)
             reports = []
             invalid_problem_report = True
-            row['answer.problem_reports'] = ''
         d['problem_report_count'] = len(reports)
         d['invalid_problem_report'] = 1 if invalid_problem_report else 0
         for report_index, report in enumerate(reports or ([{}] if invalid_problem_report else [])):
@@ -804,7 +802,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         d['status'] = row['assignmentstatus']
 
         # step1. check if audio of all X questions are played at least once
-        d['all_videos_played'] = 1 if check_video_played(row, method) else 0
+        d['all_videos_played'] = 0 if invalid_problem_report else int(check_video_played(row, method))
         # check if qualification was shown
         if 'answer.7_plate3' in row:
             # step3. check color vision test
@@ -821,9 +819,12 @@ def data_cleaning(filename, method, wrong_vcodes):
             # step2. check math
             d['correct_matrix'] = check_matrix(row)
         # step 4. check tps
-        d['correct_tps'] = check_tps(row, method)
+        d['correct_tps'] = 0 if invalid_problem_report else check_tps(row, method)
         # step5. check gold_standard,
-        d['correct_gold_question'], details  = check_gold_question(row, method)
+        d['correct_gold_question'], details = (
+            (0, {'invalid_problem_report': True}) if invalid_problem_report
+            else check_gold_question(row, method)
+        )
         details['worker_id'] = d['worker_id']
         details['is_correct'] = d['correct_gold_question']
         if 'answer.rdp_exist' in row:
@@ -844,16 +845,19 @@ def data_cleaning(filename, method, wrong_vcodes):
                 d[f'rdps_{pair}_src_pos'] = row.get(src_key, '')
 
         # step6. check variance in a session rating
-        d['variance_in_ratings'] = check_variance(row, method)
-        d['video_dropped_frame_percent_avg'], d['max_dropped_frame_percent'] = check_video_dropped_frame_percent(row)
+        d['variance_in_ratings'] = 0 if invalid_problem_report else check_variance(row, method)
+        d['video_dropped_frame_percent_avg'], d['max_dropped_frame_percent'] = (
+            (float('inf'), float('inf')) if invalid_problem_report
+            else check_video_dropped_frame_percent(row)
+        )
 
-        d['percent_over_play_duration'] = check_play_duration(row)
+        d['percent_over_play_duration'] = float('inf') if invalid_problem_report else check_play_duration(row)
 
         if 'answer.video_loading_duration_ms' in row:
             d['video_loading_duration'] = row['answer.video_loading_duration_ms']
 
         # only for tlep_pt
-        d['complete_answered'] = check_all_answered(row, method)
+        d['complete_answered'] = 0 if invalid_problem_report else check_all_answered(row, method)
             
         should_be_accepted, accept_failures = check_if_session_accepted(d)
 
@@ -882,7 +886,7 @@ def data_cleaning(filename, method, wrong_vcodes):
         # --------------------------
         """
         not_using_further_reasons.extend(failures)
-        if method == 'avatar_pt':
+        if method == 'avatar_pt' and not invalid_problem_report:
             row = extend_row_with_pt(row)
         if should_be_used:
             d['accept_and_use'] = 1
@@ -959,13 +963,21 @@ def save_problem_reports(reports, worker_list, path):
     export_rows = []
     for report in reports:
         worker = outcomes[report['assignment']]
-        export_rows.append({
+        export_row = {
             **report,
             'accept': worker['accept'],
             'accept_and_use': worker['accept_and_use'],
             'Reject': worker['Reject'],
             'failures': json.dumps(worker['failures']),
-        })
+        }
+        # CSV quoting alone does not prevent spreadsheet formula evaluation.
+        for key, value in export_row.items():
+            if isinstance(value, str) and (
+                value.lstrip().startswith(('=', '+', '-', '@'))
+                or value.startswith(('\t', '\r', '\n'))
+            ):
+                export_row[key] = "'" + value
+        export_rows.append(export_row)
     write_dict_as_csv(export_rows, path, headers=headers)
 
 

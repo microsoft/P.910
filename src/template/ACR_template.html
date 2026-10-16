@@ -196,119 +196,138 @@ function shuffle(a) {
 	return a;
 }
 
-function getCurrentRatingVideoUrls() {
-	var videoUrls = [];
-	var currentVideo = $('#nav-tabContent-rating .tab-pane.active .velmnt').first();
-	var referenceUrl = currentVideo.attr('data-src-ref');
-	var processedUrl = currentVideo.attr('data-src-clip');
-	if (referenceUrl) {
-		videoUrls.push(referenceUrl);
-	}
-	if (processedUrl) {
-		videoUrls.push(processedUrl);
-	}
-	return videoUrls;
+function getRatingQuestionPane(questionId) {
+    return $('#nav-tabContent-rating .tab-pane').filter(function() {
+        return this.id.replace('-panel', '').toLowerCase() === questionId;
+    }).first();
+}
+
+function getCurrentRatingVideoUrls(questionId) {
+    var videoUrls = [];
+    var pane = questionId ? getRatingQuestionPane(questionId) : $('#nav-tabContent-rating .tab-pane.active');
+    var currentVideo = pane.find('.velmnt').first();
+    var referenceUrl = currentVideo.attr('data-src-ref');
+    var processedUrl = currentVideo.attr('data-src-clip');
+    if (referenceUrl) {
+        videoUrls.push(referenceUrl);
+    }
+    if (processedUrl) {
+        videoUrls.push(processedUrl);
+    }
+    return videoUrls;
 }
 
 function getCurrentRatingQuestionId() {
-	return $('#nav-tabContent-rating .tab-pane.active').attr('id').replace('-panel', '').toLowerCase();
+    return $('#nav-tabContent-rating .tab-pane.active').attr('id').replace('-panel', '').toLowerCase();
 }
 
 function getProblemReports() {
-	return JSON.parse($('#problem_reports').val());
+    return JSON.parse($('#problem_reports').val());
 }
 
 function formatProblemReportEmail(reports) {
-	var lines = [
-		'To: ' + config.emailAddress,
-		'Subject: Problem with video-rating study',
-		'',
-		'Study page: ' + window.location.href.split('#')[0],
-		'Browser: ' + navigator.userAgent,
-		''
-	];
-	reports.forEach(function(report, index) {
-		lines.push('Problem ' + (index + 1) + ' (' + report.question_id + ')');
-		lines.push('Description: ' + report.description);
-		report.video_urls.forEach(function(videoUrl, videoIndex) {
-			lines.push('Video ' + (videoIndex + 1) + ': ' + videoUrl);
-		});
-		lines.push('Reported at: ' + report.reported_at);
-		lines.push('');
-	});
-	return lines.join('\n');
+    var lines = [
+        'To: ' + config.emailAddress,
+        'Subject: Problem with video-rating study',
+        '',
+        'Study page: ' + window.location.href.split('#')[0],
+        'Browser: ' + navigator.userAgent,
+        ''
+    ];
+    reports.forEach(function(report, index) {
+        lines.push('Problem ' + (index + 1) + ' (' + report.question_id + ')');
+        lines.push('Description: ' + report.description);
+        report.video_urls.forEach(function(videoUrl, videoIndex) {
+            lines.push('Video ' + (videoIndex + 1) + ': ' + videoUrl);
+        });
+        lines.push('Reported at: ' + report.reported_at);
+        lines.push('');
+    });
+    return lines.join('\n');
 }
 
 function updateProblemReportState(reports) {
-	$('#problem_reports').val(JSON.stringify(reports));
-	$('#problem_report_status').text(
-		reports.length + ' problem question' + (reports.length === 1 ? '' : 's') + ' reported.');
-	$('#problem_report_email').val(formatProblemReportEmail(reports));
-	$('#problem_report_email_section').show();
-	if (reports.length > 1) {
-		$('#multiple_problem_warning').show();
-	}
+    $('#problem_reports').val(JSON.stringify(reports));
+    $('#problem_report_status').text(
+        reports.length + ' problem question' + (reports.length === 1 ? '' : 's') + ' reported.');
+    $('#problem_report_email').val(formatProblemReportEmail(reports));
+    updateProblemReportQuestion();
 }
 
-function openProblemReport() {
-	var questionId = getCurrentRatingQuestionId();
-	var reports = getProblemReports();
-	var existingReport = reports.find(function(report) {
-		return report.question_id === questionId;
-	});
-	var videoUrls = getCurrentRatingVideoUrls();
-	$('#problem_report_description').val(existingReport ? existingReport.description : '');
-	$('#problem_report_error').hide();
-	$('#problem_report_video_urls').text(videoUrls.join('\n'));
-	if (reports.length > 0 && !existingReport) {
-		$('#multiple_problem_warning').show();
-		$('#save_problem_report_button').text('Save report');
-	} else {
-		$('#save_problem_report_button').text('Save report and skip question');
-	}
-	if (reports.length > 0) {
-		$('#problem_report_email').val(formatProblemReportEmail(reports));
-		$('#problem_report_email_section').show();
-	}
-	$('#problemReportModal').modal('show');
+function updateProblemReportQuestion() {
+    var questionId = $('#problem_report_question').val();
+    var reports = getProblemReports();
+    var existingReport = reports.find(function(report) {
+        return report.question_id === questionId;
+    });
+    var videoUrls = getCurrentRatingVideoUrls(questionId);
+    $('#problem_report_description').val(existingReport ? existingReport.description : '');
+    $('#problem_report_error').hide();
+    $('#problem_report_video_urls').text(videoUrls.join('\n'));
+    var canSkip = reports.length === 0 || reports[0].question_id === questionId;
+    $('#multiple_problem_warning').toggle(reports.length > 1 || !canSkip);
+    $('#save_problem_report_button').text(canSkip ? 'Save report and skip question' : 'Save report');
+    $('#problem_report_email_section').toggle(reports.length > 0);
+    if (reports.length > 0) {
+        $('#problem_report_email').val(formatProblemReportEmail(reports));
+    }
+}
+
+function openProblemReport(duringLoading) {
+    var questions = $('#problem_report_question').empty();
+    var firstPendingQuestion = null;
+    $('#nav-tabContent-rating .tab-pane').each(function() {
+        var questionId = this.id.replace('-panel', '').toLowerCase();
+        var video = $(this).find('.velmnt').first();
+        var pending = videos_not_loaded_yet_set.has('video1_' + video.attr('id')) ||
+            videos_not_loaded_yet_set.has('video2_' + video.attr('id'));
+        if (pending && !firstPendingQuestion) {
+            firstPendingQuestion = questionId;
+        }
+        $('<option>').val(questionId).text(questionId.toUpperCase() +
+            (pending ? ' (not loaded)' : '') + ': ' + getCurrentRatingVideoUrls(questionId).join(' | ')).appendTo(questions);
+    });
+    questions.val(duringLoading && firstPendingQuestion ? firstPendingQuestion : getCurrentRatingQuestionId());
+    updateProblemReportQuestion();
+    $('#problemReportModal').modal('show');
 }
 
 function saveProblemReport() {
-	var description = $('#problem_report_description').val().trim();
-	if (!description) {
-		$('#problem_report_error').show();
-		return;
-	}
+    var description = $('#problem_report_description').val().trim();
+    if (!description) {
+        $('#problem_report_error').show();
+        return;
+    }
 
-	var questionId = getCurrentRatingQuestionId();
-	var reports = getProblemReports();
-	var report = {
-		question_id: questionId,
-		description: description,
-		video_urls: getCurrentRatingVideoUrls(),
-		browser_info: navigator.userAgent,
-		reported_at: new Date().toISOString()
-	};
-	var existingIndex = reports.findIndex(function(existingReport) {
-		return existingReport.question_id === questionId;
-	});
-	if (existingIndex === -1) {
-		reports.push(report);
-	} else {
-		reports[existingIndex] = report;
-	}
+    var questionId = $('#problem_report_question').val();
+    var reports = getProblemReports();
+    var report = {
+        question_id: questionId,
+        description: description,
+        video_urls: getCurrentRatingVideoUrls(questionId),
+        browser_info: navigator.userAgent,
+        reported_at: new Date().toISOString()
+    };
+    var existingIndex = reports.findIndex(function(existingReport) {
+        return existingReport.question_id === questionId;
+    });
+    if (existingIndex === -1) {
+        reports.push(report);
+    } else {
+        reports[existingIndex] = report;
+    }
 
-	if (reports[0].question_id === questionId) {
-		$('#nav-tabContent-rating .tab-pane.active :input').removeAttr('required');
-	}
-	updateProblemReportState(reports);
+    if (reports[0].question_id === questionId) {
+        getRatingQuestionPane(questionId).find(':input').removeAttr('required');
+    }
+    updateProblemReportState(reports);
 }
 
 function copyProblemReportEmail() {
-	var emailText = $('#problem_report_email');
-	emailText.focus();
-	emailText.select();
-	document.execCommand('copy');
+    var emailText = $('#problem_report_email');
+    emailText.focus();
+    emailText.select();
+    document.execCommand('copy');
 }
 
 
@@ -1056,6 +1075,7 @@ function add(accumulator, a) {
 function update_video_loading_progress(){
     var total_videos = videoElements.length;
     var remaining_videos = videos_not_loaded_yet_set.size;
+    $('#loading_problem_report').toggle(remaining_videos > 0);
     var loaded_percentage = total_videos === 0
         ? 100
         : Math.round((total_videos - remaining_videos) * 100 / total_videos);
@@ -2604,6 +2624,12 @@ function avoidAnsweringBeforeWatchingThrough(){
 	<div class="col-md-3"></div>
 </div></div>
 
+<div class="container" id="loading_problem_report">
+    <p>If a rating video is not loading, select its question and URL in the report dialog.
+        You can copy an email report even if this HIT cannot continue.</p>
+    <button type="button" class="btn btn-link" onclick="openProblemReport(true)">Report a video loading problem</button>
+</div>
+
 <!-- Instructions -->
 <section class="container disabled_section" id="Survey">
 	<div class="panel panel-primary">
@@ -3173,9 +3199,13 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 			<div class="modal-body">
 				<div id="multiple_problem_warning" class="alert alert-danger" role="alert" hidden>
-					More than one rating question has a problem. This additional question cannot be skipped. Copy the email report below, report and return this HIT, and do not submit it.
+                    More than one rating question has a problem. Only the first reported question can be skipped. Copy the email report below, report and return this HIT, and do not submit it.
 				</div>
 				<div class="form-group">
+                    <label for="problem_report_question">Rating question and video URL(s)</label>
+                    <select id="problem_report_question" class="form-control" onchange="updateProblemReportQuestion()"></select>
+                </div>
+                <div class="form-group">
 					<label for="problem_report_description">Describe the problem with this question</label>
 					<textarea id="problem_report_description" class="form-control" rows="4" maxlength="1000"></textarea>
 				</div>
