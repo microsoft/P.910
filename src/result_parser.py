@@ -71,12 +71,6 @@ def get_problem_reports(row):
     return reports
 
 
-def get_reported_question_names(row):
-    """Only the first reported question is eligible to be skipped."""
-    reports = get_problem_reports(row)
-    return {reports[0]['question_id'].lower()} if reports else set()
-
-
 def outliers_modified_z_score(votes):
     """
     return  outliers, using modified z-score
@@ -232,13 +226,9 @@ def check_video_played(row, method):
     :return:
     """
     question_played = 0
-    reported_questions = get_reported_question_names(row)
     try:
         if method in ['acr', 'acr-hr', 'dcr', 'ccr',  'avatar_a', 'avatar_b', 'avatar_pt']:
             for q_name in question_names:
-                if q_name in reported_questions:
-                    question_played += 1
-                    continue
                 if int(float(row[f'answer.video_n_finish_{q_name}'])) > 0:
                     question_played += 1
     except Exception as e:
@@ -259,12 +249,9 @@ def check_tps_avatar_b(row, method):
     given_ans = []
     # only consider problem_tokens that does not contain _pt_
     problem_tokens_consider = [pt for pt in problem_tokens if 'pt_' not in pt]
-    reported_questions = get_reported_question_names(row)
     try:
         for q_name in question_names:
             if tp_url in row[f'answer.{q_name}_url']:
-                if q_name in reported_questions:
-                    return 1
                 # found a trapping clips question
                 for tp in problem_tokens_consider:
                     print(tp)
@@ -295,12 +282,9 @@ def check_tps_avatar_a(row):
     tp_url = row[config['trapping']['url_found_in']]
     tp_correct_ans = [int(float(row[config['trapping']['ans_found_in']]))]
     tp_q_name_dict = {'lessthan5':1, 'cantreadenglish':1, 'hundred':1, 'speling':1, 'lesshundred':5, 'olderthan5':5, 'canreadenglish':5}
-    reported_questions = get_reported_question_names(row)
     try:
         suffix = ''
         for idx, q_name in enumerate(question_names):
-            if q_name in reported_questions:
-                continue
             if tp_url in row[f'answer.{q_name}_url']:
                 for pt in problem_tokens:
                     suffix = "_" + pt
@@ -341,13 +325,10 @@ def check_tps(row, method):
     incorrect_tps = 0
     tp_url = row[config['trapping']['url_found_in']]
     tp_correct_ans = [int(float(row[config['trapping']['ans_found_in']]))]
-    reported_questions = get_reported_question_names(row)
     try:
         suffix = ''
         for q_name in question_names:
             if tp_url in row[f'answer.{q_name}_url']:
-                if q_name in reported_questions:
-                    return 1
                 # found a trapping clips question
                 given_ans = int(float(row[f'answer.{q_name}{suffix}']))
                 
@@ -356,9 +337,8 @@ def check_tps(row, method):
                 if given_ans in tp_correct_ans:
                     correct_tps = 1
                     return correct_tps
-    except:
-        print(given_ans, tp_correct_ans)
-        pass
+    except Exception as error:
+        logger.info('Caught exception while checking trapping question: %s', error)
     return correct_tps
 
 def check_variance_avatar(row, method):
@@ -369,10 +349,7 @@ def check_variance_avatar(row, method):
     """
     r = []
     r_pt = []
-    reported_questions = get_reported_question_names(row)
     for q_name in question_names:
-        if q_name in reported_questions:
-            continue
         if 'gold_question' in config and row[config['gold_question']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
         if 'trapping' in config and row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
@@ -411,10 +388,7 @@ def check_variance(row, method):
     if method in ['avatar_b', 'avatar_pt', 'avatar_a']:
         return check_variance_avatar(row, method)
     r = []
-    reported_questions = get_reported_question_names(row)
     for q_name in question_names:
-        if q_name in reported_questions:
-            continue
         if 'gold_question' in config and row[config['gold_question']['url_found_in']] in row[f'answer.{q_name}_url']:
             continue
         if 'trapping' in config and row[config['trapping']['url_found_in']] in row[f'answer.{q_name}_url']:
@@ -456,13 +430,8 @@ def check_gold_question_avatarb(row):
 
         gq_var = int(float(config['gold_question']['variance']))
         details ={'gq_url': gq_url, 'gq_correct_ans':correct_ans_text}
-        reported_questions = get_reported_question_names(row)
-
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
-                if q_name in reported_questions:
-                    details['reported_problem'] = True
-                    return 1, details
                 # found a gold standard question
                 correct_ans_count = 0
                 for pt in item_orders:
@@ -478,7 +447,7 @@ def check_gold_question_avatarb(row):
                     correct_gq = 1
                     return correct_gq, details
     except Exception as e:
-        logger.info('Gold Question error: ', e.message)        
+        logger.info('Gold Question error: %s', e)
         return None, None
     return correct_gq, details
 
@@ -497,12 +466,8 @@ def check_gold_question_avatara(row, method):
         gq_correct_ans = int(float(row[config['gold_question']['ans_found_in']]))
         gq_var = int(float(config['gold_question']['variance']))
         details ={'gq_url': gq_url, 'gq_correct_ans':gq_correct_ans }
-        reported_questions = get_reported_question_names(row)
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
-                if q_name in reported_questions:
-                    details['reported_problem'] = True
-                    return 1, details
                 q_names_pt = [f'{q_name}_{pt}' for pt in problem_tokens]
                 # found a gold standard question
                 for q_name_pt in q_names_pt:
@@ -523,7 +488,7 @@ def check_gold_question_avatara(row, method):
                         return correct_gq, details
             
     except Exception as e:
-        logger.info('Gold Question error: '+ e)
+        logger.info('Gold Question error: %s', e)
         return None, None
     return correct_gq, details
 
@@ -546,12 +511,8 @@ def check_gold_question(row, method):
         gq_correct_ans = int(float(row[config['gold_question']['ans_found_in']]))
         gq_var = int(float(config['gold_question']['variance']))
         details ={'gq_url': gq_url, 'gq_correct_ans':gq_correct_ans }
-        reported_questions = get_reported_question_names(row)
         for q_name in question_names:
             if gq_url in row[f'answer.{q_name}_url']:
-                if q_name in reported_questions:
-                    details['reported_problem'] = True
-                    return 1, details
                 # found a gold standard question
                 details['given_ans'] = int(float(row[f'answer.{q_name}']))
                 if int(float(row[f'answer.{q_name}'])) in range(gq_correct_ans-gq_var, gq_correct_ans+gq_var+1):
@@ -559,7 +520,7 @@ def check_gold_question(row, method):
                     return correct_gq, details
             
     except Exception as e:
-        logger.info('Gold Question error: '+ e)        
+        logger.info('Gold Question error: %s', e)
         return None, None
     return correct_gq, details
 
@@ -654,11 +615,9 @@ def check_play_duration(row):
     :param row:
     :return: ration of play-back to clip
     """
-    reported_questions = get_reported_question_names(row)
-    included_questions = [q for q in question_names if q not in reported_questions]
     try:
-        total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in included_questions)
-        total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in included_questions)
+        total_duration = sum(float(row[f'answer.video_duration_{q}']) for q in question_names)
+        total_play_duration = sum(float(row[f'answer.video_play_duration_{q}']) for q in question_names)
         if total_duration == 0:
             return float('inf')
     except ValueError as exp:
@@ -672,14 +631,7 @@ def check_all_answered(row, method):
     only relevant for avatar_tp where participants should select one out of the reasons. Theoretically this should be checked in front-end before submission, here is to do a double check.
 
     """
-    reported_questions = get_reported_question_names(row)
-    if not reported_questions.issubset(set(question_names)):
-        return 0
-
     for q_name in question_names:
-        if q_name in reported_questions:
-            continue
-
         if method in ['avatar_a', 'avatar_b', 'avatar_pt']:
             required_tokens = [pt for pt in problem_tokens if 'pt_' not in pt]
             if any(not str(row.get(f'answer.{q_name}_{pt.lower()}', '')).strip() for pt in required_tokens):
@@ -781,7 +733,7 @@ def data_cleaning(filename, method, wrong_vcodes):
             invalid_problem_report = True
         d['problem_report_count'] = len(reports)
         d['invalid_problem_report'] = 1 if invalid_problem_report else 0
-        for report_index, report in enumerate(reports or ([{}] if invalid_problem_report else [])):
+        for report in reports or ([{}] if invalid_problem_report else []):
             problem_report_rows.append({
                 'worker_id': row['workerid'],
                 'HITId': row['hitid'],
@@ -791,7 +743,7 @@ def data_cleaning(filename, method, wrong_vcodes):
                 'video_urls': json.dumps(report.get('video_urls', [])),
                 'browser_info': report.get('browser_info', ''),
                 'reported_at': report.get('reported_at', ''),
-                'excluded_question': int(report_index == 0 and not invalid_problem_report),
+                'excluded_question': 0,
                 'validation_error': report_error,
                 'raw_problem_reports': raw_problem_reports,
             })
@@ -1599,10 +1551,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
 
     for session in sessions:
         found_gold_question = False
-        reported_questions = get_reported_question_names(session)
         for question in question_names:
-            if question in reported_questions:
-                continue
             # is it a trapping clips question
             if 'trapping' in config and session[config['trapping']['url_found_in']] == session[f'answer.{question}_url']:
                 continue
@@ -1610,7 +1559,7 @@ def transform(test_method, sessions, agrregate_on_condition, is_worker_specific)
             if not found_gold_question and\
                     session[config['gold_question']['url_found_in']] == session[f'answer.{question}_url']:
                 found_gold_question = True
-                continue            
+                continue
             short_file_name = session[f'answer.{question}_url'].rsplit('/', 1)[-1]
             file_name = session[f'answer.{question}_url']
             if file_name not in data_per_file:
@@ -1967,7 +1916,15 @@ def add_dmos_acrhr(agg_per_file_path, cfg):
     scale_max = int(cfg['general']['scale'])
 
     for index, row in per_file.iterrows():
-        mos_ref = mos_dict[pvs_src_map[row['file_url']]]
+        reference_url = pvs_src_map.get(row['file_url'])
+        mos_ref = mos_dict.get(reference_url)
+        if pd.isna(mos_ref):
+            logger.warning(
+                'DMOS unavailable for %s: missing reference MOS (%s)',
+                row['file_url'], reference_url,
+            )
+            dmos_list.append(float('nan'))
+            continue
         mos_pvs = mos_dict[row['file_url']]
         dmos = min([mos_pvs - mos_ref + scale_max, scale_max])
         dmos_list.append(dmos)

@@ -314,9 +314,6 @@ function updateProblemReportQuestion() {
     $('#problem_report_description').val(existingReport ? existingReport.description : '');
     $('#problem_report_error').hide();
     $('#problem_report_video_urls').text(videoUrls.join('\n'));
-    var canSkip = reports.length === 0 || reports[0].question_id === questionId;
-    $('#multiple_problem_warning').toggle(reports.length > 1 || !canSkip);
-    $('#save_problem_report_button').text(canSkip ? 'Save report and skip question' : 'Save report');
     $('#problem_report_email_section').toggle(reports.length > 0);
     if (reports.length > 0) {
         $('#problem_report_email').val(formatProblemReportEmail(reports));
@@ -367,9 +364,6 @@ function saveProblemReport() {
         reports[existingIndex] = report;
     }
 
-    if (reports[0].question_id === questionId) {
-        getRatingQuestionPane(questionId).find(':input').removeAttr('required');
-    }
     updateProblemReportState(reports);
 }
 
@@ -3440,9 +3434,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 				<h4 class="modal-title" id="problemReportModalLabel">Report a problem</h4>
 			</div>
 			<div class="modal-body">
-				<div id="multiple_problem_warning" class="alert alert-danger" role="alert" hidden>
-                    More than one rating question has a problem. Only the first reported question can be skipped. Copy the email report below, report and return this HIT, and do not submit it.
-				</div>
+                <p>Please rate every question, even if you report a problem. Reporting a problem does not skip the question.</p>
 				<div class="form-group">
                     <label for="problem_report_question">Rating question and video URL(s)</label>
                     <select id="problem_report_question" class="form-control" onchange="updateProblemReportQuestion()"></select>
@@ -3463,7 +3455,7 @@ function avoidAnsweringBeforeWatchingThrough(){
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Done</button>
-				<button type="button" class="btn btn-primary" id="save_problem_report_button" onclick="saveProblemReport()">Save report and skip question</button>
+                <button type="button" class="btn btn-primary" id="save_problem_report_button" onclick="saveProblemReport()">Save report</button>
 			</div>
 		</div>
 	</div>

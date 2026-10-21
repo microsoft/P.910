@@ -1,4 +1,5 @@
 import csv
+import configparser
 from contextlib import ExitStack
 import json
 import logging
@@ -24,19 +25,82 @@ class ProblemReportTests(unittest.TestCase):
         ]
         return {
             'answer.problem_reports': json.dumps(reports),
-            'answer.q1': '',
+            'answer.q1': '5',
             'answer.q1_url': reports[0]['video_urls'][0],
             'answer.q2': '3',
             'answer.q2_url': reports[1]['video_urls'][0],
         }
 
-    def test_only_first_report_is_excluded_and_other_answers_remain_required(self):
-        row = self.make_row()
+    def test_all_reported_questions_still_require_answers(self):
         with patch.multiple(parser, question_names=['q1', 'q2'], question_name_suffix='', create=True):
-            self.assertEqual(parser.get_reported_question_names(row), {'q1'})
-            self.assertEqual(parser.check_all_answered(row, 'acr'), 1)
-            row['answer.q2'] = ''
-            self.assertEqual(parser.check_all_answered(row, 'acr'), 0)
+            for method in ['acr', 'acr-hr', 'dcr', 'ccr']:
+                for question in ['q1', 'q2']:
+                    with self.subTest(method=method, question=question):
+                        row = self.make_row()
+                        self.assertEqual(parser.check_all_answered(row, method), 1)
+                        row[f'answer.{question}'] = ''
+                        self.assertEqual(parser.check_all_answered(row, method), 0)
+
+    def test_reported_avatar_questions_require_ratings_and_problem_tokens(self):
+        with patch.multiple(
+            parser, question_names=['q1', 'q2'], problem_tokens=['trust', 'pt_other'], create=True,
+        ):
+            for method in ['avatar_a', 'avatar_b', 'avatar_pt']:
+                for question in ['q1', 'q2']:
+                    with self.subTest(method=method, question=question):
+                        row = {
+                            **self.make_row(),
+                            'answer.q1_trust': '5', 'answer.q2_trust': '3',
+                            'answer.q1_pt_other': 'Video stalled', 'answer.q2_pt_other': 'Video stalled',
+                        }
+                        self.assertEqual(parser.check_all_answered(row, method), 1)
+                        row[f'answer.{question}_trust'] = ''
+                        self.assertEqual(parser.check_all_answered(row, method), 0)
+                        row[f'answer.{question}_trust'] = '3'
+                        row[f'answer.{question}_pt_other'] = ''
+                        self.assertEqual(parser.check_all_answered(row, method), int(method != 'avatar_pt'))
+
+    def test_reported_questions_remain_in_playback_and_variance_checks(self):
+        row = {
+            **self.make_row(),
+            'answer.video_n_finish_q1': '0', 'answer.video_n_finish_q2': '1',
+            'answer.video_duration_q1': '10', 'answer.video_duration_q2': '10',
+            'answer.video_play_duration_q1': '20', 'answer.video_play_duration_q2': '10',
+        }
+        with patch.multiple(
+            parser, config={}, question_names=['q1', 'q2'], question_name_suffix='', create=True,
+        ):
+            self.assertFalse(parser.check_video_played(row, 'acr'))
+            row['answer.video_n_finish_q1'] = '1'
+            self.assertTrue(parser.check_video_played(row, 'acr'))
+            self.assertEqual(parser.check_play_duration(row), 1.5)
+            self.assertEqual(parser.check_variance(row, 'acr'), 2)
+
+    def test_reported_quality_questions_are_not_automatically_passed(self):
+        config = {
+            'trapping': {'url_found_in': 'answer.q1_url', 'ans_found_in': 'input.correct_ans'},
+            'gold_question': {
+                'url_found_in': 'answer.q1_url', 'ans_found_in': 'input.correct_ans',
+                'variance': '0', 'gold_ans_format': '(trust)',
+            },
+        }
+        with patch.multiple(
+            parser, config=config, question_names=['q1', 'q2'], problem_tokens=['trust'],
+            logger=logging.getLogger(__name__), create=True,
+        ):
+            for method in ['acr', 'acr-hr', 'dcr', 'ccr', 'avatar_a', 'avatar_b', 'avatar_pt']:
+                for answer in ['1', '5']:
+                    with self.subTest(method=method, answer=answer):
+                        row = {
+                            **self.make_row(), 'input.correct_ans': '5',
+                            'answer.q1': answer, 'answer.q1_trust': answer, 'answer.q1_order': 'rp',
+                            'answer.q2_trust': '3', 'answer.q2_tpid': 'lessthan5',
+                            'answer.q2_tp': '1', 'answer.q2_repeatedid': 'trust',
+                            'answer.q2_repeatingitem': '3',
+                        }
+                        expected = int(answer == '5')
+                        self.assertEqual(parser.check_tps(row, method), expected)
+                        self.assertEqual(parser.check_gold_question(row, method)[0], expected)
 
     def test_multiple_reports_follow_normal_acceptance_checks(self):
         config = {
@@ -117,8 +181,11 @@ class ProblemReportTests(unittest.TestCase):
             'hitid': 'hit-1',
             'assignmentid': 'assignment-1',
             'assignmentstatus': 'Submitted',
+            'answer.video_n_finish_q1': '1',
             'answer.video_n_finish_q2': '1',
+            'answer.video_duration_q1': '10',
             'answer.video_duration_q2': '10',
+            'answer.video_play_duration_q1': '10',
             'answer.video_play_duration_q2': '10',
         }
         config = {
@@ -142,6 +209,7 @@ class ProblemReportTests(unittest.TestCase):
                 'assignmentid': f'invalid-{index}',
                 'answer.problem_reports': payload,
             })
+        rows.append({**row, 'assignmentid': 'unanswered', 'answer.q1': ''})
         with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
             stack.enter_context(patch.multiple(
                 parser, config=config, question_names=['q1', 'q2'], question_name_suffix='',
@@ -175,17 +243,108 @@ class ProblemReportTests(unittest.TestCase):
                 writer.writerows(rows)
             workers, sessions = parser.data_cleaning(str(path), 'acr', [])
             self.assertEqual(workers[0]['accept'], 1)
-            self.assertEqual([worker['accept'] for worker in workers[1:]], [0, 0, 0])
-            self.assertTrue(all('problem report data was invalid' in worker['Reject'] for worker in workers[1:]))
+            self.assertEqual([worker['accept'] for worker in workers[1:]], [0, 0, 0, 0])
+            self.assertTrue(all('problem report data was invalid' in worker['Reject'] for worker in workers[1:4]))
+            self.assertEqual(workers[-1]['complete_answered'], 0)
             self.assertEqual(len(sessions), 1)
             with (path.parent / 'answers_problem_reports.csv').open(newline='') as file:
                 reports = list(csv.DictReader(file))
-            self.assertEqual([report['excluded_question'] for report in reports[:2]], ['1', '0'])
+            self.assertTrue(all(report['excluded_question'] == '0' for report in reports))
             self.assertEqual([report['accept'] for report in reports[:2]], ['1', '1'])
-            self.assertEqual(len(reports), 6)
-            self.assertTrue(all(report['validation_error'] for report in reports[2:]))
+            self.assertEqual(len(reports), 8)
+            self.assertTrue(all(report['validation_error'] for report in reports[2:6]))
             self.assertTrue(all(report['accept'] == '0' for report in reports[2:]))
-            self.assertEqual(reports[-1]['raw_problem_reports'], "'=1+1")
+            self.assertEqual(reports[5]['raw_problem_reports'], "'=1+1")
+
+    def test_reported_regular_votes_are_included_in_aggregation(self):
+        config = configparser.ConfigParser()
+        config.read_dict({
+            'general': {'number_of_questions_in_rating': '2'},
+            'gold_question': {'url_found_in': 'input.gold_url'},
+            'accept_and_use': {},
+        })
+        row = {
+            **self.make_row(),
+            'input.gold_url': 'https://example.com/gold.mp4',
+            'hitid': 'hit-1', 'workerid': 'worker-1',
+        }
+        with patch.multiple(
+            parser, config=config, question_names=['q1', 'q2'], question_name_suffix='',
+            max_found_per_file=-1, pvs_src_map={}, file_to_condition_map={},
+            logger=logging.getLogger(__name__), create=True,
+        ):
+            per_file, _, per_worker = parser.transform('acr', [row], False, False)
+            self.assertEqual([item['file_url'] for item in per_file], [row['answer.q1_url'], row['answer.q2_url']])
+            self.assertEqual([item['MOS'] for item in per_file], [5, 3])
+            self.assertEqual(per_worker['vote'].tolist(), [5, 3])
+
+    def test_reported_gold_occurrence_does_not_discard_later_regular_vote(self):
+        config = configparser.ConfigParser()
+        config.read_dict({
+            'general': {'number_of_questions_in_rating': '2'},
+            'gold_question': {'url_found_in': 'input.gold_url'},
+            'trapping': {'url_found_in': 'input.trapping_url'},
+            'accept_and_use': {},
+        })
+        row = self.make_row()
+        row.update({
+            'answer.q2_url': row['answer.q1_url'],
+            'answer.problem_reports': json.dumps(parser.get_problem_reports(row)[:1]),
+            'input.gold_url': row['answer.q1_url'],
+            'input.trapping_url': 'https://example.com/trapping.mp4',
+            'hitid': 'hit-1',
+            'workerid': 'worker-1',
+        })
+        for method in ['acr', 'acr-hr']:
+            with self.subTest(method=method), patch.multiple(
+                parser, config=config, question_names=['q1', 'q2'], question_name_suffix='',
+                max_found_per_file=-1, pvs_src_map={}, file_to_condition_map={},
+                logger=logging.getLogger(__name__), create=True,
+            ):
+                per_file, _, per_worker = parser.transform(method, [row], False, False)
+                self.assertEqual(len(per_file), 1)
+                self.assertEqual(per_file[0]['file_url'], row['answer.q2_url'])
+                self.assertEqual(per_file[0]['n'], 1)
+                self.assertEqual(per_file[0]['MOS'], 3)
+                self.assertEqual(per_worker['vote'].tolist(), [3])
+
+    def test_acrhr_reported_reference_remains_in_dmos_calculation(self):
+        config = configparser.ConfigParser()
+        config.read_dict({
+            'general': {'number_of_questions_in_rating': '4', 'scale': '5'},
+            'gold_question': {'url_found_in': 'input.gold_url'},
+            'accept_and_use': {},
+        })
+        row = {
+            **self.make_row(),
+            'input.gold_url': 'https://example.com/gold.mp4',
+            'answer.q3_url': 'https://example.com/reference.mp4',
+            'answer.q3': '4',
+            'answer.q4_url': 'https://example.com/processed.mp4',
+            'answer.q4': '3',
+            'hitid': 'hit-1',
+            'workerid': 'worker-1',
+        }
+        for index, question in enumerate(['q1', 'q2', 'q3', 'q4']):
+            row[f'input.q{index}'] = row[f'answer.{question}_url']
+            row[f'input.q{index}_r'] = row['answer.q1_url' if index < 2 else 'answer.q3_url']
+        with tempfile.TemporaryDirectory() as directory, patch.multiple(
+            parser, config=config, question_names=['q1', 'q2', 'q3', 'q4'], question_name_suffix='',
+            max_found_per_file=-1, pvs_src_map={}, file_to_condition_map={},
+            logger=logging.getLogger(__name__), create=True,
+        ):
+            per_file, _, _ = parser.transform('acr-hr', [row], False, False)
+            self.assertIn(row['answer.q1_url'], [item['file_url'] for item in per_file])
+            path = Path(directory) / 'per_file.csv'
+            parser.pd.DataFrame(per_file).to_csv(path, index=False)
+            parser.add_dmos_acrhr(str(path), config)
+            with path.open(newline='') as file:
+                scores = {item['file_url']: item for item in csv.DictReader(file)}
+            self.assertEqual(float(scores[row['answer.q1_url']]['DMOS']), 5)
+            self.assertEqual(float(scores[row['answer.q2_url']]['DMOS']), 3)
+            self.assertEqual(float(scores[row['answer.q3_url']]['DMOS']), 5)
+            self.assertEqual(float(scores[row['answer.q4_url']]['DMOS']), 4)
+            self.assertEqual(len(scores), 4)
 
 
 if __name__ == '__main__':
